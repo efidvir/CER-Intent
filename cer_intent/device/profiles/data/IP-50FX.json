@@ -1,0 +1,18 @@
+{
+  "model_name": "IP-50FX",
+  "vendor": "Ceragon",
+  "type": "wireless_transport",
+  "capabilities": {
+    "max_throughput": {"name": "Max Throughput", "value": 10.0, "unit": "Gbps"},
+    "max_bandwidth": {"name": "Max Bandwidth", "value": 112, "unit": "MHz"},
+    "xpic_support": {"name": "XPIC Support", "value": true},
+    "max_qam": {"name": "Max Modulation", "value": 2048, "unit": "QAM"}
+  },
+  "supported_modulations": ["QPSK", "16QAM", "32QAM", "64QAM", "128QAM", "256QAM", "512QAM", "1024QAM", "2048QAM"],
+  "channel_bandwidths_mhz": [28, 56, 112],
+  "config_mappings": [
+    {"intent_param": "min_throughput_gbps", "config_key": "mrmc_script_id", "transformation": "lookup_mrmc"},
+    {"intent_param": "max_latency_ms", "config_key": "qos/egress-queue/policy", "transformation": "latency_to_class"}
+  ],
+  "api_guide": "The IP-50FX is a ultra-high capacity Millimeter Wave radio. It supports up to 112MHz channels and 2048QAM. For ultra-low latency, always use the 'Expedited Forwarding' (EF) queue. It supports XPIC for doubling capacity on a single frequency."
+}

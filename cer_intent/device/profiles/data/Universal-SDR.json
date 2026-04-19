@@ -1,0 +1,17 @@
+{
+  "model_name": "Universal-SDR",
+  "vendor": "OpenRadio",
+  "type": "wireless_transport",
+  "capabilities": {
+    "max_throughput": {"name": "Max Throughput", "value": 1.0, "unit": "Gbps"},
+    "max_bandwidth": {"name": "Max Bandwidth", "value": 28, "unit": "MHz"},
+    "xpic_support": {"name": "XPIC Support", "value": false},
+    "max_qam": {"name": "Max Modulation", "value": 256, "unit": "QAM"}
+  },
+  "supported_modulations": ["QPSK", "16QAM", "64QAM", "256QAM"],
+  "channel_bandwidths_mhz": [14, 28],
+  "config_mappings": [
+    {"intent_param": "min_throughput_gbps", "config_key": "radio/capacity-profile", "transformation": "direct"}
+  ],
+  "api_guide": "A generic Software Defined Radio. It has limited capacity (max 1Gbps) and supports basic 256QAM only. Configuration is via a simplified radio-profile API rather than MRMC scripts."
+}

@@ -1,0 +1,17 @@
+{
+  "model_name": "IP-20N",
+  "vendor": "Ceragon",
+  "type": "wireless_transport",
+  "capabilities": {
+    "max_throughput": {"name": "Max Throughput", "value": 5.0, "unit": "Gbps"},
+    "max_bandwidth": {"name": "Max Bandwidth", "value": 56, "unit": "MHz"},
+    "xpic_support": {"name": "XPIC Support", "value": true},
+    "max_qam": {"name": "Max Modulation", "value": 1024, "unit": "QAM"}
+  },
+  "supported_modulations": ["QPSK", "16QAM", "32QAM", "64QAM", "128QAM", "256QAM", "512QAM", "1024QAM"],
+  "channel_bandwidths_mhz": [28, 56],
+  "config_mappings": [
+    {"intent_param": "min_throughput_gbps", "config_key": "mrmc_script_id", "transformation": "lookup_mrmc"}
+  ],
+  "api_guide": "The IP-20N is a versatile split-mount radio. It excels in long-haul transport but is limited to 1024QAM and 56MHz channels. It has a modular architecture with high port density."
+}

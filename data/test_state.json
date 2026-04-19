@@ -1,0 +1,74 @@
+{
+  "devices": {
+    "node-A": {
+      "configs": {
+        "slice": {
+          "config_type": "slice",
+          "parameters": {
+            "slice_name": "eMBB",
+            "slice_type": "eMBB",
+            "bandwidth_pct": null,
+            "bandwidth_mbps": null,
+            "priority_level": 5,
+            "vlan_id": 104
+          },
+          "intent_id": "1498e9f0-a929-4d32-a3b5-bb5382e1bd8c",
+          "applied_at": "2026-04-13T13:54:48.435029+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" message-id=\"cer-intent-1498e9f0\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:slice-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" target-device=\"node-A\">\n        <ns1:slice>\n          <ns1:name>eMBB</ns1:name>\n          <ns1:type>eMBB</ns1:type>\n     "
+        }
+      },
+      "last_updated": "2026-04-13T13:54:48.435029+00:00"
+    },
+    "node-B": {
+      "configs": {
+        "slice": {
+          "config_type": "slice",
+          "parameters": {
+            "slice_name": "eMBB",
+            "slice_type": "eMBB",
+            "bandwidth_pct": null,
+            "bandwidth_mbps": null,
+            "priority_level": 5,
+            "vlan_id": 104
+          },
+          "intent_id": "1498e9f0-a929-4d32-a3b5-bb5382e1bd8c",
+          "applied_at": "2026-04-13T13:54:48.487131+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" message-id=\"cer-intent-1498e9f0\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:slice-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" target-device=\"node-B\">\n        <ns1:slice>\n          <ns1:name>eMBB</ns1:name>\n          <ns1:type>eMBB</ns1:type>\n     "
+        }
+      },
+      "last_updated": "2026-04-13T13:54:48.487131+00:00"
+    }
+  },
+  "config_history": [
+    {
+      "device_id": "node-A",
+      "config_type": "slice",
+      "parameters": {
+        "slice_name": "eMBB",
+        "slice_type": "eMBB",
+        "bandwidth_pct": null,
+        "bandwidth_mbps": null,
+        "priority_level": 5,
+        "vlan_id": 104
+      },
+      "intent_id": "1498e9f0-a929-4d32-a3b5-bb5382e1bd8c",
+      "applied_at": "2026-04-13T13:54:48.435029+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" message-id=\"cer-intent-1498e9f0\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:slice-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" target-device=\"node-A\">\n        <ns1:slice>\n          <ns1:name>eMBB</ns1:name>\n          <ns1:type>eMBB</ns1:type>\n     "
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "slice",
+      "parameters": {
+        "slice_name": "eMBB",
+        "slice_type": "eMBB",
+        "bandwidth_pct": null,
+        "bandwidth_mbps": null,
+        "priority_level": 5,
+        "vlan_id": 104
+      },
+      "intent_id": "1498e9f0-a929-4d32-a3b5-bb5382e1bd8c",
+      "applied_at": "2026-04-13T13:54:48.487131+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" message-id=\"cer-intent-1498e9f0\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:slice-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-slice:1.0\" target-device=\"node-B\">\n        <ns1:slice>\n          <ns1:name>eMBB</ns1:name>\n          <ns1:type>eMBB</ns1:type>\n     "
+    }
+  ]
+}

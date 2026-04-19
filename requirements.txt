@@ -1,0 +1,14 @@
+flask==3.0.3
+flask-socketio==5.3.6
+flask-cors==4.0.1
+google-generativeai==0.7.2
+ncclient==0.6.15
+pyyaml==6.0.1
+jsonschema==4.22.0
+rich==13.7.1
+click==8.1.7
+pydantic==2.7.4
+python-dotenv==1.0.1
+eventlet==0.36.1
+lxml==5.2.2
+requests==2.32.3

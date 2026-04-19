@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CER-Intent — 6G Transport Intent Manager</title>
+  <meta name="description" content="Real-time intent-based management system for Ceragon 6G transport networks. Submit intents, visualize the network topology, monitor telemetry, and track configurations.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="/socket.io.min.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header" id="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <div class="logo-icon">⬡</div>
+        <div>
+          <div class="logo-title">CER-Intent</div>
+          <div class="logo-sub">6G Transport Intent Manager</div>
+        </div>
+      </div>
+    </div>
+    <div class="header-center">
+      <div class="status-pill" id="conn-status">
+        <span class="status-dot"></span>
+        <span id="conn-label">Connecting…</span>
+      </div>
+      <div class="header-stats">
+        <div class="hstat"><span id="stat-intents">0</span><label>Intents</label></div>
+        <div class="hstat"><span id="stat-devices">8</span><label>Devices</label></div>
+        <div class="hstat"><span id="stat-links">10</span><label>Links</label></div>
+        <div class="hstat" id="backend-badge"><span id="stat-backend">—</span><label>Backend</label></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-ghost" id="btn-clear-intents" title="Clear all intents">🗑 Clear</button>
+      <button class="btn btn-primary" id="btn-open-intent" title="Submit new intent">＋ New Intent</button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="main-grid" id="main-layout">
+
+    <!-- LEFT: Topology + Telemetry -->
+    <section class="panel panel-topology" id="panel-topology">
+      <div class="panel-header">
+        <h2>Network Topology</h2>
+        <div class="panel-controls">
+          <button class="chip chip-active" data-filter="all" id="filter-all">All</button>
+          <button class="chip" data-filter="active" id="filter-active">Active</button>
+          <button class="chip" data-filter="degraded" id="filter-degraded">Degraded</button>
+        </div>
+      </div>
+      <div class="topology-container" id="topology-svg-container">
+        <div class="disconnected-overlay" id="topology-offline">
+          <div class="disconnected-icon">⚠</div>
+          <div class="disconnected-text">Network Plot Offline</div>
+          <div class="disconnected-sub">Awaiting backend connection...</div>
+        </div>
+        <svg id="topology-svg"></svg>
+        <div class="topo-legend">
+          <div><span class="dot dot-active"></span> Active</div>
+          <div><span class="dot dot-degraded"></span> Degraded</div>
+          <div><span class="dot dot-node-ip50fx"></span> IP-50FX</div>
+          <div><span class="dot dot-node-ip20n"></span> IP-20N</div>
+          <div><span class="dot dot-node-ip20c"></span> IP-20C</div>
+        </div>
+      </div>
+      <!-- Link Telemetry Details -->
+      <div class="telemetry-table-wrap" id="telemetry-wrap">
+        <div class="panel-header" style="padding: 0.5rem 1rem 0">
+          <h3>Live Link Telemetry</h3>
+          <span class="live-badge">● LIVE</span>
+        </div>
+        <table class="tel-table" id="tel-table">
+          <thead>
+            <tr>
+              <th>Link</th><th>Status</th><th>SNR (dB)</th><th>Modulation</th>
+              <th>Throughput</th><th>Utilization</th><th>Latency</th><th>Loss</th>
+            </tr>
+          </thead>
+          <tbody id="tel-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RIGHT: Intent Panel + Audit -->
+    <aside class="sidebar" id="sidebar">
+
+      <!-- Intent Submission -->
+      <div class="panel panel-intent" id="panel-intent-input">
+        <div class="panel-header">
+          <h2>Submit Intent</h2>
+          <div class="tab-row">
+            <button class="tab active" id="tab-nl" data-mode="nl">Natural Language</button>
+            <button class="tab" id="tab-json" data-mode="json">Structured JSON</button>
+          </div>
+        </div>
+        <div class="intent-form">
+          <!-- NL Mode -->
+          <div id="mode-nl">
+            <div class="examples-scroll">
+              <div class="example-label">Try an example:</div>
+              <div class="examples-row" id="examples-row"></div>
+            </div>
+            <textarea id="nl-input" class="intent-textarea"
+              placeholder="e.g. Increase capacity on link-A-B to 5 Gbps for eMBB slice&#10;e.g. Enable 1+1 HSB protection on sector-north&#10;e.g. Set minimum modulation to 256QAM on all links"
+              rows="4"></textarea>
+          </div>
+          <!-- JSON Mode -->
+          <div id="mode-json" class="hidden">
+            <textarea id="json-input" class="intent-textarea mono"
+              placeholder='{"type":"capacity","target":{"target_type":"link","identifier":"link-A-B"},"parameters":{"min_throughput_gbps":5,"slice_type":"eMBB"}}'
+              rows="6"></textarea>
+          </div>
+          <div class="intent-meta">
+            <label>Priority
+              <select id="intent-priority">
+                <option value="3">3 — Low</option>
+                <option value="5" selected>5 — Medium</option>
+                <option value="7">7 — High</option>
+                <option value="10">10 — Critical</option>
+              </select>
+            </label>
+            <label>Source
+              <select id="intent-source">
+                <option value="operator">Operator</option>
+                <option value="agent">Agent</option>
+                <option value="api">API</option>
+              </select>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <span class="toggle-label" title="Automatically apply architect strategies without manual approval">Auto-Apply Architecture</span>
+            <label class="switch">
+              <input type="checkbox" id="check-auto-apply">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <button class="btn btn-submit" id="btn-submit">⚡ Submit Intent</button>
+          <div id="submit-result" class="submit-result hidden"></div>
+        </div>
+      </div>
+
+      <!-- Active Intents List -->
+      <div class="panel panel-intents-list" id="panel-intents-list">
+        <div class="panel-header">
+          <h2>Active Intents <span class="badge" id="intent-count">0</span></h2>
+          <select id="intent-status-filter" class="filter-select">
+            <option value="">All statuses</option>
+            <option value="applied">Applied</option>
+            <option value="drift">Drift</option>
+            <option value="failed">Failed</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <div class="intents-list" id="intents-list">
+          <div class="empty-state" id="intents-empty">No intents submitted yet</div>
+        </div>
+      </div>
+
+      <!-- Audit Log -->
+      <div class="panel panel-audit" id="panel-audit">
+        <div class="panel-header">
+          <h2>Audit Log</h2>
+          <span class="live-badge">● LIVE</span>
+        </div>
+        <div class="audit-log" id="audit-log-container">
+          <div class="empty-state">Waiting for events…</div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Intent Detail Modal -->
+  <div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal" id="intent-modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Intent Detail</h3>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- YANG Config Drawer -->
+  <div class="drawer-overlay hidden" id="drawer-overlay">
+    <div class="drawer" id="yang-drawer">
+      <div class="drawer-header">
+        <h3 id="drawer-title">NETCONF Config</h3>
+        <button class="drawer-close" id="drawer-close">✕</button>
+      </div>
+      <pre class="yang-pre" id="yang-content"></pre>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

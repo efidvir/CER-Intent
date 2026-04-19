@@ -1,0 +1,1708 @@
+{
+  "devices": {
+    "node-A": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:16.678279+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:16.678279+00:00"
+    },
+    "node-B": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:16.758216+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:16.758216+00:00"
+    },
+    "node-C": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:16.845166+00:00",
+          "yang_xml_snippet": ""
+        },
+        "protection": {
+          "config_type": "protection",
+          "parameters": {
+            "protection_mode": "1+1-hsb",
+            "revert_mode": "revertive",
+            "wtr_seconds": 300,
+            "holdoff_ms": 0
+          },
+          "intent_id": "46e608bf-069d-41ad-aec5-4a6e11edce7c",
+          "applied_at": "2026-04-16T14:33:14.579323+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-46e608bf\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+        }
+      },
+      "last_updated": "2026-04-16T14:33:14.579323+00:00"
+    },
+    "node-D": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:16.922543+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:16.922543+00:00"
+    },
+    "node-E": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:17.001853+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:17.001853+00:00"
+    },
+    "node-F": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:17.080392+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:17.080392+00:00"
+    },
+    "node-G": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:17.145469+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:17.145469+00:00"
+    },
+    "node-H": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:17.207417+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:17.207417+00:00"
+    },
+    "node-I": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "channel_bandwidth_mhz": 28,
+            "mrmc_script_id": 30,
+            "min_modulation": "16QAM",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "slice_type": null,
+            "target_throughput_gbps": 1.0
+          },
+          "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+          "applied_at": "2026-04-16T09:06:17.277825+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-04-16T09:06:17.277825+00:00"
+    }
+  },
+  "config_history": [
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 112,
+        "mrmc_script_id": 50,
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 5.0
+      },
+      "intent_id": "faa438b3-647e-4291-8f34-3f13072e55a0",
+      "applied_at": "2026-04-13T13:59:04.959833+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-faa438b3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>112MHz</ns1"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 112,
+        "mrmc_script_id": 50,
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 5.0
+      },
+      "intent_id": "faa438b3-647e-4291-8f34-3f13072e55a0",
+      "applied_at": "2026-04-13T13:59:05.012416+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-faa438b3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>112MHz</ns1"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.051960+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.104591+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.158174+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-C</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.219332+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-D</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-E",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.279035+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-E</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-F",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.332774+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-F</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-G",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.389664+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-G</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-H",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.443123+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-H</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-I",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1d22f69d-b8eb-4d4e-a20c-b2b6d1da85d5",
+      "applied_at": "2026-04-14T08:29:18.496330+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d22f69d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-I</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.049914+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.102579+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.155504+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-C</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.207950+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-D</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-E",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.261876+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-E</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-F",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.315311+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-F</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-G",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.368598+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-G</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-H",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.422320+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-H</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-I",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "5417d194-3fc4-4a26-a29c-d64216a903b5",
+      "applied_at": "2026-04-14T08:30:42.475314+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-5417d194\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-I</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "1ab95787-7174-496f-be6a-821bbf099eea",
+      "applied_at": "2026-04-14T08:39:20.704783+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1ab95787\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "2611a2d3-67ae-49ca-aafd-0193ec447abf",
+      "applied_at": "2026-04-14T08:39:37.792068+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-2611a2d3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "2611a2d3-67ae-49ca-aafd-0193ec447abf",
+      "applied_at": "2026-04-14T08:39:37.794726+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "2611a2d3-67ae-49ca-aafd-0193ec447abf",
+      "applied_at": "2026-04-14T08:39:37.846885+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-2611a2d3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "2611a2d3-67ae-49ca-aafd-0193ec447abf",
+      "applied_at": "2026-04-14T08:39:37.852318+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "4a41cc3d-0f54-4c3d-8cfe-e0f850277f49",
+      "applied_at": "2026-04-14T08:39:37.910671+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-4a41cc3d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-C</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "4a41cc3d-0f54-4c3d-8cfe-e0f850277f49",
+      "applied_at": "2026-04-14T08:39:37.965078+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-4a41cc3d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-D</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "03595e95-a54d-4bf3-b2da-cddf88358476",
+      "applied_at": "2026-04-14T08:44:09.677750+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-03595e95\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "03595e95-a54d-4bf3-b2da-cddf88358476",
+      "applied_at": "2026-04-14T08:44:09.681515+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "03595e95-a54d-4bf3-b2da-cddf88358476",
+      "applied_at": "2026-04-14T08:44:09.737728+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-03595e95\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "03595e95-a54d-4bf3-b2da-cddf88358476",
+      "applied_at": "2026-04-14T08:44:09.743909+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "109f38b8-bcd2-4e04-a803-76f5d9f20f86",
+      "applied_at": "2026-04-14T08:44:09.802486+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-109f38b8\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-C</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "109f38b8-bcd2-4e04-a803-76f5d9f20f86",
+      "applied_at": "2026-04-14T08:44:09.859924+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-109f38b8\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-D</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "ea9a18c4-d5d8-4dec-b449-6018260303ba",
+      "applied_at": "2026-04-14T08:50:00.945265+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-ea9a18c4\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "ea9a18c4-d5d8-4dec-b449-6018260303ba",
+      "applied_at": "2026-04-14T08:50:00.948330+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "ea9a18c4-d5d8-4dec-b449-6018260303ba",
+      "applied_at": "2026-04-14T08:50:01.002280+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-ea9a18c4\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabled"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "64QAM",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "ea9a18c4-d5d8-4dec-b449-6018260303ba",
+      "applied_at": "2026-04-14T08:50:01.003804+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "109f0f1b-8e35-4320-a7ea-541f0b0ea788",
+      "applied_at": "2026-04-14T08:50:01.162186+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-109f0f1b\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-C</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "109f0f1b-8e35-4320-a7ea-541f0b0ea788",
+      "applied_at": "2026-04-14T08:50:01.215196+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-109f0f1b\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-D</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "1f88afc4-2544-482a-91ee-96fbecddc00d",
+      "applied_at": "2026-04-14T08:50:49.035667+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1f88afc4\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "1f88afc4-2544-482a-91ee-96fbecddc00d",
+      "applied_at": "2026-04-14T08:50:49.090355+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1f88afc4\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "972afe9d-3cd6-42ce-aecc-4f02299846f0",
+      "applied_at": "2026-04-14T09:33:01.268821+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-972afe9d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "972afe9d-3cd6-42ce-aecc-4f02299846f0",
+      "applied_at": "2026-04-14T09:33:01.274887+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "56c9e80e-8ed6-4165-9177-b2e890af15e8",
+      "applied_at": "2026-04-14T09:33:08.426692+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-56c9e80e\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "56c9e80e-8ed6-4165-9177-b2e890af15e8",
+      "applied_at": "2026-04-14T09:33:08.431337+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "c0ee93f4-700a-4674-9572-a315160fffa8",
+      "applied_at": "2026-04-14T10:48:56.317013+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-c0ee93f4\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "c0ee93f4-700a-4674-9572-a315160fffa8",
+      "applied_at": "2026-04-14T10:48:56.321834+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "98781cd3-a065-458d-9fcb-a2cad8df3363",
+      "applied_at": "2026-04-14T10:51:07.952303+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-98781cd3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "98781cd3-a065-458d-9fcb-a2cad8df3363",
+      "applied_at": "2026-04-14T10:51:07.954911+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "1d2ddc7c-532d-4813-b225-51e1a6c0dc48",
+      "applied_at": "2026-04-14T10:52:32.568385+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d2ddc7c\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "1d2ddc7c-532d-4813-b225-51e1a6c0dc48",
+      "applied_at": "2026-04-14T10:52:32.571416+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "1d2ddc7c-532d-4813-b225-51e1a6c0dc48",
+      "applied_at": "2026-04-14T10:52:32.625753+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-1d2ddc7c\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "1d2ddc7c-532d-4813-b225-51e1a6c0dc48",
+      "applied_at": "2026-04-14T10:52:32.627771+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "712c8017-4905-4b9a-96a0-939b93ae939b",
+      "applied_at": "2026-04-14T12:43:46.989719+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-712c8017\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "77cc5e6d-c5bc-4008-88c2-09b70a3bdbf8",
+      "applied_at": "2026-04-14T12:43:51.204398+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-77cc5e6d\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "3fa7ba36-bf3f-404e-a01a-756e26c035c1",
+      "applied_at": "2026-04-14T12:44:38.201606+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-3fa7ba36\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "6d68f1b0-06c4-45a6-b2b5-edfc9e7fa6d4",
+      "applied_at": "2026-04-14T12:44:42.465032+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-6d68f1b0\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "a8edb7ae-5665-4915-93f4-b15bee2df26c",
+      "applied_at": "2026-04-14T12:45:17.793159+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-a8edb7ae\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "d36c1d6c-dc1a-4a59-b622-c54621dd105e",
+      "applied_at": "2026-04-14T12:45:22.079540+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-d36c1d6c\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:53.877879+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:53.882834+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:53.941235+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:53.945283+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.012489+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-C</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.017525+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.092441+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-D</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.097028+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-E",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.169679+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-E</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-E",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.175774+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-F",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.245562+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-F</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-F",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.252101+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-G",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.319741+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-G</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-G",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.325614+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-H",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.385671+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-H</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-H",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.388747+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-I",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.462304+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-f22295de\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-I</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-I",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": "eMBB",
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "f22295de-3c2c-49c4-a785-c87696aa51ae",
+      "applied_at": "2026-04-16T08:57:54.468659+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.671816+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-A</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-A",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.678279+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.750676+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-B</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-B",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.758216+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.839178+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-C</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.845166+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.916215+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-D</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-D",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.922543+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-E",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:16.994196+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-E</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-E",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.001853+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-F",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.073040+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-F</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-F",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.080392+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-G",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.139319+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-G</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-G",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.145469+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-H",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.201481+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-H</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-H",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.207417+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-I",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.271496+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-b8071abc\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>node-I</ns1:link-id>\n        <ns1:carrier>\n          <ns1:channel-bandwidth>28MHz</ns1:"
+    },
+    {
+      "device_id": "node-I",
+      "config_type": "radio",
+      "parameters": {
+        "channel_bandwidth_mhz": 28,
+        "mrmc_script_id": 30,
+        "min_modulation": "16QAM",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "slice_type": null,
+        "target_throughput_gbps": 1.0
+      },
+      "intent_id": "b8071abc-42d5-4836-b788-30f51a99c52e",
+      "applied_at": "2026-04-16T09:06:17.277825+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "e611a0aa-d7ef-463c-a21c-8423cd14b8e5",
+      "applied_at": "2026-04-16T14:33:10.359514+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-e611a0aa\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "e611a0aa-d7ef-463c-a21c-8423cd14b8e5",
+      "applied_at": "2026-04-16T14:33:10.366522+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-e611a0aa\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "46e608bf-069d-41ad-aec5-4a6e11edce7c",
+      "applied_at": "2026-04-16T14:33:14.572073+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-46e608bf\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    },
+    {
+      "device_id": "node-C",
+      "config_type": "protection",
+      "parameters": {
+        "protection_mode": "1+1-hsb",
+        "revert_mode": "revertive",
+        "wtr_seconds": 300,
+        "holdoff_ms": 0
+      },
+      "intent_id": "46e608bf-069d-41ad-aec5-4a6e11edce7c",
+      "applied_at": "2026-04-16T14:33:14.579323+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" message-id=\"cer-intent-46e608bf\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:protection-config xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-protection:1.0\" target-device=\"node-C\">\n        <ns1:protection-group>\n          <ns1:id>pg-node-C</ns1:id>\n          <ns1"
+    }
+  ]
+}
