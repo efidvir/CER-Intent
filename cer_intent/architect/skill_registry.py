@@ -16,6 +16,10 @@ from cer_intent.architect.skills.low_latency_skill import LowLatencySkill
 from cer_intent.architect.skills.high_capacity_skill import HighCapacitySkill
 from cer_intent.architect.skills.radio_optimization_skill import RadioOptimizationSkill
 from cer_intent.architect.skills.traffic_engineering_skill import TrafficEngineeringSkill, ResilienceSkill
+from cer_intent.architect.skills.network_health_skill import NetworkHealthSkill
+from cer_intent.architect.skills.rain_fade_skill import RainFadeSkill
+from cer_intent.architect.skills.energy_optimization_skill import EnergyOptimizationSkill
+from cer_intent.architect.skills.spectral_efficiency_skill import SpectralEfficiencySkill
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +30,10 @@ _ALL_SKILLS: List[BaseSkill] = [
     RadioOptimizationSkill(),
     TrafficEngineeringSkill(),
     ResilienceSkill(),
+    NetworkHealthSkill(),
+    RainFadeSkill(),
+    EnergyOptimizationSkill(),
+    SpectralEfficiencySkill(),
 ]
 
 
