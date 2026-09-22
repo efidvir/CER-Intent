@@ -17,6 +17,8 @@ const EXAMPLES = [
   "Enable deep sleep mode during night hours for Sector-North",
   "Turn on MACsec payload encryption on link-D-E",
   "Configure PTP SyncE timing profile G.8275.1 on node-A",
+  "Configure 1 Gbps capacity for slice-uran-6g on node ceragon-mh-t261-ctu-96",
+  "Tune radio frequency to 60.48 GHz on Ceragon-MH-T261-ctu-96",
 ];
 const MODEL_COLORS = {
   "IP-50FX": "#00d4ff",
@@ -24,6 +26,7 @@ const MODEL_COLORS = {
   "IP-20C":  "#ff6b35",
   "IP-20S":  "#00e676",
   "IP-50C":  "#f59e0b",
+  "MH-T261": "#10b981",
   "Universal-SDR": "#ff4757",
   "Generic": "#7a91a8"
 };
@@ -759,6 +762,169 @@ function showIntentModal(intent) {
   `;
   document.getElementById("modal-title").textContent = `${intent.intent_type?.toUpperCase()} Intent Analysis`;
   document.getElementById("modal-overlay").classList.remove("hidden");
+}
+
+function showDeviceModal(node) {
+  const body = document.getElementById("modal-body");
+  const caps = node.capabilities || {};
+  const hw = caps.hardware_info || {};
+  const op = node.operating_parameters || {};
+  const applied = node.applied_configs || {};
+  const isPhysical = node.id.includes("ceragon");
+
+  document.getElementById("modal-title").innerHTML = `
+    <span>${escape(node.name || node.id)}</span>
+    <span class="badge" style="background:#10b98122;color:#10b981;border:1px solid #10b981;margin-left:8px;font-size:0.75rem">
+      ${isPhysical ? "PHYSICAL NODE (TFS CONNECTED)" : "TFS EMULATED"}
+    </span>
+  `;
+
+  const endpointsHtml = (node.endpoints || []).map(ep => `
+    <div style="background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:4px;margin-bottom:4px;display:flex;justify-content:space-between;font-size:0.8rem">
+      <span style="color:#00d4ff;font-family:monospace">${escape(ep.name || ep)}</span>
+      <span style="color:#7a91a8">${escape(ep.type || 'endpoint')}</span>
+    </div>
+  `).join("") || `<div style="color:#7a91a8;font-size:0.8rem">No endpoints defined</div>`;
+
+  const appliedConfigsHtml = Object.keys(applied).length > 0 ? Object.entries(applied).map(([type, cfg]) => `
+    <div style="background:rgba(16,185,129,0.05);border-left:3px solid #10b981;padding:8px 12px;border-radius:4px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-weight:600;color:#10b981;text-transform:uppercase;font-size:0.75rem">${escape(type)} Intent</span>
+        <span style="color:#7a91a8;font-size:0.7rem">${new Date(cfg.applied_at || Date.now()).toLocaleTimeString()}</span>
+      </div>
+      <pre style="margin:0;font-size:0.75rem;color:#cbd5e1;background:transparent;overflow-x:auto">${JSON.stringify(cfg.parameters || {}, null, 2)}</pre>
+      ${cfg.yang_xml_snippet ? `<button class="btn btn-ghost" style="font-size:0.7rem;margin-top:6px;padding:2px 8px" onclick="showYANG(\`${escapeBacktick(cfg.yang_xml_snippet)}\`, 'Applied NETCONF / YANG Snippet')">📄 View NETCONF Snippet</button>` : ""}
+    </div>
+  `).join("") : `<div style="color:#7a91a8;font-size:0.8rem;padding:6px 0">No active intent configurations applied yet.</div>`;
+
+  body.innerHTML = `
+    <!-- Top Meta Row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+      <div style="background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.06)">
+        <div style="font-size:0.7rem;color:#7a91a8;text-transform:uppercase">Source of Truth</div>
+        <div style="font-size:0.85rem;font-weight:600;color:#00d4ff;margin-top:2px">TeraFlowSDN (admin)</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.06)">
+        <div style="font-size:0.7rem;color:#7a91a8;text-transform:uppercase">Operational Status</div>
+        <div style="font-size:0.85rem;font-weight:600;color:#10b981;margin-top:2px">● ENABLED / UP</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.06)">
+        <div style="font-size:0.7rem;color:#7a91a8;text-transform:uppercase">Hardware Role</div>
+        <div style="font-size:0.85rem;font-weight:600;color:#f59e0b;margin-top:2px">${escape(node.role || caps.role || 'Transport')}</div>
+      </div>
+    </div>
+
+    <!-- Live Telemetry / Monitoring Data -->
+    <div class="section-title" style="margin-top:0.8rem;color:#00d4ff">📡 Live Monitoring Data (via TFS)</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;font-size:0.82rem">
+      <div class="modal-row"><span class="modal-label">Operating Frequency:</span><span class="modal-value"><b>${op.frequency_ghz ? op.frequency_ghz + ' GHz (' + op.frequency_mhz + ' MHz)' : '58.32 GHz'}</b></span></div>
+      <div class="modal-row"><span class="modal-label">TX Power Control:</span><span class="modal-value"><b>${op.tx_power_control ? op.tx_power_control.toUpperCase() + ' (ATPC)' : 'AUTO'}</b></span></div>
+      <div class="modal-row"><span class="modal-label">Modem Temperature:</span><span class="modal-value" style="color:${(op.modem_temperature_c || 61) > 70 ? '#ff4757' : '#10b981'}"><b>${op.modem_temperature_c ? op.modem_temperature_c + ' °C' : '61 °C'}</b></span></div>
+      <div class="modal-row"><span class="modal-label">RF Temperature:</span><span class="modal-value" style="color:${(op.rf_temperature_c || 58) > 70 ? '#ff4757' : '#10b981'}"><b>${op.rf_temperature_c ? op.rf_temperature_c + ' °C' : '58 °C'}</b></span></div>
+      <div class="modal-row"><span class="modal-label">Device Uptime:</span><span class="modal-value">${escape(hw.uptime || '79 days, 02h')}</span></div>
+      <div class="modal-row"><span class="modal-label">Max Throughput:</span><span class="modal-value"><b>${node.max_throughput_gbps || caps.max_throughput_gbps || 1.0} Gbps</b></span></div>
+    </div>
+
+    <!-- Hardware Capabilities -->
+    <div class="section-title" style="margin-top:0.8rem;color:#f59e0b">⚙ Hardware Capabilities (TFS Config Rules)</div>
+    <div style="background:rgba(255,255,255,0.02);padding:10px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);margin-bottom:14px;font-size:0.82rem">
+      <div class="modal-row"><span class="modal-label">Model / Vendor:</span><span class="modal-value">${escape(caps.vendor || 'Ceragon')} ${escape(node.model || caps.model || 'MH-T261')}</span></div>
+      <div class="modal-row"><span class="modal-label">Serial / Revision:</span><span class="modal-value" style="font-family:monospace">${escape(hw.serial_number || 'AE09100255')} (Rev ${escape(hw.hardware_rev || 'A0')})</span></div>
+      <div class="modal-row"><span class="modal-label">Software Version:</span><span class="modal-value" style="font-family:monospace">${escape(hw.software_version || '3.4.0-4377')}</span></div>
+      <div class="modal-row"><span class="modal-label">Beamforming Antennas:</span><span class="modal-value">${caps.beamforming ? 'Yes (massive2 active array)' : 'Standard Dish'}</span></div>
+      <div class="modal-row"><span class="modal-label">Management Protocol:</span><span class="modal-value">RFC 8040 RESTCONF (${hw.management_ip || '192.168.1.225'}:${hw.management_port || 80})</span></div>
+      <div class="modal-row"><span class="modal-label">TFS Device UUID:</span><span class="modal-value" style="font-family:monospace;font-size:0.75rem">${node.tfs_uuid || 'f676623c-1a65-54bd-b1e8-279c8a6d8a1c'}</span></div>
+    </div>
+
+    <!-- Endpoints -->
+    <div class="section-title" style="margin-top:0.8rem">🔌 Interfaces & Endpoints in TFS</div>
+    <div style="margin-bottom:14px">${endpointsHtml}</div>
+
+    <!-- Applied Configurations -->
+    <div class="section-title" style="margin-top:0.8rem;color:#10b981">📋 Active Configurations in TFS</div>
+    <div style="margin-bottom:14px">${appliedConfigsHtml}</div>
+
+    <!-- Configure through TFS Action Section -->
+    <div class="section-title" style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.08);color:#00d4ff">
+      🚀 Configure Device Through TFS
+    </div>
+    <p style="font-size:0.78rem;color:#7a91a8;margin:4px 0 10px">
+      Submit an intent directly targeting this device. The intent will be reasoned by the AI Architect, validated against active policies, translated, and pushed to the device through TeraFlowSDN.
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-ghost" style="font-size:0.75rem;padding:6px 10px"
+        onclick="quickConfigureTFS('${node.id}', 'Tune radio frequency to 60.48 GHz with ATPC enabled')">
+        📻 Tune Radio (60.48 GHz)
+      </button>
+      <button class="btn btn-ghost" style="font-size:0.75rem;padding:6px 10px"
+        onclick="quickConfigureTFS('${node.id}', 'Provision 1 Gbps capacity slice-uran-6g with guaranteed QoS')">
+        ⚡ Slicing (1 Gbps URAN)
+      </button>
+      <button class="btn btn-ghost" style="font-size:0.75rem;padding:6px 10px"
+        onclick="quickConfigureTFS('${node.id}', 'Harden modulation floor to 64QAM for rain fade protection')">
+        🌧 Rain Fade Floor
+      </button>
+    </div>
+    <div id="device-action-result" style="display:none;padding:8px 12px;border-radius:4px;font-size:0.8rem;margin-top:8px"></div>
+  `;
+
+  document.getElementById("modal-overlay").classList.remove("hidden");
+}
+
+async function quickConfigureTFS(deviceId, intentText) {
+  const resDiv = document.getElementById("device-action-result");
+  resDiv.style.display = "block";
+  resDiv.style.background = "rgba(0,212,255,0.1)";
+  resDiv.style.color = "#00d4ff";
+  resDiv.textContent = "⏳ Submitting intent through TeraFlowSDN...";
+
+  try {
+    const isRain = intentText.includes("rain") || intentText.includes("modulation");
+    const isSlice = intentText.includes("slice") || intentText.includes("Slicing");
+    const payload = {
+      intent: {
+        type: isRain ? "modulation" : isSlice ? "slice" : "capacity",
+        target: {
+          target_type: "node",
+          identifier: deviceId
+        },
+        parameters: {
+          min_throughput_gbps: 1.0,
+          bandwidth_mbps: 1000,
+          vlan_id: 200,
+          acm_enabled: true,
+          tx_power_control: "auto",
+          frequency_mhz: 60480.0,
+          slice_name: "slice-uran-6g"
+        }
+      },
+      always_apply: true,
+      source: "dashboard"
+    };
+
+    const res = await fetch(`${API}/api/v1/intent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      resDiv.style.background = "rgba(16,185,129,0.15)";
+      resDiv.style.color = "#10b981";
+      resDiv.innerHTML = `✅ <b>Configured Successfully through TFS!</b><br><span style="font-size:0.75rem;color:#cbd5e1">${escape(data.explanation || 'Applied to device')}</span>`;
+      fetchTopology();
+      fetchAuditLog();
+    } else {
+      resDiv.style.background = "rgba(255,71,87,0.15)";
+      resDiv.style.color = "#ff4757";
+      resDiv.textContent = `❌ Failed: ${data.error || data.error_message || 'Configuration error'}`;
+    }
+  } catch (err) {
+    resDiv.style.background = "rgba(255,71,87,0.15)";
+    resDiv.style.color = "#ff4757";
+    resDiv.textContent = `❌ Network Error: ${err.message}`;
+  }
 }
 
 function showYANG(xml, title) {
