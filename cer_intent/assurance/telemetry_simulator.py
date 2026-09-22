@@ -75,6 +75,10 @@ class TelemetrySimulator:
     def get_snapshot(self) -> Dict[str, Any]:
         return dict(self._telemetry)
 
+    def refresh_links(self):
+        """Re-initialise telemetry when registry topology updates."""
+        self._init_telemetry()
+
     def _loop(self):
         while self._running:
             self._update()
@@ -87,8 +91,12 @@ class TelemetrySimulator:
 
         for link in self._registry.get_all_links():
             lid = link["id"]
-            base = self._BASE.get(lid, {"snr": 20.0, "util": 0.5, "mod": "256QAM", "tx_pwr": 23.0})
-            tel = self._telemetry[lid]
+            base = self._BASE.get(lid, {"snr": 25.0, "util": 0.45, "mod": "512QAM", "tx_pwr": 22.0})
+            if lid not in self._telemetry:
+                self._init_telemetry()
+            tel = self._telemetry.get(lid)
+            if not tel:
+                continue
 
             # Simulate slow SNR drift with noise
             snr = base["snr"] + 4 * math.sin(t * 0.15 + hash(lid) % 7) + random.gauss(0, 0.8)

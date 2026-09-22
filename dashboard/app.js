@@ -23,6 +23,7 @@ const MODEL_COLORS = {
   "IP-20N":  "#7c3aed",
   "IP-20C":  "#ff6b35",
   "IP-20S":  "#00e676",
+  "IP-50C":  "#f59e0b",
   "Universal-SDR": "#ff4757",
   "Generic": "#7a91a8"
 };

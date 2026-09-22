@@ -30,7 +30,11 @@ class StateStore:
         if self._path.exists():
             try:
                 with open(self._path, "r") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        data.setdefault("devices", {})
+                        data.setdefault("config_history", [])
+                        return data
             except json.JSONDecodeError:
                 logger.warning("State file corrupt, resetting")
         return {"devices": {}, "config_history": []}

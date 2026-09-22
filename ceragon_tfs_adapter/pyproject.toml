@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ceragon-tfs-adapter"
+version = "1.0.0"
+description = "TeraFlowSDN (TFS) Device Adapter for Ceragon Wireless Transport Devices via REST/RESTCONF"
+readme = "README.md"
+authors = [
+    { name = "Ceragon Intent Team", email = "info@ceragon.com" }
+]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: System :: Networking",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.28.0",
+    "urllib3>=1.26.0",
+    "click>=8.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+ceragon-tfs-adapter = "ceragon_tfs_adapter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ceragon_tfs_adapter*"]

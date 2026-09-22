@@ -1,0 +1,18 @@
+{
+  "model_name": "IP-50E",
+  "vendor": "Ceragon",
+  "type": "wireless_transport",
+  "capabilities": {
+    "max_throughput": {"name": "Max Throughput", "value": 20.0, "unit": "Gbps"},
+    "max_bandwidth": {"name": "Max Bandwidth", "value": 2000, "unit": "MHz"},
+    "xpic_support": {"name": "XPIC Support", "value": false},
+    "max_qam": {"name": "Max Modulation", "value": 512, "unit": "QAM"}
+  },
+  "supported_modulations": ["QPSK", "16QAM", "32QAM", "64QAM", "128QAM", "256QAM", "512QAM"],
+  "channel_bandwidths_mhz": [250, 500, 1000, 2000],
+  "config_mappings": [
+    {"intent_param": "min_throughput_gbps", "config_key": "mrmc_script_id", "transformation": "lookup_mrmc"},
+    {"intent_param": "max_latency_ms", "config_key": "qos/egress-queue/policy", "transformation": "latency_to_class"}
+  ],
+  "api_guide": "The IP-50E operates in the E-Band (71-86 GHz) providing ultra-high transport capacity up to 20 Gbps over wide channels (up to 2000 MHz). Ideal for fronthaul and high-density 6G aggregation."
+}

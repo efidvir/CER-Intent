@@ -118,71 +118,139 @@ class TeraFlowAdapter(AdapterBase):
     We use the TeraFlow REST gateway to configure devices southbound.
 
     Environment variables required:
-      TERAFLOW_URL    — base URL of TeraFlow REST gateway (e.g. http://10.0.0.1:8080)
+      TERAFLOW_URL    — base URL of TeraFlow REST gateway (e.g. http://localhost:8080)
       TERAFLOW_TOKEN  — Bearer token for authentication (optional)
+      TFS_CONTEXT     — Context UUID or name (default: admin)
+      TFS_TOPOLOGY    — Topology UUID or name (default: admin)
     """
 
-    def __init__(self, state_store: StateStore):
+    def __init__(self, state_store: StateStore, registry: Any = None):
         self._store = state_store
-        self._base_url = os.getenv("TERAFLOW_URL", "http://localhost:8080").rstrip("/")
-        self._token = os.getenv("TERAFLOW_TOKEN", "")
-        self._timeout = int(os.getenv("TERAFLOW_TIMEOUT_SEC", "10"))
+        self._registry = registry
+        from cer_intent.device.tfs_client import TFSClient, make_uuid
+        self._tfs_client = TFSClient()
+        self._make_uuid = make_uuid
+        self._base_url = self._tfs_client.base_url
 
-    def _headers(self) -> dict:
-        h = {"Content-Type": "application/json", "Accept": "application/json"}
-        if self._token:
-            h["Authorization"] = f"Bearer {self._token}"
-        return h
+    def _resolve_device_uuid(self, device_id: str) -> str:
+        """Resolve a shorthand device ID or name to its authoritative TFS UUID."""
+        if self._registry:
+            tfs_uuid = self._registry.get_tfs_uuid(device_id)
+            if tfs_uuid:
+                return tfs_uuid
 
-    def _device_config_endpoint(self, device_id: str) -> str:
-        return f"{self._base_url}/api/v1/devices/{device_id}/config"
+        # Check if it's a known Ceragon physical device registered in TFS
+        if "ceragon" in device_id.lower() or "ctu" in device_id.lower():
+            try:
+                for dev in self._tfs_client.get_devices():
+                    if "ceragon" in dev.get("name", "").lower():
+                        return dev["device_id"]["device_uuid"]["uuid"]
+            except Exception:
+                pass
 
-    def _build_teraflow_payload(self, config: DeviceConfig) -> dict:
+        # Try generating deterministic 6G UUID from device_id
+        try:
+            import uuid
+            uuid.UUID(device_id)
+            return device_id
+        except ValueError:
+            return self._make_uuid(device_id)
+
+    def _build_tfs_config_rules(self, config: DeviceConfig) -> List[Dict[str, Any]]:
         """
-        Build a TeraFlow-compatible configuration request.
-        TeraFlow uses its own config-rules format that wraps YANG parameters.
-
-        Reference: TeraFlow SDN controller REST API /api/v1/devices/{id}/config
+        Build TeraFlow-compliant CONFIGACTION_SET config rules from DeviceConfig.
+        Maps intent parameters to standard TFS resource keys:
+          - /interface[name=...]/...
+          - /device/operating_parameters
+          - /device/capabilities
         """
         config_rules = []
 
-        # Convert DeviceConfig parameters to TeraFlow config-rule format
-        for key, value in config.parameters.items():
-            if value is None:
-                continue
-            # TeraFlow uses JSON config-rules with resource paths
-            resource_key = f"/interface[name={config.device_id}]/{config.config_type}/{key.replace('_', '-')}"
+        # 1. Custom interface/feature parameters (JSON dict)
+        valid_params = {k: v for k, v in config.parameters.items() if v is not None}
+        if valid_params:
+            resource_key = f"/interface[name={config.device_id}]/{config.config_type}"
             config_rules.append({
-                "action": "CONFIGRULE_ACTION_SET",
-                "resource": {
+                "action": "CONFIGACTION_SET",
+                "custom": {
                     "resource_key": resource_key,
-                    "resource_value": json.dumps(value),
+                    "resource_value": json.dumps(valid_params),
                 }
             })
 
-        return {
-            "device_uuid": {"uuid": config.device_id},
-            "config_rules": config_rules,
-            "intent_id": config.intent_id,
-            "yang_module": config.yang_module,
-        }
+        # 2. Operating parameters reflection in TFS
+        op_updates = {}
+        if config.config_type == "modulation":
+            if "max_modulation" in config.parameters:
+                op_updates["current_modulation"] = config.parameters["max_modulation"]
+            if "min_modulation" in config.parameters:
+                op_updates["min_modulation"] = config.parameters["min_modulation"]
+            op_updates["acm_enabled"] = True
+        elif config.config_type == "capacity":
+            if "min_throughput_gbps" in config.parameters:
+                op_updates["configured_capacity_gbps"] = config.parameters["min_throughput_gbps"]
+        elif config.config_type == "protection":
+            op_updates["protection_mode"] = config.parameters.get("protection_mode", "1+1_HSB")
+        elif config.config_type == "slice":
+            op_updates["active_slice"] = config.parameters.get("slice_id") or config.intent_id
+
+        if op_updates:
+            config_rules.append({
+                "action": "CONFIGACTION_SET",
+                "custom": {
+                    "resource_key": "/device/operating_parameters",
+                    "resource_value": json.dumps(op_updates),
+                }
+            })
+
+        return config_rules
 
     def apply(self, config: DeviceConfig) -> ApplyResult:
-        url = self._device_config_endpoint(config.device_id)
-        payload = self._build_teraflow_payload(config)
+        device_uuid = self._resolve_device_uuid(config.device_id)
+        config_rules = self._build_tfs_config_rules(config)
 
-        logger.info(f"[TeraFlow] POST {url}")
+        logger.info(f"[TeraFlow] Applying {config.config_type} config to device {config.device_id} (UUID: {device_uuid})")
+
         try:
-            resp = requests.post(
-                url,
-                json=payload,
-                headers=self._headers(),
-                timeout=self._timeout,
-            )
-            resp.raise_for_status()
-            result_data = resp.json() if resp.content else {}
+            # 1. Push to TeraFlowSDN device via NBI
+            result = self._tfs_client.configure_device(device_uuid, config_rules)
 
-            # Mirror to local state store for dashboard visibility
+            # 2. If it is a slice intent, also register/update slice in TFS context
+            if config.config_type == "slice":
+                slice_uuid = self._make_uuid(config.parameters.get("slice_name", f"slice-{config.intent_id[:8]}"))
+                slice_payload = {
+                    "slice_id": {
+                        "context_id": {"context_uuid": {"uuid": self._tfs_client.context_name}},
+                        "slice_uuid": {"uuid": slice_uuid}
+                    },
+                    "name": config.parameters.get("slice_name", f"Slice-{config.intent_id[:8]}"),
+                    "slice_status": {"slice_status": "SLICESTATUS_ACTIVE"},
+                    "slice_endpoint_ids": [
+                        {
+                            "device_id": {"device_uuid": {"uuid": device_uuid}},
+                            "endpoint_uuid": {"uuid": self._make_uuid(f"{config.device_id}-eth-1/10G")}
+                        }
+                    ],
+                    "slice_config": {"config_rules": config_rules},
+                }
+                try:
+                    self._tfs_client.create_or_update_slice(slice_payload)
+                    logger.info(f"[TeraFlow] Slicing successfully registered in TFS for slice_uuid={slice_uuid}")
+                except Exception as ex:
+                    logger.warning(f"[TeraFlow] Slice API registration warning: {ex}")
+
+            # 3. If target is physical Ceragon hardware, push down to device via TFSCeragonDriver
+            if "ceragon" in config.device_id.lower() or "ctu" in config.device_id.lower() or "t261" in config.device_id.lower():
+                try:
+                    from ceragon_tfs_adapter.driver import TFSCeragonDriver
+                    driver = TFSCeragonDriver()
+                    resources = [(r["custom"]["resource_key"], r["custom"]["resource_value"]) for r in config_rules if "custom" in r]
+                    driver_results = driver.set_config(resources)
+                    logger.info(f"[TeraFlow -> Ceragon Hardware] Applied {len(resources)} rules: {driver_results}")
+                except Exception as ex:
+                    logger.warning(f"[TeraFlow -> Ceragon Hardware] Dispatch warning: {ex}")
+
+            # 4. Mirror confirmed config to local state store
             self._store.update_device_config(
                 device_id=config.device_id,
                 config_type=config.config_type,
@@ -191,33 +259,55 @@ class TeraFlowAdapter(AdapterBase):
                 yang_xml=config.yang_xml,
             )
 
+            # 5. Trigger registry sync to ensure live topology stays updated
+            if self._registry and hasattr(self._registry, "sync_from_tfs"):
+                self._registry.sync_from_tfs()
+
             return ApplyResult(
                 device_id=config.device_id,
                 success=True,
-                message=f"TeraFlow accepted config (HTTP {resp.status_code})",
-                response_data=result_data,
+                message=f"TeraFlow SDN accepted and applied configuration to device {device_uuid}",
+                response_data=result,
             )
+
         except requests.exceptions.ConnectionError:
-            msg = f"Cannot reach TeraFlow at {self._base_url} — is it running?"
+            msg = f"Cannot reach TeraFlow SDN at {self._base_url} — is the NBI service or SSH tunnel active?"
             logger.error(msg)
             return ApplyResult(device_id=config.device_id, success=False, message=msg)
         except requests.exceptions.HTTPError as e:
-            msg = f"TeraFlow HTTP error {e.response.status_code}: {e.response.text[:200]}"
+            error_body = e.response.text[:300] if e.response is not None else str(e)
+            msg = f"TeraFlow SDN HTTP error {e.response.status_code if e.response else 'Unknown'}: {error_body}"
             logger.error(msg)
             return ApplyResult(device_id=config.device_id, success=False, message=msg)
         except Exception as e:
-            msg = f"TeraFlow adapter error: {e}"
+            msg = f"TeraFlow SDN adapter error: {e}"
             logger.error(msg)
             return ApplyResult(device_id=config.device_id, success=False, message=msg)
 
     def get_state(self, device_id: str) -> Dict[str, Any]:
-        url = f"{self._base_url}/api/v1/devices/{device_id}"
+        device_uuid = self._resolve_device_uuid(device_id)
         try:
-            resp = requests.get(url, headers=self._headers(), timeout=self._timeout)
-            resp.raise_for_status()
-            return resp.json()
+            device_data = self._tfs_client.get_device(device_uuid)
+            # Extract config rules and operating state
+            configs = {}
+            for rule in device_data.get("device_config", {}).get("config_rules", []):
+                custom = rule.get("custom", {})
+                k = custom.get("resource_key", "")
+                v = custom.get("resource_value", "")
+                configs[k] = v
+
+            return {
+                "device_id": device_id,
+                "tfs_uuid": device_uuid,
+                "name": device_data.get("name"),
+                "status": device_data.get("device_operational_status"),
+                "type": device_data.get("device_type"),
+                "endpoints_count": len(device_data.get("device_endpoints", [])),
+                "configs": configs,
+                "source": "TeraFlowSDN",
+            }
         except Exception as e:
-            logger.warning(f"[TeraFlow] state fetch failed for {device_id}: {e}")
+            logger.warning(f"[TeraFlow] state fetch failed for {device_id} ({device_uuid}): {e}")
             return self._store.get_device_state(device_id)
 
 
@@ -369,23 +459,28 @@ class DirectRESTAdapter(AdapterBase):
 # Factory
 # ──────────────────────────────────────────────────────────────────────────────
 
-def create_adapter(state_store: StateStore) -> AdapterBase:
+def create_adapter(state_store: StateStore, registry: Any = None) -> AdapterBase:
     """
     Instantiate the correct adapter based on ADAPTER_BACKEND env variable.
     
     Values:
-      "simulated"   — default, no live device needed
-      "teraflow"    — TeraFlow SDN controller
+      "teraflow"    — TeraFlow SDN controller (Source of Truth)
+      "simulated"   — In-memory state simulation (fallback)
       "direct_rest" — Ceragon RESTCONF directly
+      "xml_ip50c"   — Ceragon IP-50C XML configuration
     """
-    backend = os.getenv("ADAPTER_BACKEND", "simulated").lower()
+    backend = os.getenv("ADAPTER_BACKEND", "teraflow").lower()
 
     if backend == "teraflow":
-        logger.info("Device adapter: TeraFlow SDN")
-        return TeraFlowAdapter(state_store)
+        logger.info("Device adapter: TeraFlow SDN (Live Source of Truth)")
+        return TeraFlowAdapter(state_store, registry=registry)
     elif backend == "direct_rest":
         logger.info("Device adapter: Direct Ceragon RESTCONF")
         return DirectRESTAdapter(state_store)
+    elif backend == "xml_ip50c":
+        logger.info("Device adapter: Ceragon IP-50C XML configuration")
+        from cer_intent.device.xml_adapter import IP50CXMLAdapter
+        return IP50CXMLAdapter(state_store)
     else:
         logger.info("Device adapter: Simulated (no live device required)")
         return SimulatedAdapter(state_store)

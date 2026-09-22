@@ -4,8 +4,11 @@ CER-Intent: 6G Transport Domain Intent Management System
 PoC entry point. Starts the Flask API server with SocketIO,
 the telemetry simulator, and the closed-loop reconciler.
 """
-import eventlet
-eventlet.monkey_patch()
+try:
+    import eventlet
+    eventlet.monkey_patch()
+except Exception:
+    pass
 
 import os
 import sys

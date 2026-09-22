@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging & Build directories
+build/
+*.egg-info/
+.eggs/
+
+# Environment configurations with local secrets
+.env
+.venv
+env/
+venv/
+
+# Scratch & temporary working artifacts
+scratch/
+*.tmp
+~$*.docx
+data/test_audit_log.jsonl
+patch_*.json
+restore_*.json
+host_fixer.yaml
+host_root_fix.sh
+crdb_endpoints.yaml
+
+# User specific reference materials
+Yossi/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,17 @@
+{
+  "model_name": "IP-50C",
+  "vendor": "Ceragon",
+  "type": "wireless_transport",
+  "capabilities": {
+    "max_throughput": {"name": "Max Throughput", "value": 2.5, "unit": "Gbps"},
+    "max_bandwidth": {"name": "Max Bandwidth", "value": 112, "unit": "MHz"},
+    "xpic_support": {"name": "XPIC Support", "value": true},
+    "max_qam": {"name": "Max Modulation", "value": 4096, "unit": "QAM"}
+  },
+  "supported_modulations": ["QPSK", "16QAM", "32QAM", "64QAM", "128QAM", "256QAM", "512QAM", "1024QAM", "2048QAM", "4096QAM"],
+  "channel_bandwidths_mhz": [28, 56, 80, 112],
+  "config_mappings": [
+    {"intent_param": "min_throughput_gbps", "config_key": "mrmc_script_id", "transformation": "lookup_mrmc"}
+  ],
+  "api_guide": "The IP-50C is a high-performance multicore node. It operates south-bound via CeraOS XML template configurations. It supports XPIC, up to 4096QAM, and channel spacing up to 112MHz. Designed for multi-gigabit transport networks."
+}

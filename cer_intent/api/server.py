@@ -45,7 +45,7 @@ def create_app(registry, audit_log) -> Flask:
 
     # One-time init of shared components
     state_store = StateStore(os.getenv("STATE_FILE", "data/topology_state.json"))
-    adapter = create_adapter(state_store)
+    adapter = create_adapter(state_store, registry=registry)
     parser = IntentParser()
     validator = IntentValidator(registry=registry)
     
@@ -180,7 +180,14 @@ def create_app(registry, audit_log) -> Flask:
                 validation.warnings.append(f"Target '{intent.target.identifier}' not found; applying to all devices")
 
             # Try Architect Execution first
-            if plan and plan.selected_strategy:
+            # Bypass architect if direct/legacy is requested or custom frequencies are specified
+            bypass_architect = (
+                body.get("direct_translation") or 
+                body.get("legacy_translation") or
+                "tx_frequency" in intent.parameters or
+                "rx_frequency" in intent.parameters
+            )
+            if plan and plan.selected_strategy and not bypass_architect:
                 audit_log.system_event(f"Executing architect strategy: {plan.selected_strategy.name}")
                 translation = executor.execute_plan(plan, intent)
             else:
@@ -276,12 +283,43 @@ def create_app(registry, audit_log) -> Flask:
 
     @app.route("/api/v1/topology", methods=["GET"])
     def get_topology():
+        refresh = request.args.get("refresh", "false").lower() == "true"
+        if refresh and hasattr(registry, "sync_from_tfs"):
+            registry.sync_from_tfs()
+
         topo = registry.get_topology()
         # Enrich nodes with their applied config summary
         device_states = state_store.get_all_device_states()
-        for node in topo["nodes"]:
+        for node in topo.get("nodes", []):
             node["applied_configs"] = device_states.get(node["id"], {}).get("configs", {})
+        
+        topo["source_of_truth"] = registry.get_source_of_truth()
         return jsonify(topo)
+
+    @app.route("/api/v1/tfs/sync", methods=["POST"])
+    def sync_tfs_topology():
+        """Trigger an on-demand re-sync of the topology from TeraFlowSDN."""
+        audit_log.system_event("Manual TeraFlowSDN topology sync requested")
+        synced = False
+        if hasattr(registry, "sync_from_tfs"):
+            synced = registry.sync_from_tfs()
+
+        topo = registry.get_topology()
+        # Update telemetry simulator links if running
+        sim = app.config.get("telemetry_sim")
+        if sim and hasattr(sim, "refresh_links"):
+            sim.refresh_links()
+
+        # Emit live topology update to connected dashboard clients
+        socketio.emit("topology_update", topo)
+
+        return jsonify({
+            "synced": synced,
+            "source_of_truth": registry.get_source_of_truth(),
+            "nodes_count": len(registry.get_all_nodes()),
+            "links_count": len(registry.get_all_links()),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }), (200 if synced else 503)
 
     # ── Telemetry API ─────────────────────────────────────────────────────────
 
@@ -313,6 +351,7 @@ def create_app(registry, audit_log) -> Flask:
         return jsonify({
             "nodes": registry.get_all_nodes(),
             "links": registry.get_all_links(),
+            "source_of_truth": registry.get_source_of_truth(),
         })
 
     # ── Health ────────────────────────────────────────────────────────────────
@@ -322,9 +361,14 @@ def create_app(registry, audit_log) -> Flask:
         return jsonify({
             "status": "ok",
             "adapter_backend": type(adapter).__name__,
+            "source_of_truth": registry.get_source_of_truth(),
+            "nodes_count": len(registry.get_all_nodes()),
+            "links_count": len(registry.get_all_links()),
             "intents_active": len(_intent_store),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
+
+
 
     @app.route("/api/v1/hardware/profiles", methods=["GET"])
     def list_hardware_profiles():

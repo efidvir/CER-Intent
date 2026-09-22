@@ -44,6 +44,10 @@ class CapacityTranslator(BaseTranslator):
                 "slice_type": params.get("slice_type"),
                 "target_throughput_gbps": min_gbps,
             }
+            # Direct hardware configuration overrides from intent parameters
+            for override_key in ["tx_frequency", "rx_frequency", "tx_power_dbm", "mrmc_script_id"]:
+                if override_key in params:
+                    cfg_params[override_key] = params[override_key]
             # Cap to device hardware limit
             max_cap = device.get("max_throughput_gbps", 10.0)
             if min_gbps > max_cap:

@@ -7,7 +7,9 @@ Holds 8 Ceragon nodes across 3 sectors with 10 bidirectional links.
 from __future__ import annotations
 
 import copy
-from typing import Dict, List, Optional, Set
+import os
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Set
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -633,17 +635,243 @@ INITIAL_TOPOLOGY = {
 
 
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 class DeviceRegistry:
     """
     Central registry for the transport topology.
-    Provides helpers to look up nodes/links by ID, sector, or target spec.
+    Uses ETSI TeraFlowSDN (TFS) as the authoritative Source of Truth (SoT).
+    Provides helpers to look up nodes/links by ID, name, TFS UUID, sector, or target spec.
     """
 
-    def __init__(self):
+    def __init__(self, tfs_client: Optional[Any] = None):
         self._topology = copy.deepcopy(INITIAL_TOPOLOGY)
-        # Build lookup indices
-        self._nodes: Dict[str, dict] = {n["id"]: n for n in self._topology["nodes"]}
-        self._links: Dict[str, dict] = {l["id"]: l for l in self._topology["links"]}
+        self._source_of_truth = "InitialStatic"
+        self._id_to_tfs_uuid: Dict[str, str] = {}
+        self._tfs_uuid_to_id: Dict[str, str] = {}
+        self._nodes: Dict[str, dict] = {}
+        self._links: Dict[str, dict] = {}
+
+        from cer_intent.device.tfs_client import TFSClient
+        self._tfs_client = tfs_client or TFSClient()
+
+        # 1. Attempt live sync from TeraFlowSDN (Source of Truth)
+        synced = self.sync_from_tfs()
+
+        # 2. If TFS is unreachable, fallback to cached state files
+        if not synced:
+            self._load_fallback_topology()
+
+        # Twin with default XML if present
+        default_xml = os.getenv(
+            "IP50C_TEMPLATE_XML",
+            "c:/CER_Intent/Yossi/IP-50C_AI_chat_configuration_tool/IP50c_default_5.xml"
+        )
+        self.twin_with_xml(default_xml)
+
+    def sync_from_tfs(self) -> bool:
+        """
+        Query TeraFlowSDN NBI live and update the internal registry state.
+        Returns True if successfully synchronized from TFS.
+        """
+        import os
+        import json
+
+        try:
+            is_connected, msg = self._tfs_client.check_connection()
+            if not is_connected:
+                logger.warning(f"[Registry] TFS unreachable: {msg}. Using fallback topology.")
+                return False
+
+            logger.info("[Registry] Syncing topology live from TeraFlowSDN...")
+            tfs_topo = self._tfs_client.fetch_normalized_topology()
+
+            if tfs_topo.get("nodes"):
+                self._topology = {
+                    "nodes": tfs_topo["nodes"],
+                    "links": tfs_topo["links"],
+                    "source": "TeraFlowSDN",
+                    "context": tfs_topo.get("context", "admin"),
+                    "topology": tfs_topo.get("topology", "admin"),
+                }
+                self._source_of_truth = "TeraFlowSDN"
+                self._rebuild_indices()
+
+                # Cache fresh state to local file for offline resilience
+                try:
+                    os.makedirs("data", exist_ok=True)
+                    state_file = os.getenv("STATE_FILE", "data/topology_state.json")
+                    with open(state_file, "w", encoding="utf-8") as f:
+                        json.dump({
+                            "nodes": self._topology["nodes"],
+                            "links": self._topology["links"],
+                            "source": "TeraFlowSDN",
+                            "last_synced": datetime.now(timezone.utc).isoformat() if "datetime" in globals() else ""
+                        }, f, indent=2)
+                except Exception as ex:
+                    logger.warning(f"[Registry] Failed to cache topology to {state_file}: {ex}")
+
+                logger.info(f"[Registry] Successfully synced from TFS: {len(self._topology['nodes'])} nodes, {len(self._topology['links'])} links.")
+                return True
+
+        except Exception as e:
+            logger.error(f"[Registry] Error syncing topology from TFS: {e}")
+
+        return False
+
+    def _load_fallback_topology(self):
+        """Fallback loader for offline or cold-start scenarios."""
+        import os
+        import json
+
+        tf_topo_paths = [
+            os.getenv("STATE_FILE", "data/topology_state.json"),
+            "data/6g_transport_tfs_descriptors.json",
+            "data/tf_topology_details.json",
+        ]
+        for tf_topo_path in tf_topo_paths:
+            if os.path.exists(tf_topo_path):
+                try:
+                    with open(tf_topo_path, "r", encoding="utf-8") as f:
+                        tf_data = json.load(f)
+
+                    cer_topo = tf_data.get("_cer_intent_topology")
+                    if cer_topo and cer_topo.get("nodes") and cer_topo.get("links"):
+                        self._topology = cer_topo
+                        self._source_of_truth = f"File:{tf_topo_path} (_cer_intent_topology)"
+                        break
+
+                    if "nodes" in tf_data and "links" in tf_data:
+                        self._topology = {
+                            "nodes": tf_data["nodes"],
+                            "links": tf_data["links"],
+                        }
+                        self._source_of_truth = f"File:{tf_topo_path}"
+                        break
+                except Exception:
+                    pass
+
+        self._rebuild_indices()
+
+    def _rebuild_indices(self):
+        """Rebuild internal lookup tables supporting shorthand IDs, names, and TFS UUIDs."""
+        self._nodes = {}
+        self._links = {}
+        self._id_to_tfs_uuid = {}
+        self._tfs_uuid_to_id = {}
+
+        for n in self._topology.get("nodes", []):
+            nid = n["id"]
+            self._nodes[nid] = n
+            # Alias by name
+            name = n.get("name")
+            if name:
+                self._nodes[name] = n
+            # Alias by TFS UUID if present
+            tfs_uuid = n.get("tfs_uuid")
+            if tfs_uuid:
+                self._nodes[tfs_uuid] = n
+                self._id_to_tfs_uuid[nid] = tfs_uuid
+                self._tfs_uuid_to_id[tfs_uuid] = nid
+
+        for l in self._topology.get("links", []):
+            lid = l["id"]
+            self._links[lid] = l
+            lname = l.get("name")
+            if lname:
+                self._links[lname] = l
+            tfs_uuid = l.get("tfs_uuid")
+            if tfs_uuid:
+                self._links[tfs_uuid] = l
+
+    def get_source_of_truth(self) -> str:
+        """Returns the current Source of Truth for the topology (e.g. 'TeraFlowSDN')."""
+        return self._source_of_truth
+
+    def get_tfs_uuid(self, identifier: str) -> Optional[str]:
+        """Resolve any shorthand ID or name to its official TFS UUID."""
+        if identifier in self._id_to_tfs_uuid:
+            return self._id_to_tfs_uuid[identifier]
+        node = self._nodes.get(identifier)
+        if node and "tfs_uuid" in node:
+            return node["tfs_uuid"]
+        return None
+
+    def get_shorthand_id(self, identifier: str) -> Optional[str]:
+        """Resolve a TFS UUID or name to its canonical shorthand ID."""
+        if identifier in self._tfs_uuid_to_id:
+            return self._tfs_uuid_to_id[identifier]
+        node = self._nodes.get(identifier)
+        if node and "id" in node:
+            return node["id"]
+        return None
+
+    def twin_with_xml(self, xml_path: str):
+        """
+        Twins the registry topology with a physical Ceragon device's XML configuration.
+        """
+        import os
+        import xml.etree.ElementTree as ET
+        
+        # Translate Windows paths for WSL/Linux compatibility
+        if os.name != 'nt' and xml_path.lower().startswith("c:"):
+            xml_path = "/mnt/c" + xml_path[2:]
+
+        if not os.path.exists(xml_path):
+            return
+
+        try:
+            tree = ET.parse(xml_path)
+            root = tree.getroot()
+            
+            # Find device elements
+            for device_el in root.findall(".//Device"):
+                dev_id = f"xml-dev-{device_el.get('id')}"
+                dev_type = device_el.get("type", "IP-50C")
+                
+                # Extract unit name from Platform params
+                unit_name = dev_type
+                name_param = device_el.find(".//Platform/Param[@id='UNIT_NAME']")
+                if name_param is not None:
+                    unit_name = name_param.get("value", dev_type)
+
+                # Check if we already have this node in topology
+                if dev_id not in self._nodes:
+                    # Dynamically add to topology
+                    node_data = {
+                        "id": dev_id,
+                        "name": f"{unit_name} (Physical)",
+                        "role": "transport",
+                        "model": dev_type,
+                        "sector": "physical-sector",
+                        "x": 500,
+                        "y": 400,
+                        "max_throughput_gbps": 2.5
+                    }
+                    self._topology["nodes"].append(node_data)
+                    self._nodes[dev_id] = node_data
+                else:
+                    self._nodes[dev_id]["name"] = f"{unit_name} (Physical)"
+                    self._nodes[dev_id]["model"] = dev_type
+
+                # Dynamically add link connecting physical node to mw-agg-1 to plug it into the network
+                link_id = f"link-{dev_id}-to-mw-agg-1"
+                if link_id not in self._links:
+                    link_data = {
+                        "id": link_id,
+                        "src": dev_id,
+                        "dst": "mw-agg-1",
+                        "role": "mw",
+                        "capacity_gbps": 2.5,
+                        "distance_km": 2.0,
+                        "status": "active"
+                    }
+                    self._topology["links"].append(link_data)
+                    self._links[link_id] = link_data
+        except Exception as e:
+            pass
 
     # ── Topology Accessors ────────────────────────────────────────────────────
 
@@ -657,17 +885,25 @@ class DeviceRegistry:
         return self._links.get(link_id)
 
     def get_all_nodes(self) -> List[dict]:
-        return list(self._nodes.values())
+        return list(self._topology.get("nodes", []))
 
     def get_all_links(self) -> List[dict]:
-        return list(self._links.values())
+        return list(self._topology.get("links", []))
 
     def get_nodes_in_sector(self, sector: str) -> List[dict]:
-        return [n for n in self._nodes.values() if n.get("sector") == sector]
+        return [n for n in self._topology.get("nodes", []) if n.get("sector") == sector]
 
     def get_links_for_node(self, node_id: str) -> List[dict]:
-        return [l for l in self._links.values()
-                if l["src"] == node_id or l["dst"] == node_id]
+        # Resolve to both shorthand ID and TFS UUID for matching
+        node = self.get_node(node_id)
+        valid_ids = {node_id}
+        if node:
+            valid_ids.add(node.get("id"))
+            valid_ids.add(node.get("name"))
+            valid_ids.add(node.get("tfs_uuid"))
+        valid_ids.discard(None)
+        return [l for l in self._topology.get("links", [])
+                if l["src"] in valid_ids or l["dst"] in valid_ids]
 
     def get_all_identifiers(self) -> Set[str]:
         ids: Set[str] = set()
@@ -699,8 +935,8 @@ class DeviceRegistry:
                     devs.append(self._node_to_device(node, link_id=identifier))
             return devs
 
-        if target_type == "node":
-            node = self._nodes.get(identifier)
+        if target_type in ("node", "device"):
+            node = self.get_node(identifier)
             return [self._node_to_device(node)] if node else []
 
         if target_type == "sector":
