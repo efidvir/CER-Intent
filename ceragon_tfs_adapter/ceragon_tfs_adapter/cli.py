@@ -173,5 +173,54 @@ def status(ip, tfs_url) -> None:
     click.echo("")
 
 
+@main.group()
+def schemas() -> None:
+    """Manage and inspect Ceragon YANG data schemas."""
+    pass
+
+
+@schemas.command("list")
+def schemas_list() -> None:
+    """List all bundled Ceragon YANG schemas."""
+    from ceragon_tfs_adapter.schemas import list_schemas, SCHEMAS_DIR
+    mods = list_schemas()
+    click.secho(f"\n[*] Bundled Ceragon YANG Schemas ({len(mods)} modules in {SCHEMAS_DIR}):", fg="cyan", bold=True)
+    for m in mods:
+        prefix = "  [TG] " if "tg" in m else "  [STD]"
+        click.echo(f"{prefix} {m}")
+    click.echo("")
+
+
+@schemas.command("show")
+@click.argument("module_name")
+def schemas_show(module_name: str) -> None:
+    """Print the contents of a specific bundled YANG module."""
+    from ceragon_tfs_adapter.schemas import get_schema_content
+    content = get_schema_content(module_name)
+    if not content:
+        click.secho(f"[!] Schema '{module_name}' not found. Run 'schemas list' to see available modules.", fg="red")
+        sys.exit(1)
+    click.echo(content)
+
+
+@schemas.command("export")
+@click.option("--output-dir", "-o", default="./yang_schemas", help="Directory to export schemas into.")
+def schemas_export(output_dir: str) -> None:
+    """Export all bundled YANG schema files to a specified directory."""
+    import shutil
+    from pathlib import Path
+    from ceragon_tfs_adapter.schemas import SCHEMAS_DIR, list_schemas
+    
+    out = Path(output_dir).resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    mods = list_schemas()
+    for m in mods:
+        src = SCHEMAS_DIR / f"{m}.yang"
+        if src.exists():
+            shutil.copy(src, out / f"{m}.yang")
+    click.secho(f"[+] Successfully exported {len(mods)} YANG schemas to: {out}", fg="green", bold=True)
+
+
 if __name__ == "__main__":
     main()
+

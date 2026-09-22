@@ -1,0 +1,185 @@
+module radio-bridge-tg-gps {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/gps";
+
+    prefix "rb-tg-gps";
+
+    import radio-bridge-tg-types {
+        prefix "rb-tg-types";
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This module defines the GPS status visibility";
+
+    revision 2024-12-26 {
+        description
+          "Add factory-reset rpc";
+        reference
+          "";
+    }
+
+    revision 2024-05-27 {
+        description
+          "height_sea_level renamed into height-sea-level to match 
+          style of other fields";
+        reference
+          "";
+    }
+
+    revision 2024-05-15 {
+        description
+          "Added GPS latitude, longitude, height_sea_level and time";
+        reference
+          "";
+    }
+
+    revision 2024-05-08 {
+        description
+          "Add defaults to GPS statuses";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-03-21 {
+        description
+          "GPS accuracy";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-11-12 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+// extension statements
+// feature statements
+// identity statements
+// typedef statements  
+    typedef fix-mode {
+        type enumeration {
+            enum unknown {
+                description
+                  "Unknown fix status";
+            }
+            enum no-fix {
+                description
+                  "No fix";
+            }
+            enum 2D {
+                description
+                  "2D fix";
+            }
+            enum 3D {
+                description
+                  "3D fix";
+            }
+            enum time-only-fix {
+                description
+                  "Time only fix";
+            }
+        }
+        description
+          "Describes the fix status and its quality";
+    }
+// grouping statements
+    grouping gps-top {
+        description
+          "Top level grouping for GPS state";
+        container gps {
+            if-feature rb-tg-types:sync-mode-gps;
+            description
+              "Top level container for GPS state";
+
+            leaf fix-mode {
+                type fix-mode;
+                default unknown;
+                description
+                  "Describes the fix status and its quality";
+            }
+            leaf fix-satellites-number {
+                type uint8;
+                default 0;
+                description
+                  "The number of satellites from which the unit GSP reached a fix";
+            }
+            leaf accuracy {
+                type union {
+                    type decimal64 {
+                        fraction-digits 3;
+                    }
+                    type rb-tg-types:value-not-available;
+                }
+                description
+                  "Accuracy in meters";
+            }
+            leaf latitude {
+               type decimal64 {
+                 fraction-digits 7;
+               }
+               units "decimal degrees";
+               description
+                 "The latitude value on the astronomical body.  The
+                  definition and precision of this measurement is
+                  indicated by the reference-frame.";
+             }
+            leaf longitude {
+              type decimal64 {
+                fraction-digits 7;
+              }
+              units "decimal degrees";
+              description
+                "The longitude value on the astronomical body.  The
+                definition and precision of this measurement is
+                indicated by the reference-frame.";
+              }
+            leaf height-sea-level {
+              type decimal64 {
+                fraction-digits 3;
+              }
+              units "meters";
+              description
+                "Height from a reference 0 value.  The precision and
+                '0' value is defined by the reference-frame.";
+             }        
+            leaf time {
+                type string;
+                description
+                  "GPS date and time";
+            }
+      }
+    }
+// data definition statements
+// augment statements
+// rpc statements
+    rpc factory-reset {
+        description
+          "Reset GPS HW module to factory settings and reboot the system";
+    }
+// notification statements
+}

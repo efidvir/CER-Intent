@@ -1,0 +1,250 @@
+module radio-bridge-tg-bond {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/bond";
+
+    prefix "rb-tg-bnd";
+
+    import radio-bridge-tg-types {
+        prefix rb-tg-types;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support:<https://siklu.com/contact/>";
+
+    description
+      "Definitions for the bonding of interfaces on TG devices";
+
+    revision 2024-01-21 {
+        description
+          "Add usable-stable-timer leaf to bond-member";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-10-19 {
+      description
+        "Moved bond member type to tg-types";
+      reference
+        "";
+    }
+
+    revision 2022-07-26 {
+        description
+          "Updated descriptions";
+        reference
+          "";
+    }
+
+    revision 2022-05-18 {
+      description
+        "Initial revision";
+      reference
+        "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements 
+    typedef monitor-type {
+        type enumeration {
+            enum ccm {
+              description 
+                "Monitoring the member interface by mean of end-end connenctivity-check,
+                 between the local and remote network elements.";
+            }
+            enum link-operation-status {
+              description 
+                "Monitoring the member interface through the operation status (this is the default behavior). 
+                 meaning, that if the interface is down, it is considered unusable.";
+            }
+        }
+        default "link-operation-status";
+        description 
+          "Different ways to monitor the interface member usability in a certain bond.";
+    }
+
+    typedef bonding-type {
+        type enumeration {
+            enum active-backup {
+              description 
+                "Only one interface in the bond is active. 
+                A different interface becomes active if, and only if, the active interface fails.";
+            }
+        }
+        default "active-backup";
+        description 
+          "The type of bonding used for a specific bond";
+    }
+
+    typedef bonding-watchdog-action-type {
+        type enumeration {
+            enum cn-mode {
+              description 
+                "The device will revert to responder-mode in all sectors and won’t try to ignite any links.
+                Once reversed, the device will return back to raise links.";
+            }
+        }
+        default "cn-mode";
+        description 
+          "Action that will run once the bond watchdog has been triggered.";
+    }
+
+    typedef bonding-watchdog-exit-policy {
+        type enumeration {
+            enum matching-peer-configuration-hash {
+              description 
+                "The device will only revert the action if its runner-configuration-hash field is 
+                the same as its peer’s runner-configuration-hash.";
+            }
+        }
+        default "matching-peer-configuration-hash";
+        description 
+          "An exit condition for the bond-watchdog action.";
+    }
+
+    typedef active-backup-member-type {
+        type enumeration {
+            enum active {
+              description 
+                "The member is the active member of the active-backup bond. Only zero or one member can be in active state";
+            }
+            enum backup {
+              description 
+                "The member is a backup member in the active-backup bond. Zero or mutliple members can be in backup state";
+            }
+        }
+        description 
+          "The current state of a member in a active-backup bond";
+    }
+
+     // grouping statements
+    grouping bond-member-top {
+      description
+        "A grouping for the interface members of a bond.";
+      container bond-members {
+          description
+            "A container containing the interface members of a bond.";
+          list bond-member {
+              key "interface";
+              unique "weight";
+              description
+                "The list bond members. These members are interfaces such as, tunnels, eth ports, or rf interfaces.";
+              leaf interface {
+                  type rb-tg-types:bond-member-type;
+                  description
+                    "A member within the bond";
+              }
+              leaf weight {
+                  type uint8 {
+                      range "1 .. 99";
+                  }
+                  mandatory true;
+                  description
+                    "The weight of the bond member, used by the bond in order to prioritize specific interfaces. 
+                     1 is the lowest weight and 99 is the highest weight.";
+              }
+              leaf monitoring-type {
+                  type monitor-type;
+                  description
+                    "Mechanism used to monitor the interface member usability in a certain bond.";
+              }
+              leaf usable-stable-timer {
+                  when "../monitoring-type = 'ccm'";
+                  type uint32 {
+                      range "1..86400"; // up to 1 day
+                  }
+                  units "seconds";
+                  default "15";
+                  description
+                    "The time in seconds that the interface member must maintain a usable state to be considered stable.
+                     The bond will try to select the active member from the list of stable members.";
+              }
+              leaf active-backup-member {
+                    type active-backup-member-type;
+                    config false;
+                    description
+                       "state data to show if this member is currently acting as an active or backup bond member.
+                        If the bond is not in active-backup mode then this leaf will not be present.";
+              }
+
+              leaf oper-status {
+                type rb-tg-types:oper-status;
+                config false;
+                description
+                    "state data to show the operational status of the bond member (up/down)";
+              }
+           }
+      }
+    }
+
+    grouping tg-bonds-top {
+        description
+          "A grouping for containing all of the bonds on the device.";
+        container bonds {
+            description
+              "A container containing all of the bonds on the device.";
+            list bond {
+                key "bond-name";
+                description 
+                  "The list of all bonds on the device. Each bond contains one or more interfaces.";
+                leaf bond-name {
+                    type rb-tg-types:bond-interface-name;
+                    description
+                      "Name of type bond-<string>, has to be unique for the device.";
+                }
+                leaf bond-type {
+                  type bonding-type;
+                  description
+                    "The type of bonding used for a specific bond";
+                }
+                leaf bond-watchdog-enabled {
+                  type boolean;
+                  default false;
+                  description
+                    "Controls whether the bond watchdog feature (see above) is enabled for this bond instance.";
+                }
+                leaf bond-watchdog-timeout {
+                  type uint32 {
+                    range "1..max";
+                  }
+                  units "seconds";
+                  default "600";   // 10 minutes
+                  description
+                    "Will execute the bond watchdog actions if no usable interfaces has been found for more than this time.";
+                }
+                leaf bond-watchdog-action {
+                  type bonding-watchdog-action-type;
+                  description
+                    "Action that will run once the bond watchdog has been triggered.";
+                }
+                leaf bond-watchdog-exit-policy {
+                  type bonding-watchdog-exit-policy;
+                  description
+                    "An exit condition for the bond-watchdog action.";
+                }                
+                uses bond-member-top;
+            }
+        }
+    }
+
+// data definition statements
+    uses tg-bonds-top;
+// augment statements
+// rpc statements
+// notification statements
+}

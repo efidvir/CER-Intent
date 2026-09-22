@@ -1,0 +1,111 @@
+module radio-bridge-tg-tunnel {
+
+  yang-version "1.1";
+
+  // namespace
+  namespace "http://siklu.com/yang/tg/tunnel";
+
+  prefix "rb-tg-tunnel";
+
+  import radio-bridge-tg-types {
+      prefix rb-tg-types;
+  }
+
+  // meta
+  organization
+    "Siklu";
+
+  contact
+    "Support:<https://siklu.com/contact/>";
+
+  description
+    "Definitions for the tunneling of interfaces on TG devices";
+
+  revision 2022-07-26 {
+    description
+      "Updated descriptions";
+    reference
+      "";
+  }
+
+  revision 2022-05-24 {
+      description
+        "Initial revision";
+      reference
+        "TBD";
+  }
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements 
+  typedef tunnel-processing-type {
+      type enumeration {
+          enum termination {
+            description 
+              "Tunnel is terminated in this device.";
+          }
+          enum forward {
+            description 
+                "Tunnel is forwarded by this device.";
+          }
+      }
+      default "termination";
+      description 
+          "Different types of tunnel processing rules.";
+  }
+
+  // grouping statements
+  grouping tg-tunnel-top {
+    description
+      "A grouping for containing all of the tunnels on the device.";
+    container tunnels {
+      description
+        "A container containing all of the tunnels on the device.";
+      list tunnel {
+        key "id";
+        description 
+            "The list of all tunnels on the device.";
+
+        leaf id {
+              type rb-tg-types:vlan-id;
+              description
+                "Tunnel id. range 1-4094";
+          }
+
+        leaf processing-type {
+          type tunnel-processing-type;
+          description
+            "The processing type used for a specific tunnel.";
+        }
+
+        container tunnel-interfaces {
+        description
+            "A container containing the tunnel interfaces. 
+              For a tunnel with termination processing type it should be exact one interface - the one the tunnel is terminated to.
+              For a tunnel with forward processing type it should be exact two interfaces - the two interfaces to forward the tunnel between";
+          list tunnel-interface {
+            key "interface";
+            leaf interface {
+              type union{
+                  type rb-tg-types:embedded-interface-name;
+                  type rb-tg-types:rf-interface-name;
+              }
+              mandatory true;
+              description
+                "For a tunnel with termination processing type it should be exact one interface - the one the tunnel is terminated to.
+                For a tunnel with forward processing type it should be exact two interfaces - the two interfaces to forward the tunnel between
+                For physical ethernet interface: eth1, eth2, eth3 ...
+                For radio link: rf-<AN>, where <AN> is the network assigned name/ID for the appropriate radio link
+                host, bond and auto-connect radio link (rf) interfaces are not allowed to be tunnel interfaces";
+            }
+            description 
+              "list of tunnel-interface";
+          }
+        }
+      }
+    }
+  }
+
+  uses tg-tunnel-top;
+}

@@ -1,0 +1,205 @@
+module radio-bridge-tg-ping {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/ping";
+
+    prefix "rb-tg-ping";
+
+    import ietf-inet-types {
+        prefix inet;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This module defines how the ping functionality will work";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-02-11 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements  
+    typedef ping_id {
+        type uint16;
+        description
+          "ID of the ping session";
+    }
+
+    typedef latency {
+        type decimal64 {
+            fraction-digits 3;
+        }
+        description
+          "Round trip time (RTT) of a successful ping, in Milliseconds";
+    }
+
+    typedef latency_or_timeout {
+        type union {
+            type latency;
+            type enumeration {
+                enum TIMEOUT {
+                    description
+                      "No ping reply packet has been received for the timeout period";
+                }
+            }
+        }
+        description
+          "Ping latency or timeout";
+    }
+    // grouping statements
+    grouping ping-statistics-grouping {
+        container ping-statistics {
+            leaf minimum-rtt {
+                type latency;
+                description
+                  "Minimum Round Trip Time (RTT) in this ping session";
+            }
+
+            leaf maximum-rtt {
+                type latency;
+                description
+                  "Maximum Round Trip Time (RTT) in this ping session";
+            }
+
+            leaf average-rtt {
+                type latency;
+                description
+                  "Average Round Trip Time (RTT) in this ping session";
+            }
+
+            leaf total-ping-sent {
+                type uint32;
+                description
+                  "The total number of pings sent in this ping session";
+            }
+
+            leaf total-ping-reply-received {
+                type uint32;
+                description
+                  "The total number of pings replies received in this ping session";
+            }
+            description
+              "Ping session statistics";
+        }
+        description
+          "Top level grouping for ping session statistics";
+    }
+    // data definition statements
+    // augment statements
+    // rpc statements
+    rpc start-ping {
+        description
+          "Request to start sending ping messages";
+        input{
+            leaf host {
+                type inet:ip-address;
+                mandatory true;
+                description
+                  "Destination host";
+            }
+            leaf count {
+                type uint32 {
+                    range 1..1000;
+                }
+                default 5;
+                description
+                  "The number of ping messages to send";
+            }
+            leaf size {
+                type uint32;
+                default 56;
+                description
+                  "Specifies the number of data bytes to be sent; The default is 56, "
+                + "which translates into 64 ICMP data bytes when combined with the 8 "
+                + "bytes of ICMP header data.";
+            }
+        }
+        output{
+            leaf id {
+                type ping_id;
+                mandatory true;
+                description
+                  "ID of the ping session";
+            }
+        }
+    }
+
+    rpc get-replies {
+        description
+          "Get information about a ping session"
+        + "This API is clear on read";
+        input {
+            leaf id {
+                type ping_id;
+                mandatory true;
+                description
+                  "ID of the ping session (return value of start-ping)";
+            }
+        }
+        output{
+            list replies {
+                leaf latency {
+                    type latency_or_timeout;
+                    mandatory true;
+                    description
+                      "Latency of the reply, or timeout";
+                }
+                leaf sequence {
+                    type uint32;
+                    mandatory true;
+                    description
+                      "Sequence number of the reply";
+                }
+                leaf response_ip {
+                    type inet:ip-address;
+                    description
+                      "Source IP address of the ping response";
+                }
+                description
+                  "List of ping replies";
+            }
+            uses ping-statistics-grouping;
+        }
+    }
+
+    rpc cancel-ping {
+        description
+          "Cancel an ongoing ping";
+        input {
+            leaf id {
+                type ping_id;
+                mandatory true;
+                description
+                  "ID of the ping session (return value of start-ping)";
+            }
+        }
+    }
+// notification statements
+}

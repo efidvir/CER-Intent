@@ -1,0 +1,445 @@
+module radio-bridge-tg-system {
+
+    yang-version "1.1";
+
+// namespace
+    namespace "http://siklu.com/yang/tg/system";
+
+    prefix "rb-tg-sys";
+
+    import radio-bridge-tg-types {
+        prefix "rb-tg-types";
+    }
+
+    import radio-bridge-tg-software-upgrade {
+        prefix "rb-tg-sw-up";
+    }
+
+    import radio-bridge-tg-gps {
+        prefix "rb-tg-gps";
+    }
+
+    import radio-bridge-tg-logging {
+        prefix "rb-tg-log";
+    }
+
+// import some basic types
+    import clixon-autocli {
+        prefix autocli;
+    }
+
+    import ietf-yang-smiv2 {
+        prefix smiv2;
+    }
+
+    import ietf-yang-types {
+        prefix ietf;
+    }
+
+    import SNMPv2-TC {
+        prefix "snmpv2-tc";
+    }
+    
+// meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "TODO";
+
+    revision 2025-03-31 {
+        description
+          "Added geo-location container";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2023-01-04 {
+        description
+          "Added defval for contact and location";
+        reference
+          "";
+    }
+    
+    revision 2023-01-03 {
+        description
+          "Added uptime format to the description";
+        reference
+          "";
+    }
+    
+    revision 2022-12-27 {
+        description
+          "Added display hint to system and location";
+        reference
+          "";
+    }
+
+    revision 2022-10-26 {
+        description
+          "Added empty defaults for system and location";
+        reference
+          "";
+    }
+
+    revision 2022-08-21 {
+        description
+          "Added SMIv2 attributes; Added contact; snmp-services; uptime-seconds; snmp-object-id";
+        reference
+          "";
+    }
+
+    revision 2022-07-21 {
+        description
+          "added network-configuration-hash";
+        reference
+          "";
+    }
+
+    revision 2022-06-29 {
+        description
+          "added get-default-configurations rpc";
+        reference
+          "";
+    }
+
+    revision 2022-06-22 {
+        description
+          "added optional parameter is-clear-logs to factory-reset rpc";
+        reference
+          "";
+    }
+
+    revision 2021-12-29 {
+        description
+          "new technician file state";
+        reference
+          "";
+    }
+
+    revision 2021-11-18 {
+        description
+          "1.2.0 release";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-07-19 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+// extension statements
+// feature statements
+// identity statements
+// typedef statements
+// grouping statements
+    grouping control-config {
+        container control {
+            leaf soft-watchdog-enabled {
+                type boolean;
+                default true;
+                description
+                  "Whether the watchdog is enabled or not.
+                   Disabling the watchdog bypasses certain system health checks,
+                   Do not change this configuration unless instructed by customer support!";
+            }
+            description
+              "Container for general configuration";
+        }
+        description
+          "Grouping for general system behavior";
+    }
+
+    grouping system-top {
+
+        container system {
+            description
+              "Top level container for system HW & SW data";
+
+            leaf name {
+                type rb-tg-types:node-assigned-name;
+                smiv2:max-access "read-write";
+                smiv2:oid "1.3.6.1.2.1.1.5";
+                description
+                  "This network assigned name/ID of the unit (AN)";
+            }
+
+            leaf contact {
+                type snmpv2-tc:DisplayString {
+                    length "0..128";
+                }
+                default "";
+                smiv2:max-access "read-write";
+                smiv2:oid "1.3.6.1.2.1.1.4";
+                smiv2:defval "";
+                description
+                  "The textual identification of the contact person"
+                + "for this managed node, together with information"
+                + "on how to contact this person.";
+            }
+
+            leaf reboot-needed {
+                type boolean;
+                config false;
+                description
+                  "Is reboot needed in order to apply changes";
+            }
+            leaf network-configuration-hash {
+                autocli:hide;
+                autocli:hide-show;
+                type rb-tg-types:radio-bridge-tg-string {
+                    length "1..256";
+                }
+                description
+                  "A value that represents a unique configuration of the network and can be modified by external management stations 
+                   (NMS, runner, etc) and used by the device to know whether it has the same configuration as its peer.";
+            }
+            leaf location {
+                smiv2:oid "1.3.6.1.2.1.1.6";
+                smiv2:max-access "read-write";
+                type snmpv2-tc:DisplayString {
+                    length "0..64";
+                }
+                smiv2:defval "";
+                default "";
+                description
+                  "The location of the unit";
+            }
+
+            uses control-config;
+            uses rb-tg-log:logging-config-top;
+
+            container state {
+                config false;
+                description
+                  "State data for the system";
+                leaf snmp-object-id {
+                    type ietf:object-identifier-128;
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.1.2";
+                    description
+                      "SNMP object ID";
+                }
+                leaf snmp-services {
+                    type int32;
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.1.7";
+                    autocli:hide;
+                    autocli:hide-show;
+                    description
+                      "SNMP sysServices: a bitmap of the supported layers";
+                }
+                leaf product {
+                    type snmpv2-tc:DisplayString;
+                    smiv2:oid "1.3.6.1.2.1.1.1";
+                    smiv2:max-access "read-only";
+                    description
+                      "Product's name";
+                }
+                leaf date-and-time {
+                    type string;
+                    description
+                      "Date and time";
+                }
+                leaf uptime {
+                    type string;
+                    description
+                      "System uptime, presented in a format of DDDDD:HH:MM:SS";
+                }
+                leaf uptime-hundredths-seconds {
+                    type ietf:timeticks;
+                    autocli:hide;
+                    autocli:hide-show;
+                    smiv2:oid "1.3.6.1.2.1.1.3";
+                    smiv2:max-access "read-only";
+
+                    description
+                      "System uptime (hundredths of second)";
+                }
+                leaf is-rollback-active {
+                    type boolean;
+                    default false;
+                    description
+                      "Is rollback currently active";
+                }
+
+                uses rb-tg-sw-up:banks-info-top;
+                uses rb-tg-sw-up:sw-upgrade-info-top;
+                uses rb-tg-gps:gps-top;
+                uses rb-tg-log:logging-state-top;
+            }
+
+            container geo-location {
+            description
+              "Represent the device coordinates and orientation";
+              leaf latitude {
+                type decimal64 {
+                  fraction-digits 7;
+                  range "-90..90";
+                }
+                units "decimal degrees";
+                description
+                  "The latitude value on the astronomical body. The
+                    definition and precision of this measurement is
+                    indicated by the reference-frame.";
+              }
+
+              leaf longitude {
+                type decimal64 {
+                  fraction-digits 7;
+                  range "-180..180";
+                }
+                units "decimal degrees";
+                description
+                  "The longitude value on the astronomical body. The
+                  definition and precision of this measurement is
+                  indicated by the reference-frame.";
+                }
+
+              leaf azimuth {
+                type decimal64 {
+                  fraction-digits 7;
+                  range "0..359.9999999";
+                }
+                units "degrees";
+                description
+                  "The azimuth of the device. 0 means center of the sector 1";
+              }
+            }
+        }
+        description
+          "Top level grouping for unit";
+    }
+
+    // data definition statements
+    uses system-top;
+// augment statements
+// rpc statements
+    rpc set-system-time {
+        description
+          "RPC for setting the unit's time";
+        input{
+            leaf time {
+                type rb-tg-types:time;
+                mandatory true;
+                description
+                  "24H time string input HH:MM:SS (e.g. 23:34:45)";
+            }
+        }
+    }
+
+    rpc set-system-date {
+        description
+          "RPC for setting the unit's date";
+        input{
+            leaf date {
+                type rb-tg-types:date;
+                mandatory true;
+                description
+                  "Date string input YYYY-MM-DD (e.g. 2015-10-21)";
+            }
+        }
+    }
+
+    rpc reset {
+        description
+          "RPC for rebooting the unit";
+    }
+
+    rpc factory-reset {
+        description
+          "RPC factory resetting the unit";
+        input{
+            leaf is-clear-logs {
+                type boolean;
+                default false;
+                description
+                  "Specifies to clear the logs on the device";
+            }
+        }
+    }
+
+    rpc run-cli-commands {
+        description
+          "Gets list of cli commands and runs them on cli";
+        input {
+            list commands {
+                key id;
+                leaf id {
+                    type uint32;
+                    description
+                      "Command ID, used for ordering";
+                }
+                leaf command {
+                    type string;
+                    description
+                      "cli command";
+                }
+                description
+                  "List of cli commands";
+            }
+        }
+    }
+
+    rpc add-script {
+        description
+          "Gets content and assigned name, and puts the contents in a
+           tu provisioning file with the proper assigned name";
+        input {
+            leaf assigned-name {
+                type rb-tg-types:node-assigned-name;
+                description
+                  "assigned name that's part of the name of the tu provisioning file";
+            }
+            leaf content {
+                type string;
+                description
+                  "content to put into tu provisioning file";
+            }
+        }
+    }
+
+    rpc create-tech-file {
+        description
+          "Create technician file for debug";
+        output{
+            leaf output {
+                type string;
+                description
+                  "output file name";
+            }
+        }
+    }
+
+    rpc get-default-configurations {
+        description
+          "Returns the device’s default configurations";
+        output {
+            anyxml configs {
+                description
+                  "Contains config of each module owned by the main module";
+            }
+        }
+    }
+// notification statements
+}

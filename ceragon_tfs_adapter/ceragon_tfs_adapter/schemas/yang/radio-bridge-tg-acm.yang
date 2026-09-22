@@ -1,0 +1,50 @@
+module radio-bridge-tg-acm {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/acm";
+
+    prefix "rb-tg-acm";
+
+    import ietf-netconf-acm {
+        prefix "nacm";
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "Augments the official ietf-netconf-acm model";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-10-26 {
+        description
+          "Initial revision";
+        reference
+          "";
+    }
+// extension statements
+// feature statements
+// identity statements
+// typedef statements
+// grouping statements
+// data definition statements
+// augment statements
+// deviation statements
+deviation "/nacm:nacm" {
+  deviate "not-supported";
+}
+// rpc statements
+// notification statements
+}

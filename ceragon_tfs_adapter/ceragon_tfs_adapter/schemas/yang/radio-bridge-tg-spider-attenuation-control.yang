@@ -1,0 +1,86 @@
+module radio-bridge-tg-spider-attenuation-control {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/spider/attenuation";
+
+    prefix "rb-tg-spider-attenuation";
+    import radio-bridge-tg-types {
+        prefix "rb-tg-types";
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This module defines how control the attenuation on spider devices";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-03-31 {
+        description
+          "Add feature spider-device to the module";
+        reference
+          "";
+    }
+    revision 2022-03-10 {
+        description
+          "Initial version";
+        reference
+          "";
+    }
+
+    feature spider-device {
+        description
+          "This feature indicates if the device is a spider. 
+           If the device is a spider then this module will be loaded. 
+           Otherwise, this module won't be loaded.";
+    }
+    grouping spider-attenuation-top {
+        container spider-attenuation {
+            if-feature spider-device;
+            list sector {
+                key index;
+                leaf index {
+                    type rb-tg-types:radio-sector-index;
+                    description
+                      "The index of the sector";
+                }
+                list port {
+                    key index;
+                    leaf index {
+                        type uint16 {
+                            range "1 .. 18";
+                        }
+                        description
+                          "The index of the spider HW port";
+                    }
+                    leaf attenuation {
+                        type uint16;
+                        description
+                          "The attenuation value of the port";
+                    }
+                    description
+                      "The list of spider HW ports with the chosen attenuation";
+                }
+                description
+                  "A list of the sectors on the device";
+            }
+            description
+              "spider attenuation control";
+        }
+        description
+          "Top level grouping for spider attenuation control";
+    }
+    uses spider-attenuation-top;
+}

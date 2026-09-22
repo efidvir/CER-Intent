@@ -1,0 +1,89 @@
+module radio-bridge-tg-rollback {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/rollback";
+
+    prefix "rb-tg-rollback";
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This module defines how the rollback functionality will work";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-10-13 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements  
+    // grouping statements
+    // data definition statements
+    // augment statements
+    // rpc statements
+    rpc set-rollback-timeout {
+        description
+          "RPC for starting the rollback timer with the time given.";
+        input{
+            leaf seconds {
+                type uint32;
+                mandatory true;
+                description
+                  "The time in seconds until timeout will reboot the device (unless stopped).";
+            }
+        }
+    }
+
+    rpc stop-rollback {
+        description
+          "RPC for stopping the rollback timer";
+    }
+
+    rpc rollback-keep-alive {
+        description
+          "RPC for re-starting the rollback timer (only if already running) and returning the status of rollback";
+        output{
+            leaf is-enabled {
+                type boolean;
+                description
+                  "Whether or not the rollback timer is currently running";
+            }
+            leaf remaining-time {
+                type uint32;
+                description
+                  "The remaining time in seconds until timeout will reboot the device (unless stopped).";
+            }
+            leaf rollback-time {
+                type uint32;
+                description
+                  "The value of timeout that user set during rollback timer activation";
+            }
+        }
+    }
+// notification statements
+}

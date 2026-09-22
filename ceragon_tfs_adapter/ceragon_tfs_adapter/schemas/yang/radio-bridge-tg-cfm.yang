@@ -1,0 +1,77 @@
+module radio-bridge-tg-cfm {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/cfm";
+
+    prefix "rb-tg-cfm";
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "Augments the official CFM model";
+
+    revision 2025-01-31 {
+        description
+          "Remove all deviations. Add RPC to clear CCM counters.";
+        reference
+          "";
+    }
+
+    revision 2024-09-27 {
+        description
+          "Enable the CCM counters associated with the MEP";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-08-28 {
+      description
+        "Moved interface leaf augment statement to the official file";
+      reference
+        "";
+    }
+
+    revision 2022-08-09 {
+        description
+          "Removed deviation of MD-level, changed direction to not-supported, added tunnel type to interface";
+        reference
+          "";
+    }
+
+    revision 2022-07-31 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements
+    // grouping statements
+    // data definition statements
+    // augment statements
+
+    // rpc statements
+    rpc clear-all-ccm-counters {
+      description
+        "RPC for clearing the CCM counters for all interfaces";
+    }
+
+    // notification statements
+}

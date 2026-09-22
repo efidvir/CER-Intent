@@ -1,0 +1,1282 @@
+  
+  module radio-bridge-tg-interfaces {
+
+    yang-version "1.1";
+
+// namespace
+    namespace "http://siklu.com/yang/tg/interfaces";
+
+    prefix "rb-tg-if";
+
+    import ietf-yang-types {
+        prefix yang;
+    }
+    import radio-bridge-tg-types {
+        prefix rb-tg-types;
+    }
+    import ietf-yang-smiv2 {
+        prefix "smiv2";
+    }
+    import clixon-snmp {
+        prefix "cx-snmp";
+    }
+    import clixon-autocli {
+        prefix autocli;
+    }
+    import SNMPv2-TC {
+        prefix "snmpv2-tc";
+    }
+    import IANAifType-MIB {
+        prefix "ianaiftype-mib";
+    }
+
+// meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "TODO";
+
+    revision 2025-06-25 {
+        description
+          "Add leaves pertaining to IEEE 1588TC operation on the interface";
+        reference
+          "";
+    }
+
+    revision 2025-01-08 {
+        description
+          "Add leaf to indicate time in seconds since clear command";
+        reference
+          "";
+    }
+
+    revision 2023-05-16 {
+        description
+          "Hide if-number container from CLI.";
+        reference
+          "";
+    }
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2023-03-16 {
+        description
+          "Support for SNMP ifTable";
+        reference
+          "";
+    }
+
+    revision 2023-02-28 {
+        description
+          "Flatten the interface table";
+        reference
+          "";
+    }
+
+    revision 2022-10-25 {
+        description
+          "Changed bonds active member to oper-status";
+        reference
+          "";
+    }
+
+    revision 2022-10-19 {
+        description
+          "Added bonds list and added counters to tunnels list";
+        reference
+          "";
+    }
+
+    revision 2022-07-21 {
+        description
+          "Adding tunnel interface";
+        reference
+          "";
+    }
+
+    revision 2021-11-18 {
+        description
+          "1.2.0 release";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-08-05 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+// extension statements
+// feature statements
+// identity statements
+// typedef statements  
+    typedef physical-connector-type-enumeration {
+        type enumeration {
+            enum RJ-45 {
+                description
+                  "RJ-45";
+            }
+            enum SFP {
+                description
+                  "SFP";
+            }
+            enum 'SFP+' {
+                description
+                  "SFP+";
+            }
+            enum GPON {
+                description
+                  "GPON";
+            }
+        }
+        description
+          "physical connector type";
+    }
+    typedef ethernet-speed {
+        type enumeration {
+            enum 10Mbps {
+                description
+                  "10Mbps";
+            }
+            enum 100Mbps {
+                description
+                  "100Mbps";
+            }
+            enum 1Gbps {
+                description
+                  "1Gbps";
+            }
+            enum 2500Mbps {
+                description
+                  "2.5Gbps";
+            }
+            enum 5Gbps {
+                description
+                  "5Gbps";
+            }
+            enum 10Gbps {
+                description
+                  "10Gbps";
+            }
+        }
+        description
+          "Port speed";
+    }
+
+    typedef duplex-mode {
+        type enumeration {
+            enum full {
+                description
+                  "Full duplex mode";
+            }
+            enum half {
+                description
+                  "Half duplex mode";
+            }
+        }
+        description
+          "Duplex mode of the port";
+    }
+
+    typedef if-type {
+        type enumeration {
+            enum host {
+                description
+                  "host interface";
+            }
+            enum ethernet {
+                description
+                  "ethernet interface";
+            }
+            enum rf {
+                description
+                  "rf interface";
+            }
+            enum bond {
+                description
+                  "bond interface";
+            }
+            enum tunnel {
+                description
+                  "tunnel interface";
+            }
+        }
+        description
+          "interface type";
+    }
+
+// grouping statements
+    grouping copper-interface-config {
+        leaf speed {
+            type ethernet-speed;
+            description
+              "When auto-negotiate is 'true', this optionally sets the
+               port-speed mode that will be advertised to the peer for
+               negotiation. If unspecified, it is expected that the
+               port will select the highest speed available based on
+               negotiation.  When auto-negotiate is set to 'false', sets the
+               link speed to a fixed value. According to IEEE 802.3, for speeds 
+               of 1Gbps and higher, auto-negotiation must be on.";
+        }
+        leaf auto-negotiate {
+            type boolean;
+            default true;
+            description
+              "Set to 'true' to request the port to auto-negotiate
+               transmission parameters with its peer port.  When
+               set to 'false', the transmission parameters are specified
+               manually.";
+            reference
+              "IEEE 802.3-2012 auto-negotiation transmission parameters";
+        }
+        leaf duplex-mode {
+            type duplex-mode;
+            description
+              "When auto-negotiate is 'true', this optionally sets the
+               duplex mode that will be advertised to the peer.  If
+               unspecified, the port should negotiate the duplex mode
+               directly (typically full-duplex).  When auto-negotiate is
+               'false', this sets the duplex mode on the port directly.";
+        }
+        leaf pse-out {
+            type boolean;
+            description
+              "Set to 'true' to enable PSE/PoE-out. This feature should be supported by the hardware for this port";
+        }
+        description
+          "Set of configurations for RJ-45 ports";
+    }
+
+    grouping interfaces-top {
+        description
+          "Top-level grouping for port configuration and state data";
+
+        container if-number {
+            config false;
+
+            leaf ifNumber {
+                type int32;
+                autocli:hide;
+                autocli:hide-show;
+                config false;
+                description
+                  "The number of network interfaces (regardless of their
+                   current state) present on this system.";
+                smiv2:max-access "read-only";
+                smiv2:oid "1.3.6.1.2.1.2.1";
+                reference
+                  "RFC 2863: The Interfaces Group MIB - ifNumber";
+            }
+
+            autocli:hide;
+            autocli:hide-show;
+            description
+              "A container for ifNumber scalar";
+        }
+
+        container interfaces {
+            smiv2:oid "1.3.6.1.2.1.2.2";
+
+            list interface {
+                key "name";
+                description
+                  "The list of all interfaces of the device.";
+                smiv2:oid "1.3.6.1.2.1.2.2.1";
+                cx-snmp:table-key "ifIndex";
+
+                leaf ifIndex {
+                    type rb-tg-types:InterfaceIndex;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "A unique value, greater than zero, for each interface.  It
+                        is recommended that values are assigned contiguously
+                        starting from 1.  The value for each interface sub-layer
+                        must remain constant at least from one re-initialization of
+                        the entity's network management system to the next re-
+                        initialization.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.1";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifIndex";
+                }
+
+                leaf ifDescr {
+                    type snmpv2-tc:DisplayString {
+                        length "0..255";
+                    }
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "A textual string containing information about the
+                       interface.  This string should include the name of the
+                       manufacturer, the product name and the version of the
+                       interface hardware/software.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.2";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifDescr";
+                }
+
+                leaf iftype {
+                    type ianaiftype-mib:IANAifType;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The type of interface.  Additional values for ifType are
+                        assigned by the Internet Assigned Numbers Authority (IANA),
+                        through updating the syntax of the IANAifType textual
+                        convention.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.3";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - iftype";
+                }
+
+                leaf ifMtu {
+                    type int32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The size of the largest packet which can be sent/received
+                         on the interface, specified in octets.  For interfaces that
+                         are used for transmitting network datagrams, this is the
+                         size of the largest network datagram that can be sent on the
+                         interface.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.4";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifMtu";
+                }
+
+                leaf ifSpeed {
+                    type yang:gauge32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "An estimate of the interface's current bandwidth in bits
+                         per second.  For interfaces which do not vary in bandwidth
+                         or for those where no accurate estimation can be made, this
+                         object should contain the nominal bandwidth.  If the
+                         bandwidth of the interface is greater than the maximum value
+                         reportable by this object then this object should report its
+                         maximum value (4,294,967,295) and ifHighSpeed must be used
+                         to report the interace's speed.  For a sub-layer which has
+                         no concept of bandwidth, this object should be zero.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.5";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifSpeed";
+                }
+
+                leaf mac-address {
+                    type yang:phys-address;
+                    config false;
+                    description
+                      "The interface's MAC address";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.6";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifPhysAddress";
+                }
+
+                leaf admin-status {
+                    type rb-tg-types:admin-status;
+                    default "up";
+                    description
+                      "This leaf contains the configured, desired state of the
+                       interface.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.7";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifAdminStatus";
+                }
+
+                leaf oper-status {
+                    type rb-tg-types:oper-status;
+                    config false;
+                    description
+                      "in case of eth port: 
+                           The current operational status of the eth port.
+                       in case of rf interface:
+                           The current operational status of the rf link.
+                        in case of tunnel:
+                           the operational status of the tunnel:
+                             up: CCM is enabled on the tunnel interface and reports up status.
+                             down: CCM is enabled  on the tunnel interface and reports down status.
+                             unknown: CCM is not enabled on the tunnel interface.
+                        in case of bond:
+                             the operational status of the bond:
+                               up: There is at least one active bond member.
+                               down: No active bond member was found.
+                      ";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.8";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifOperStatus";
+                }
+
+                leaf ifLastChange {
+                    type yang:timeticks;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The value of sysUpTime at the time the interface entered
+                       its current operational state.  If the current state was
+                       entered prior to the last re-initialization of the local
+                       network management subsystem, then this object contains a
+                       zero value.
+                       Currently not supported";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.9";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifLastChange";
+                }
+
+                leaf ifInOctets {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The total number of octets received on the interface,
+                       including framing characters.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.10";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifInOctets";
+                }
+
+                leaf ifInUcastPkts {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The number of packets, delivered by this sub-layer to a
+                       higher (sub-)layer, which were not addressed to a multicast
+                       or broadcast address at this sub-layer.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.11";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifInUcastPkts";
+                }
+
+                leaf ifInNUcastPkts {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    status deprecated;
+                    description
+                      "The number of packets, delivered by this sub-layer to a
+                       higher (sub-)layer, which were addressed to a multicast or
+                       broadcast address at this sub-layer.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.
+                       
+                       This object is deprecated in favour of ifInMulticastPkts and
+                       ifInBroadcastPkts.
+                       Not supported";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.12";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifInNUcastPkts";
+                }
+
+                leaf ifInDiscards {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The number of inbound packets which were chosen to be
+                       discarded even though no errors had been detected to prevent
+                       
+                       their being deliverable to a higher-layer protocol.  One
+                       possible reason for discarding such a packet could be to
+                       free up buffer space.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.13";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifInDiscards";
+                }
+
+                leaf ifInErrors {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "For packet-oriented interfaces, the number of inbound
+                       packets that contained errors preventing them from being
+                       deliverable to a higher-layer protocol.  For character-
+                       oriented or fixed-length interfaces, the number of inbound
+                       transmission units that contained errors preventing them
+                       from being deliverable to a higher-layer protocol.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.14";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifInErrors";
+                }
+
+                leaf ifInUnknownProtos {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "For packet-oriented interfaces, the number of packets
+                       received via the interface which were discarded because of
+                       an unknown or unsupported protocol.  For character-oriented
+                       or fixed-length interfaces that support protocol
+                       multiplexing the number of transmission units received via
+                       the interface which were discarded because of an unknown or
+                       unsupported protocol.  For any interface that does not
+                       support protocol multiplexing, this counter will always be
+                       0.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.
+                       Not supported";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.15";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifInUnknownProtos";
+                }
+
+                leaf ifOutOctets {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The total number of octets transmitted out of the
+                       interface, including framing characters.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.16";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifOutOctets";
+                }
+
+                leaf ifOutUcastPkts {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The total number of packets that higher-level protocols
+                       requested be transmitted, and which were not addressed to a
+                       multicast or broadcast address at this sub-layer, including
+                       those that were discarded or not sent.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.17";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifOutUcastPkts";
+                }
+
+                leaf ifOutNUcastPkts {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    status deprecated;
+                    description
+                      "The total number of packets that higher-level protocols
+                       requested be transmitted, and which were addressed to a
+                       multicast or broadcast address at this sub-layer, including
+                       those that were discarded or not sent.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.
+                       
+                       This object is deprecated in favour of ifOutMulticastPkts
+                       and ifOutBroadcastPkts.
+                       Not supported";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.18";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifOutNUcastPkts";
+                }
+
+                leaf ifOutDiscards {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "The number of outbound packets which were chosen to be
+                       discarded even though no errors had been detected to prevent
+                       their being transmitted.  One possible reason for discarding
+                       such a packet could be to free up buffer space.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.19";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifOutDiscards";
+                }
+
+                leaf ifOutErrors {
+                    type yang:counter32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    description
+                      "For packet-oriented interfaces, the number of outbound
+                       packets that could not be transmitted because of errors.
+                       For character-oriented or fixed-length interfaces, the
+                       number of outbound transmission units that could not be
+                       transmitted because of errors.
+                       
+                       Discontinuities in the value of this counter can occur at
+                       re-initialization of the management system, and at other
+                       times as indicated by the value of
+                       ifCounterDiscontinuityTime.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.20";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifOutErrors";
+                }
+
+                leaf ifOutQLen {
+                    type yang:gauge32;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    status deprecated;
+                    description
+                      "The length of the output packet queue (in packets).
+                       Not supported";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.21";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifOutQLen";
+                }
+
+                leaf ifSpecific {
+                    type yang:object-identifier-128;
+                    autocli:hide;
+                    autocli:hide-show;
+                    config false;
+                    status deprecated;
+                    description
+                      "A reference to MIB definitions specific to the particular
+                       media being used to realize the interface.  It is
+                       
+                       recommended that this value point to an instance of a MIB
+                       object in the media-specific MIB, i.e., that this object
+                       have the semantics associated with the InstancePointer
+                       textual convention defined in RFC 2579.  In fact, it is
+                       recommended that the media-specific MIB specify what value
+                       ifSpecific should/can take for values of ifType.  If no MIB
+                       definitions specific to the particular media are available,
+                       the value should be set to the OBJECT IDENTIFIER { 0 0 }.
+                       Not supported";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.2.2.1.22";
+                    reference
+                      "RFC 2863: The Interfaces Group MIB - ifSpecific";
+                }
+
+                container copper-specific-config {
+                    uses copper-interface-config;
+                    description
+                      "Configurations that are relevant only when the port is of type RJ-45";
+                }
+
+                leaf physical-connector-type {
+                    type physical-connector-type-enumeration;
+                    config false;
+                    description
+                      "The type of the physical connector, For example: RJ-45";
+                }
+
+                leaf port-speed {
+                    type ethernet-speed;
+                    config false;
+                    description
+                      "Max port speed, relevant for Ethernet ports only";
+                }
+
+                leaf actual-duplex-mode {
+                    type duplex-mode;
+                    config false;
+                    description
+                      "When auto-negotiate is set to 'true', and the port has
+                       completed auto-negotiation with the remote peer, this value
+                       shows the duplex mode that has been negotiated.
+                       This parameter is relevant only for ETH ports";
+                }
+
+                leaf actual-port-speed {
+                    type ethernet-speed;
+                    config false;
+                    description
+                      "This value shows the actual speed of the port. It is determined either by 
+                       auto-negotiation or the port speed configuration. 
+                       This parameter is relevant only for ETH ports";
+                }
+
+                leaf interface-type {
+                    type if-type;
+                    config false;
+                    mandatory true;
+                    description
+                      "The interface type. e.g., host/eth/rf";
+                }
+
+                leaf time-since-last-clear {
+                    type string;
+                    config false;
+                    description
+                      "This value shows the time since last clear statistics command, presented in format of DDDDD:HH:MM:SS";
+                }
+            }
+
+            description
+              "Top level container for all interfaces";
+        }
+    }
+
+// data definition statements
+    uses interfaces-top;
+
+// augment statements
+    augment "/interfaces/interface" {
+        description
+          "An entry containing additional management information
+            applicable to a particular interface.";
+        smiv2:oid "1.3.6.1.2.1.31.1.1.1";
+
+        leaf name {
+            type union{
+                type rb-tg-types:host-interface-name;
+                type rb-tg-types:embedded-interface-name;
+                type rb-tg-types:rf-interface-name;
+                type rb-tg-types:tunnel-interface-name;
+                type rb-tg-types:bond-interface-name;
+            }
+            description
+              "The interface's name:
+               host or
+               The eth port's name. (format 'eth<number>') or 
+               The name of the RF link. (format: 'rf-<AN>') or
+               The tunnels's name. (format 'tunnel-<TunnelId> or'
+               The bond's name. (format 'bond-<name>'
+              ";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.1";
+            smiv2:display-hint "255a";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifName";
+        }
+
+        leaf ifInMulticastPkts {
+            type yang:counter32;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The number of packets, delivered by this sub-layer to a
+                higher (sub-)layer, which were addressed to a multicast
+                address at this sub-layer.  For a MAC layer protocol, this
+                includes both Group and Functional addresses.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+               
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.2";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifInMulticastPkts";
+        }
+
+        leaf ifInBroadcastPkts {
+            type yang:counter32;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The number of packets, delivered by this sub-layer to a
+                higher (sub-)layer, which were addressed to a broadcast
+                address at this sub-layer.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.3";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifInBroadcastPkts";
+        }
+
+        leaf ifOutMulticastPkts {
+            type yang:counter32;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The total number of packets that higher-level protocols
+                requested be transmitted, and which were addressed to a
+                multicast address at this sub-layer, including those that
+                were discarded or not sent.  For a MAC layer protocol, this
+                includes both Group and Functional addresses.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.4";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifOutMulticastPkts";
+        }
+
+        leaf ifOutBroadcastPkts {
+            type yang:counter32;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The total number of packets that higher-level protocols
+                requested be transmitted, and which were addressed to a
+                broadcast address at this sub-layer, including those that
+                were discarded or not sent.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+               
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.5";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifOutBroadcastPkts";
+        }
+
+        leaf in-octets {
+            type yang:counter64;
+            config false;
+            description
+              "The total number of octets received on the port,
+               including framing characters.
+               Discontinuities in the value of this counter can occur
+               at re-initialization of the unit, and after clear statistics command.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.6";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCInOctets";
+        }
+
+        leaf in-pkts {
+            type yang:counter64;
+            config false;
+            description
+              "The total number of packets received on the port,
+               including all unicast, multicast, broadcast and bad packets
+               etc.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.7";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCInUcastPkts";
+        }
+
+        leaf in-discards {
+            type yang:counter64;
+            config false;
+            description
+              "The number of inbound packets that were 
+               discarded even though no errors had been detected.
+               
+               Discontinuities in the value of this counter can occur
+               at re-initialization of the unit, and after clear statistics command.";
+        }
+
+        leaf in-errors {
+            type yang:counter64;
+            config false;
+            description
+              "The number of inbound packets that contained errors. 
+               
+               Discontinuities in the value of this counter can occur
+               at re-initialization of the unit, and after clear statistics command.";
+        }
+
+        leaf in-no-rule-discards {
+            type yang:counter64;
+            config false;
+            description
+              "The number of inbound packets that were
+               discarded for some reason (f.ex. not in any bridge).
+               
+               Discontinuities in the value of this counter can occur
+               at re-initialization of the unit, and after clear statistics command.";
+        }
+
+        leaf ifHCInMulticastPkts {
+            type yang:counter64;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The number of packets, delivered by this sub-layer to a
+                higher (sub-)layer, which were addressed to a multicast
+                address at this sub-layer.  For a MAC layer protocol, this
+                includes both Group and Functional addresses.  This object
+                is a 64-bit version of ifInMulticastPkts.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.8";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCInMulticastPkts";
+        }
+
+        leaf ifHCInBroadcastPkts {
+            type yang:counter64;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The number of packets, delivered by this sub-layer to a
+                higher (sub-)layer, which were addressed to a broadcast
+                address at this sub-layer.  This object is a 64-bit version
+                of ifInBroadcastPkts.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.9";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCInBroadcastPkts";
+        }
+
+        leaf out-octets {
+            type yang:counter64;
+            config false;
+            description
+              "The total number of octets transmitted out of the
+               port, including framing characters.          
+               Discontinuities in the value of this counter can occur
+               at re-initialization of the unit, and after clear statistics command.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.10";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCOutOctets";
+        }
+
+        leaf out-pkts {
+            type yang:counter64;
+            config false;
+            description
+              "The total number of packets transmitted out of the
+               port, including all unicast, multicast, broadcast,
+               and bad packets etc.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.11";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCOutUcastPkts";
+        }
+
+        leaf out-discards {
+            type yang:counter64;
+            config false;
+            description
+              "The number of outbound packets that were chosen to be
+               discarded even though no errors had been detected to
+               prevent their being transmitted.  One possible reason
+               for discarding such a packet could be to free up queue
+               space.
+               
+               Discontinuities in the value of this counter can occur
+               at re-initialization of the unit, and after clear statistics command.";
+        }
+
+        leaf out-errors {
+            type yang:counter64;
+            config false;
+            description
+              "The number of outbound packets that could not be transmitted because of errors.
+               
+               Discontinuities in the value of this counter can occur
+               at re-initialization of the unit, and after clear statistics command.";
+        }
+
+        leaf ifHCOutMulticastPkts {
+            type yang:counter64;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The total number of packets that higher-level protocols
+                requested be transmitted, and which were addressed to a
+                multicast address at this sub-layer, including those that
+                were discarded or not sent.  For a MAC layer protocol, this
+                includes both Group and Functional addresses.  This object
+                is a 64-bit version of ifOutMulticastPkts.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.12";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCOutMulticastPkts";
+        }
+
+        leaf ifHCOutBroadcastPkts {
+            type yang:counter64;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The total number of packets that higher-level protocols
+                requested be transmitted, and which were addressed to a
+                broadcast address at this sub-layer, including those that
+                were discarded or not sent.  This object is a 64-bit version
+                of ifOutBroadcastPkts.
+               
+                Discontinuities in the value of this counter can occur at
+                re-initialization of the management system, and at other
+                times as indicated by the value of
+                ifCounterDiscontinuityTime.
+                Not supported";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.13";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHCOutBroadcastPkts";
+        }
+
+        leaf ifLinkUpDownTrapEnable {
+            type enumeration {
+                enum "enabled" {
+                    value "1";
+                    description
+                      "enable";
+                }
+                enum "disabled" {
+                    value "2";
+                    description
+                      "disable";
+                }
+            }
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "Indicates whether linkUp/linkDown traps should be generated
+                for this interface.
+               
+                By default, this object should have the value enabled(1) for
+                interfaces which do not operate on 'top' of any other
+                interface (as defined in the ifStackTable), and disabled(2)
+                otherwise.
+                Traps are currently not supported and this parameter is always set to disabled(2)";
+            smiv2:max-access "read-write";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.14";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifLinkUpDownTrapEnable";
+        }
+
+        leaf ifHighSpeed {
+            type yang:gauge32;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "An estimate of the interface's current bandwidth in units
+                of 1,000,000 bits per second.  If this object reports a
+                value of `n' then the speed of the interface is somewhere in
+                the range of `n-500,000' to `n+499,999'.  For interfaces
+                which do not vary in bandwidth or for those where no
+                accurate estimation can be made, this object should contain
+                the nominal bandwidth.  For a sub-layer which has no concept
+                of bandwidth, this object should be zero.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.15";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifHighSpeed";
+        }
+
+        leaf ifPromiscuousMode {
+            type boolean;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "This object has a value of false(2) if this interface only
+                accepts packets/frames that are addressed to this station.
+                This object has a value of true(1) when the station accepts
+                all packets/frames transmitted on the media.  The value
+                true(1) is only legal on certain types of media.  If legal,
+                setting this object to a value of true(1) may require the
+                interface to be reset before becoming effective.
+               
+                The value of ifPromiscuousMode does not affect the reception
+                of broadcast and multicast packets/frames by the interface.
+                Currently not supported and this parameter is always set to false(2)";
+            smiv2:max-access "read-write";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.16";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifPromiscuousMode";
+        }
+
+        leaf ifConnectorPresent {
+            type boolean;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "This object has the value 'true(1)' if the interface
+                sublayer has a physical connector and the value 'false(2)'
+                otherwise.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.17";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifConnectorPresent";
+        }
+
+        leaf alias {
+            type rb-tg-types:radio-bridge-tg-string {
+                length "0..20";
+            }
+            default "";
+            description
+              "The alias name of interface given by user.";
+            smiv2:defval "";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.18";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifAlias";
+        }
+
+        leaf ifCounterDiscontinuityTime {
+            type yang:timestamp;
+            autocli:hide;
+            autocli:hide-show;
+            config false;
+            description
+              "The value of uptime-hundredths-seconds on the most recent occasion 
+                at which any one or more of this interface's counters suffered a
+                discontinuity.  The relevant counters are the specific
+                instances associated with this interface of any Counter32 or
+               
+                Counter64 object contained in the ifTable or ifXTable. If
+                no such discontinuities have occurred since the last re-
+                initialization of the local management subsystem, then this
+                object contains a zero value.
+                Currently not supported and the return value is always zero";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.2.1.31.1.1.1.19";
+            reference
+              "RFC 2863: The Interfaces Group MIB - ifCounterDiscontinuityTime";
+        }
+
+        leaf ptp-tc-support {
+            type boolean;
+            default false;
+            config false;
+            description
+              "This parameter indicates whether the interface supports IEEE 1588 Transparent Clock (TC) functionality.
+                If set to 'true', the interface is capable of operating as a transparent clock, forwarding PTP messages
+                and adjusting the timestamps accordingly. If set to 'false', the interface does not support PTP TC operations.";
+        }
+
+        leaf ptp-tc-enable {
+            type boolean;
+            default false;
+            description
+              "This parameter indicates whether the interface is configured for IEEE 1588 Transparent Clock (TC).
+                If set to 'true', the interface will operate as a transparent clock, forwarding PTP messages
+                and adjusting the timestamps accordingly. If set to 'false', the interface will not perform
+                any PTP-related operations.";
+        }
+    }
+
+// rpc statements
+    rpc clear-all-interfaces-statistics {
+        description
+          "RPC for clearing the traffic statistics for all interfaces";
+    }
+// notification statements
+}

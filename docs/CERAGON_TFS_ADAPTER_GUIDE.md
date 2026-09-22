@@ -164,6 +164,20 @@ Runs continuously in the background, interrogating the device every `interval` s
 ceragon-tfs-adapter daemon --interval 15
 ```
 
+### 5. YANG Schema Repository & Inspector (`schemas`)
+Inspect, display, and export all 51 bundled RFC-compliant YANG data models:
+```bash
+# List all 51 bundled YANG schemas
+ceragon-tfs-adapter schemas list
+
+# Print full YANG schema content for a module (e.g. user bridge)
+ceragon-tfs-adapter schemas show radio-bridge-tg-user-bridge
+
+# Export all 51 .yang schema files to a custom directory
+ceragon-tfs-adapter schemas export --output-dir ./extracted_schemas
+```
+
+
 ---
 
 ## 6. TeraFlowSDN Representation & Config Rules
@@ -234,3 +248,35 @@ The adapter issues an RFC 8040 `PATCH` to the radio configuration container and 
 | `TFS_CONTEXT` | `admin` | Target TFS Context. |
 | `TFS_TOPOLOGY` | `admin` | Target TFS Topology. |
 | `ADAPTER_SYNC_INTERVAL_SEC` | `15` | Periodic synchronization interval for daemon. |
+
+---
+
+## 9. Bundled Device Schema Repository (51 Modules)
+
+The adapter package bundles the complete set of **51 RFC-compliant YANG schema data models** extracted directly from Ceragon Terragraph mmWave hardware:
+
+### A. Proprietary MultiHaul TG Modules (24 Modules)
+- **Ethernet & Switching**: `radio-bridge-tg-user-bridge.yang`, `radio-bridge-tg-interfaces.yang`, `radio-bridge-tg-bond.yang`, `radio-bridge-tg-tunnel.yang`
+- **Radio & RF Layer**: `radio-bridge-tg-radio-common.yang`, `radio-bridge-tg-radio-dn.yang`, `radio-bridge-tg-acm.yang`, `radio-bridge-tg-spider-attenuation-control.yang`
+- **OAM & Telemetry**: `radio-bridge-tg-cfm.yang`, `radio-bridge-tg-pm.yang`, `radio-bridge-tg-ping.yang`, `radio-bridge-tg-events.yang`
+- **Inventory & System**: `radio-bridge-tg-system.yang`, `radio-bridge-tg-inventory.yang`, `radio-bridge-tg-software-upgrade.yang`, `radio-bridge-tg-rollback.yang`, `radio-bridge-tg-database-version.yang`
+- **Services & Management**: `radio-bridge-tg-ip.yang`, `radio-bridge-tg-gps.yang`, `radio-bridge-tg-logging.yang`, `radio-bridge-tg-snmp.yang`, `radio-bridge-tg-gui.yang`, `radio-bridge-tg-user-management.yang`, `radio-bridge-tg-types.yang`
+
+### B. Standard IETF / IEEE Models (27 Modules)
+- `ietf-yang-library.yang`, `ietf-netconf-monitoring.yang`, `ietf-restconf.yang`, `ietf-datastores.yang`, `ietf-netconf.yang`, `ietf-netconf-nmda.yang`, `ietf-netconf-acm.yang`, `ietf-origin.yang`, `ietf-inet-types.yang`, `ietf-yang-types.yang`, `ieee802-dot1q-types.yang`, `ieee802-dot1q-cfm.yang`, `IANAifType-MIB.yang`, `SNMPv2-TC.yang`, etc.
+
+### C. Python Schema Accessor API
+Applications or scripts can access any schema programmatically:
+```python
+from ceragon_tfs_adapter.schemas import list_schemas, get_schema_content, get_schema_path
+
+# List all available modules
+all_modules = list_schemas()  # ['IANAifType-MIB', ..., 'radio-bridge-tg-user-bridge']
+
+# Retrieve raw YANG schema text
+yang_text = get_schema_content("radio-bridge-tg-user-bridge")
+
+# Retrieve filesystem path to the schema
+path = get_schema_path("radio-bridge-tg-radio-common")
+```
+

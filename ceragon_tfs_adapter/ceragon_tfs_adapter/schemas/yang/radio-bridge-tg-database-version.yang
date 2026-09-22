@@ -1,0 +1,82 @@
+module radio-bridge-tg-database-version {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/database-version";
+
+    prefix "rb-tg-db-ver";
+
+    // import some basic types
+    import clixon-autocli {
+        prefix autocli;
+    }
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This YANG module is part of MultiHaul(tm) TG project.
+        It defines the version of the database that is used by the project";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-02-14 {
+        description
+          "drop clixon-lib";
+        reference
+          "clixon CHANGELOG.md";
+    }
+
+    revision 2022-02-07 {
+        description
+          "import clixon-autocli";
+        reference
+          "clixon CHANGELOG.md";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-10-21 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements
+    // grouping statements
+    grouping database-version-top {
+        description
+          "A grouping for the version number of the database";
+        container database-version {
+            autocli:hide;
+            autocli:hide-show;
+            description
+              "A container that contains the version number of the database";
+            leaf database-version-number {
+                type uint32;
+                default 0;
+                description
+                  "The version number of the database";
+            }
+        }
+    }
+    uses database-version-top;
+}

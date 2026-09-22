@@ -1,0 +1,353 @@
+module radio-bridge-tg-types {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/types";
+
+    prefix "rb-tg-types";
+
+    import ietf-yang-smiv2 {
+        prefix smiv2;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "Definitions for the user bridge on TG Radio-bridge devices";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1
+          Introduce ptp, rf-sync and gps features";
+        reference
+          "";
+    }
+
+    revision 2023-03-16 {
+        description
+          "Add type: InterfaceIndex";
+        reference
+          "";
+    }
+
+    revision 2023-02-26 {
+        description
+          "Set length limitation for bond name";
+        reference
+          "";
+    }
+
+    revision 2023-01-22 {
+        description
+          "add numeric values to admin-status type in order to make it SNMP compatible";
+        reference
+          "";
+    }
+
+    revision 2022-12-27 {
+        description
+          "Added display hint to assigned name
+           Limited embedded-interface-name to eth[1-9]
+           Removed unneeded space from the rf-interface-name pattern
+          ";
+        reference
+          "";
+    }
+
+    revision 2022-10-19 {
+        description
+          "Moved bond member type from tg-bond to here";
+        reference
+          "";
+    }
+
+    revision 2022-05-18 {
+        description
+          "Added bond id and tunnel interface name";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-09-15 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    feature sync-mode-ptp {
+      description "Represents IEEE 1588v2 synchronization support";
+    }
+    feature sync-mode-rf {
+      description "Represents OTA/RF synchronization support";
+    }
+    feature sync-mode-gps {
+        description "Represents GPS synchronization support";
+    }
+    // identity statements
+    // typedef statements  
+    typedef radio-bridge-tg-string {
+        type string {
+            pattern
+              '[!#%-*,->@-Z^-~]*';
+        }
+        smiv2:display-hint "255a";
+        description
+          "Includes all printable characters, besides the characters ?$[]+ backslash, double quotes and spaces. 
+           This is according to our CLI limitations and some of Cisco's rules here:
+           https://www.cisco.com/assets/sol/sb/WAP321_Emulators/WAP321_Emulator_v1.0.0.3/help/Wireless05.html#:~:text=The%20SSID%20can%20be%20any,%5C%2C%20%5D%2C%20and%20%2B.
+          ";
+    }
+    typedef radio-sector-index {
+        type uint8 {
+            range "1 .. 4";
+        }
+        description
+          "Index of a radio sector";
+    }
+
+    typedef vlan-id {
+        type uint16 {
+            range "1 .. 4094";
+        }
+        description
+          "VLAN ID";
+    }
+
+    typedef ipv4-prefix-length {
+        type uint8 {
+            range 1..32;
+        }
+        description
+          "An IPv4 prefix length";
+    }
+
+    typedef node-assigned-name {
+        type string {
+            pattern
+              "[a-z0-9.-]{1,8}";
+        }
+        description
+          "Network name/ID assigned to the node (AN).";
+        smiv2:display-hint "255a";
+    }
+
+    typedef admin-status {
+        type enumeration {
+            enum up {
+                value "1";
+                description
+                  "configured to be up";
+            }
+            enum down {
+                value "2";
+                description
+                  "configured to be down";
+            }
+        }
+        description
+          "the admin status, can be either enabled/up or disabled/down";
+    }
+
+    typedef oper-status {
+        type enumeration {
+            enum up {
+                value 1;
+                description
+                  "Is operational.";
+            }
+            enum down {
+                value 2;
+                description
+                  "Is not operational.";
+            }
+            enum testing {
+                value 3;
+                description
+                  "In some test mode. No operational data can
+                   be passed.";
+            }
+            enum unknown {
+                value 4;
+                description
+                  "Status cannot be determined for some reason.";
+            }
+            enum dormant {
+                value 5;
+                description
+                  "Waiting for some external event.";
+            }
+            enum not-present {
+                value 6;
+                description
+                  "Some component (typically hardware) is missing.";
+            }
+            enum lower-layer-down {
+                value 7;
+                description
+                  "Down due to state of lower-layer interface(s).";
+            }
+        }
+        description
+          "The current operational state of the interface.";
+    }
+
+    typedef host-interface-name {
+        type string{
+            pattern
+              "host"; // TODO(itziks): add beginning and end of expression.
+        }
+        description
+          "Host interface name";
+    }
+
+    typedef rf-auto-connect-interface-name {
+        type string{
+            pattern
+              "rf";
+        }
+        description
+          "RF auto-connect interface name";
+    }
+
+    typedef embedded-interface-name {
+        type string{
+            pattern
+              "eth[1-9]";
+        }
+        description
+          "Port interface name";
+    }
+
+    typedef rf-interface-name {
+        type string{
+            pattern
+              "rf-[a-z0-9.-]{1,8}";
+        }
+        description
+          "RF interface name";
+    }
+
+    typedef tunnel-interface-name {
+        type string{
+            pattern
+              "tunnel-[0-9]{1,4}";
+        }
+        description
+          "Tunnel interface name. The number represents the T-VLAN associated the tunnel.
+           A T-VLAN is a new tag added to the packets that go through a SIKLU tunnel";
+    }
+
+    typedef temperature-celsius {
+        type int16;
+        units "Degrees in Celsius";
+        description
+          "Temperature (Celsius)";
+    }
+
+    typedef value-not-available {
+        type string{
+            pattern
+              "N/A";
+        }
+        description
+          "Value not available";
+    }
+
+    typedef yes_no {
+        type enumeration {
+            enum yes {
+                description
+                  "yes";
+            }
+            enum no {
+                description
+                  "no";
+            }
+        }
+        description
+          "yes or no";
+    }
+
+    typedef date {
+        type string {
+            pattern
+              '\d{4}-\d{2}-\d{2}';
+        }
+        description
+          "The date type is a profile of the ISO 8601
+           standard for representation of dates and times using the
+           Gregorian calendar.  The profile is defined by the
+           date-time production in Section 5.6 of RFC 3339.";
+    }
+
+    typedef time {
+        type string {
+            pattern
+              '\d{2}:\d{2}:\d{2}';
+        }
+        description
+          "The time type is a profile of the ISO 8601
+           standard for representation of dates and times using the
+           Gregorian calendar.  The profile is defined by the
+           date-time production in Section 5.6 of RFC 3339.";
+    }
+
+    typedef bond-interface-name {
+        type string{
+            length "1..32";
+            pattern
+              "bond-[!#%-*,->@-Z^-~]+";
+        }
+        description
+          "bond interface name. The pattern comes from radio-bridge-tg-string.";
+    }
+
+    typedef bond-member-type {
+        type union {
+            type rb-tg-types:embedded-interface-name;
+            type rb-tg-types:rf-interface-name;
+            type rb-tg-types:tunnel-interface-name;
+        }
+        description
+          "Type of bond members
+            For physical ethernet interface: eth1, eth2, eth3 ...
+            For radio link: rf-<AN>, where <AN> is the network assigned name/ID for the appropriate radio link.
+            For tunnel interface: tunnel-<ID>, where <ID> is the T-VLAN associated with the tunnel.
+            sub interfaces (such as a ethernet port with a VLAN) or rf interface (with no <AN> cannot be added as a bond member";
+    }
+
+    typedef InterfaceIndex {
+        type int32 {
+            range "1..2147483647";
+        }
+        description
+          "A unique value, greater than zero, for each interface or
+           interface sub-layer in the managed system.  It is
+           recommended that values are assigned contiguously starting
+           from 1.  The value for each interface sub-layer must remain
+           constant at least from one re-initialization of the entity's
+           network management system to the next re-initialization.";
+        smiv2:display-hint "d";
+    }
+// grouping statements
+// data definition statements
+// augment statements
+// rpc statements
+// notification statements
+}

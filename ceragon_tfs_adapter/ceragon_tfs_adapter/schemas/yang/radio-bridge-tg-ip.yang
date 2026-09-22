@@ -1,0 +1,160 @@
+module radio-bridge-tg-ip {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/ip";
+
+    prefix "rb-tg-ip";
+
+    // import some basic types
+    import ietf-inet-types {
+        prefix inet;
+    }
+    import radio-bridge-tg-types {
+        prefix rb-tg-types;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "Definitions for the host interface";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-08-05 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements  
+    // grouping statements
+    grouping ipv4-address-config {
+        description
+          "Configurations for one IPv4 address";
+
+        leaf ip {
+            type inet:ipv4-address-no-zone;
+            description
+              "IPv4 address to be configured";
+        }
+
+        leaf prefix-length {
+            type rb-tg-types:ipv4-prefix-length;
+            default "24";
+            description
+              "Prefix of the IPv4 address";
+        }
+
+        leaf c-vlan {
+            type rb-tg-types:vlan-id;
+            description
+              "Optional c-vlan Id of interface";
+        }
+    }
+
+    grouping ipv4-default-gw-config {
+        description
+          "Default gateway configuration for IPv4";
+
+        leaf default-gateway {
+            type inet:ipv4-address-no-zone;
+            description
+              "Default IPv4 gateway for the unit";
+        }
+    }
+
+    grouping ipv4-top {
+        description
+          "Top level grouping for IPv4 configuration/status";
+
+        container ipv4 {
+            description
+              "Top level container for IPv4 configuration/status";
+            list address {
+                key "ip";
+                description
+                  "List of static IPv4 addresses, for management";
+                uses ipv4-address-config;
+            }
+            uses ipv4-default-gw-config;
+        }
+    }
+
+    grouping ipv6-top {
+        description
+          "Top level grouping for IPv6 configuration/status";
+        container ipv6 {
+            description
+              "Top level container for IPv6 configuration/status";
+            leaf link-local {
+                type inet:ipv6-address-no-zone;
+                config false;
+                description
+                  "Link-local IPv6 address, for management";
+            }
+        }
+    }
+
+    grouping ip-top {
+        container ip {
+            description
+              "Top level container for management IP addresses";
+            uses ipv4-top;
+            uses ipv6-top;
+        // TODO(itziks): ipv6 container
+        // TODO(itziks): leaf enable-dhcp / container dhcp-config
+        // TODO(itziks): state container - DHCP(IP, prefix, default gateway)
+        }
+        description
+          "Top level grouping for management IP addresses";
+    }
+
+    // data definition statements
+    uses ip-top;
+// augment statements
+// rpc statements
+    rpc get-device-ipv6-address {
+        description
+          "RPC for receiving assigned name as parameter and converting it to an IPV6 link local address.";
+        input{
+            leaf assigned-name {
+                type rb-tg-types:node-assigned-name;
+                mandatory true;
+                description
+                  "This is the assigned name of the unit";
+            }
+        }
+        output{
+            leaf ipv6 {
+                type inet:ipv6-address-no-zone;
+                mandatory true;
+                description
+                  "IPv6 link local address converted from the given assigned name";
+            }
+        }
+    }
+// notification statements
+}

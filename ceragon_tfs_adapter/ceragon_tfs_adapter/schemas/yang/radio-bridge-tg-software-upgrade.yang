@@ -1,0 +1,371 @@
+module radio-bridge-tg-software-upgrade {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/software-upgrade";
+
+    prefix "rb-tg-sw-up";
+
+    import radio-bridge-tg-types {
+        prefix "rb-tg-types";
+    }
+
+    // import some basic types
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This YANG module is part of TG project.
+        It defines the software upgrade part of the project";
+
+    revision 2023-06-05 {
+        description
+          "Update accept-timeout range to 3..65535";
+        reference
+          "";
+    }
+
+    revision 2023-05-18 {
+        description
+          "Change accept-timeout range";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2021-12-22 {
+        description
+          "Added download-software-upgrade-file rpc";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-09-09 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements
+    typedef scheduling-date-time-type {
+        type string {
+            pattern
+              '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}';
+        }
+        description
+          "The date type is a profile of the ISO 8601
+           standard for representation of dates and times using the
+           Gregorian calendar.  The profile is defined by the
+           date-time production in Section 5.6 of RFC 3339.";
+    }
+
+    typedef scheduling-type {
+        type enumeration {
+            enum immediate {
+                description
+                  "Switch SW bank and reset the unit right now; SW in the bank will be run after the immediate reset";
+            }
+            enum next-reset {
+                description
+                  "Switch SW bank and wait for the next reset; SW in the bank will be run after the future reset";
+            }
+        }
+        description
+          "Type of the SW upgrade scheduling operation";
+    }
+
+    typedef software-bank-status-type {
+        type enumeration {
+            enum active {
+                description
+                  "This bank contains the currently active software";
+            }
+            enum passive {
+                description
+                  "This bank contains the other software";
+            }
+            enum requires-accept {
+                description
+                  "This bank contains the currently active software but require acceptance";
+            }
+        }
+        description
+          "Type of software residing in the bank, whether it's the active software or not";
+    }
+
+    typedef scheduled-to-switch-type {
+        type union {
+            type  enumeration {
+                enum idle {
+                    description
+                      "The SW in this bank won't be run after next reset";
+                }
+                enum next-reset {
+                    description
+                      "This SW in this bank will be run after next reset";
+                }
+            }
+
+            type scheduling-date-time-type;
+        }
+        description
+          "Describes from which bank will the SW be run after next reset";
+    }
+
+    typedef download-and-burning-state-type {
+        type  enumeration {
+            enum not-started {
+                description
+                  "SW download and burn to passive bank not started";
+            }
+            enum in-progress {
+                description
+                  "SW download and burn to passive bank started";
+            }
+            enum finished-successfully {
+                description
+                  "SW download and burn to passive bank finished successfully";
+            }
+            enum failed {
+                description
+                  "SW download and burn to passive bank failed";
+            }
+        }
+        description
+          "SW upgrade status";
+    }
+
+    typedef url-type {
+        type string{
+            length "1..255";
+            pattern
+              '[!-~]+';
+        }
+        description
+          "Dedicated type for URL representation";
+    }
+
+
+    // grouping statements
+    grouping banks-info-top {
+        description
+          "A grouping for the info regarding the SW banks";
+        container banks-info {
+            config false;
+            description
+              "The info regarding the SW banks";
+            list banks {
+                key "number";
+                description
+                  "List of banks info";
+
+                leaf number {
+                    type uint8 {
+                        range "0 .. 1";
+                    }
+                    description
+                      "The number of the SW bank";
+                }
+
+                leaf software-version {
+                    type string;
+                    description
+                      "Siklu software version for this bank";
+                }
+
+                leaf status {
+                    type software-bank-status-type;
+                    description
+                      "The status of the SW residing in the bank, whether it's the running SW or other";
+                }
+
+                leaf accept-countdown {
+                    type uint16;
+                    description
+                      "Show how many time in minutes left for acceptance";
+                }
+
+                leaf scheduled-to-switch {
+                    type scheduled-to-switch-type;
+                    mandatory true;
+                    description
+                      "Describes if this bank will run after next reset";
+                }
+
+                leaf scheduled-accept-timeout {
+                    type uint16;
+                    description
+                      "Accept timeout in minutes that will be available for acceptance once the device will be rebooted after activation";
+                }
+            }
+        }
+    }
+
+    // grouping statements
+    grouping sw-upgrade-info-top {
+        description
+          "A grouping for the info regarding the SW upgrade progress";
+        container sw-upgrade-info {
+            config false;
+            description
+              "The info regarding the SW upgrade progress";
+            leaf download-and-burning-state {
+                type download-and-burning-state-type;
+                description
+                  "Describes the state of the SW download and burn to the other bank";
+            }
+
+            leaf url {
+                type url-type;
+                description
+                  "URL of SW upgrade image ";
+            }
+
+            leaf download-file-progress {
+                type string;
+                description
+                  "progress of the SW download, in percentage";
+            }
+
+            leaf download-file-error {
+                type string;
+                description
+                  "reason of SW download failure";
+            }
+        }
+    }
+
+    // rpc statements
+    rpc download-and-flash-software-upgrade-file {
+        description
+          "RPC for downloading and flashing the SW upgrade file to the Terragraph device.
+          To perform SW upgrade of the Terragraph device with no routable IP address,
+          it is possible to do the following steps:
+          1. Download the SW image to the Terragraph device that has a routable IP address
+          using download-software-upgrade-file RPC.
+          2. Execute the download-and-flash-software-upgrade-file RPC on the device that has
+          no routable IP address (it is possible to execute the RPC using cascade SSH functionality).
+          The URL parameter of the download-and-flash-software-upgrade-file RPC should be in the
+          following format: device://<device name> where <device name> is a  percent-encoded
+          name of the Terragraph device to which the SW upgrade image is uploaded in the first step.
+          If only one Terragraph device is connected through the RF link to the device on which we
+          are going to upgrade the SW image, the <device name> can be omitted and the
+          following URL can be used: device://";
+        input{
+            leaf url {
+                type url-type;
+                mandatory true;
+                description
+                  "URL address that leads to the file for the SW download.
+                   Example for URL: ftp://192.168.1.1:8080/path/to/file/etc.
+                   URL in the following formats: device://<device name> or device:// are also supported";
+            }
+
+            leaf force {
+                type boolean;
+                description
+                  "Flash this software even if it is older that the currently running one. Note: activating an older SW will cause factory reset";
+            }
+        }
+    }
+
+    rpc download-software-upgrade-file {
+        description
+          "RPC for downloading the SW upgrade file to the Terragraph device without flashing it.
+          To perform SW upgrade of the Terragraph device with no routable IP address,
+          it is possible to do the following steps:
+          1. Download the SW image to the Terragraph device that has a routable IP address
+          using download-software-upgrade-file RPC.
+          2. Execute the download-and-flash-software-upgrade-file RPC on the device that has
+          no routable IP address (it is possible to execute the RPC using cascade SSH functionality).
+          The URL parameter of the download-and-flash-software-upgrade-file RPC should be in the
+          following format: device://<device name> where <device name> is a  percent-encoded
+          name of the Terragraph device to which the SW upgrade image is uploaded in the first step.
+          If only one Terragraph device is connected through the RF link to the device on which we
+          are going to upgrade the SW image, the <device name> can be omitted and the
+          following URL can be used: device://";
+        input{
+            leaf url {
+                type url-type;
+                mandatory true;
+                description
+                  "URL address that leads to the file for the SW download.
+                   Example for URL: ftp://192.168.1.1:8080/path/to/file/etc.
+                   URL in the following formats: device://<device name> or device:// are also supported";
+            }
+        }
+    }
+
+    rpc activate-upgraded-software {
+        description
+          "RPC for activating the flashed upgraded software by switching SW banks";
+        input{
+            leaf scheduling {
+                type scheduling-type;
+                description
+                  "Type of the SW upgrade scheduling operation. Cannot be specified
+                   simultaneously with `scheduling-date` or `scheduling-time` parameters";
+            }
+            leaf scheduling-date {
+                type rb-tg-types:date;
+                description
+                  "Schedule the date for the device to reset and run the SW from the new bank.
+                   Must be specified with `scheduling-time` parameter. Cannot be specified
+                   together with `scheduling` parameter";
+            }
+
+            leaf scheduling-time {
+                type rb-tg-types:time;
+                description
+                  "Schedule the time for the device to reset and run the SW from the new bank.
+                   Must be specified with `scheduling-date` parameter. Cannot be specified
+                   together with `scheduling` parameter";
+            }
+
+            leaf accept-timeout {
+                type uint16 {
+                  range "3..65535";
+                }
+                description
+                  "The `Accept timeout` defines the maximum amount of time, measured in minutes,
+                   that the SW will wait for the `accept-upgraded-software` RPC call to be made.
+                   If the expected RPC call is not received within the specified period of time,
+                   the system will revert back to the previous SW bank, effectively canceling the
+                   SW update.";
+            }
+        }
+    }
+
+    rpc cancel-activate-upgraded-software {
+        description
+          "RPC for canceling activating the flashed upgraded software by switching banks";
+    }
+
+    rpc accept-upgraded-software {
+        description
+          "RPC for accepting activated software. Executing this RPC should cancel already scheduled rollback after accept-timeout runout";
+    }
+}
+

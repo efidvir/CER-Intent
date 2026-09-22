@@ -33,3 +33,7 @@ ceragon-tfs-adapter = "ceragon_tfs_adapter.cli:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["ceragon_tfs_adapter*"]
+
+[tool.setuptools.package-data]
+"ceragon_tfs_adapter" = ["schemas/yang/*.yang"]
+

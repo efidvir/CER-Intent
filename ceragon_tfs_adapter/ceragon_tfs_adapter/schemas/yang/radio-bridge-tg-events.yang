@@ -1,0 +1,70 @@
+module radio-bridge-tg-events {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/events";
+
+    prefix "events";
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This module defines how to get last events";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2021-11-18 {
+        description
+          "1.2.0 release";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Initial revision";
+        reference
+          "";
+    }
+
+    rpc get-events {
+        description
+          "Get last events";
+        input {
+            leaf number {
+                type uint32;
+                mandatory true;
+                description
+                  "Number of the latest events to get";
+            }
+        }
+        output{
+            list events {
+                key index;
+                leaf index {
+                    type uint32;
+                    description
+                      "The index of the event on this response, used for ordering the returned events";
+                }
+                leaf event {
+                    type string;
+                    description
+                      "Stringified event";
+                }
+                description
+                  "List of events";
+            }
+        }
+    }
+}

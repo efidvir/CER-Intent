@@ -1,0 +1,129 @@
+module radio-bridge-tg-gui {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/gui";
+
+    prefix "rb-tg-gui";
+
+    import clixon-autocli {
+        prefix autocli;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "TODO";
+
+    revision 2023-05-16 {
+        description
+          "Add icon type for falcon";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-05-26 {
+        description
+          "Add Single Sector Node (B265) icon type";
+        reference
+          "";
+    }
+
+    revision 2022-02-16 {
+        description
+          "hide the gui container from CLI";
+        reference
+          "container gui";
+    }
+
+    revision 2022-02-14 {
+        description
+          "drop clixon-lib";
+        reference
+          "clixon CHANGELOG.md";
+    }
+
+    revision 2022-02-07 {
+        description
+          "import clixon-autocli";
+        reference
+          "clixon CHANGELOG.md";
+    }
+
+    revision 2021-08-13 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements  
+
+    typedef product-icon-type {
+        type enumeration {
+            enum Node {
+                value 1;
+                description "MultiHaul TG Node";
+            }
+            enum TU {
+                value 2;
+                description "MultiHaul TG Terminal Unit";
+            }
+            enum cTU {
+                value 3;
+                description "MultiHaul TG Compact Terminal Unit";
+            }
+            enum LR {
+                value 4;
+                description "MultiHaul TG LR Terminal Unit";
+            }
+            enum SingleSectorNode {
+                value 5;
+                description "MultiHaul TG Single Sector Node";
+            }
+            enum Falcon {
+                value 6;
+                description "MultiHaul TG Falcon Node";
+            }
+        }
+        description "Icon kind used in web";
+    }
+
+    // grouping statements
+    grouping gui-top {
+
+        container gui {
+            description
+              "Top level container for web related data";
+            autocli:hide-show;
+            autocli:hide;
+
+            leaf icon {
+                type product-icon-type;
+                config false;
+                description
+                  "Icon that based on production type";
+            }
+        }
+        description
+          "Top level grouping for web related data";
+    }
+    // data definition statements
+    uses gui-top;
+}

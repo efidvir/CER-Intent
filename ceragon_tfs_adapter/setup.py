@@ -6,6 +6,10 @@ setup(
     description="TeraFlowSDN (TFS) Device Adapter for Ceragon Wireless Transport Devices via REST/RESTCONF",
     author="Ceragon Intent Team",
     packages=find_packages(),
+    package_data={
+        "ceragon_tfs_adapter": ["schemas/yang/*.yang"],
+    },
+    include_package_data=True,
     install_requires=[
         "requests>=2.28.0",
         "urllib3>=1.26.0",
