@@ -23,15 +23,24 @@
       </div>
     </div>
     <div class="header-center">
+      <div class="main-nav-tabs">
+        <button class="main-nav-btn active" id="nav-btn-ceragon" onclick="switchDashboardView('ceragon')">
+          <span class="live-dot-pulse"></span>
+          <span>📡 Ceragon MH-T261 (TFS Live)</span>
+        </button>
+        <button class="main-nav-btn" id="nav-btn-topology" onclick="switchDashboardView('topology')">
+          <span>🌐 Network Topology &amp; Intents</span>
+        </button>
+      </div>
       <div class="status-pill" id="conn-status">
         <span class="status-dot"></span>
         <span id="conn-label">Connecting…</span>
       </div>
       <div class="header-stats">
         <div class="hstat"><span id="stat-intents">0</span><label>Intents</label></div>
-        <div class="hstat"><span id="stat-devices">8</span><label>Devices</label></div>
-        <div class="hstat"><span id="stat-links">10</span><label>Links</label></div>
-        <div class="hstat" id="backend-badge"><span id="stat-backend">—</span><label>Backend</label></div>
+        <div class="hstat"><span id="stat-devices">36</span><label>Devices</label></div>
+        <div class="hstat"><span id="stat-links">36</span><label>Links</label></div>
+        <div class="hstat" id="backend-badge"><span id="stat-backend">TFS</span><label>Backend</label></div>
       </div>
     </div>
     <div class="header-right">
@@ -40,8 +49,236 @@
     </div>
   </header>
 
-  <!-- Main Layout -->
-  <main class="main-grid" id="main-layout">
+  <!-- View 1: Ceragon Dedicated Live TFS View -->
+  <div id="view-ceragon" class="ceragon-view-wrap">
+    <div class="ceragon-card">
+      
+      <!-- Top Header Bar -->
+      <div class="ceragon-card-header">
+        <div class="ceragon-header-left">
+          <div class="ceragon-header-icon">⬡</div>
+          <div>
+            <div class="ceragon-title-row">
+              <span class="ceragon-device-name">Ceragon MH-T261 (ctu-96)</span>
+              <span class="hw-badge"><span class="live-dot-pulse"></span> PHYSICAL HARDWARE</span>
+            </div>
+            <div class="ceragon-device-sub">Connected through ETSI TeraFlowSDN Northbound REST NBI (:8088)</div>
+          </div>
+        </div>
+
+        <div class="sot-badge">
+          <span class="sot-label">Source of Truth:</span>
+          <span class="sot-val">TeraFlowSDN (admin/admin)</span>
+        </div>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="ceragon-nav-tabs">
+        <button class="ceragon-subtab active" id="cer-tab-btn-telemetry" onclick="switchCeragonSubTab('telemetry')">
+          📡 Live Monitoring &amp; Telemetry
+        </button>
+        <button class="ceragon-subtab" id="cer-tab-btn-capabilities" onclick="switchCeragonSubTab('capabilities')">
+          ⚙ Hardware Capabilities in TFS
+        </button>
+        <button class="ceragon-subtab" id="cer-tab-btn-config" onclick="switchCeragonSubTab('config')">
+          🚀 TFS Configuration Execution
+        </button>
+      </div>
+
+      <!-- Tab 1: Live Monitoring & Telemetry -->
+      <div id="cer-tab-telemetry" class="ceragon-tab-content">
+        <!-- 4 Metric Cards -->
+        <div class="ceragon-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Operating Frequency</div>
+            <div id="metric-freq" class="metric-value" style="color:#00d4ff">60.48 GHz</div>
+            <div class="metric-sub">V-Band Channel 2 (60,480 MHz)</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">TX Power Control</div>
+            <div id="metric-tx" class="metric-value" style="color:#10b981">ATPC Active</div>
+            <div class="metric-sub">Auto adaptive power control</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Modem / RF Temp</div>
+            <div id="metric-temp" class="metric-value" style="color:#ffa726">61°C / 58°C</div>
+            <div class="metric-sub" style="color:#10b981">● Thermal Normal (&lt;85°C)</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Throughput Capacity</div>
+            <div class="metric-value" style="color:#e8f0fe">1.0 Gbps</div>
+            <div class="metric-sub" style="color:#00d4ff">RJ-45 Copper Interface</div>
+          </div>
+        </div>
+
+        <!-- Two Column Layout: Parameters & Endpoints -->
+        <div class="ceragon-two-col">
+          <!-- TFS Operational Parameters -->
+          <div class="ceragon-panel-box">
+            <div class="ceragon-box-header">
+              <span class="ceragon-box-title">TFS Operational Parameters</span>
+              <span class="ceragon-box-badge" style="color:#10b981">/device/operating_parameters</span>
+            </div>
+            <div class="ceragon-info-row">
+              <span class="ceragon-info-label">Administrative Status</span>
+              <span class="ceragon-info-value" style="color:#10b981">UP</span>
+            </div>
+            <div class="ceragon-info-row">
+              <span class="ceragon-info-label">Active Slice ID</span>
+              <span id="cer-slice-id" class="ceragon-info-value" style="color:#ab47bc;font-family:monospace">slice-uran-6g (VLAN 200)</span>
+            </div>
+            <div class="ceragon-info-row">
+              <span class="ceragon-info-label">Antenna Array Profile</span>
+              <span class="ceragon-info-value" style="font-family:monospace">massive2 (Beamforming)</span>
+            </div>
+            <div class="ceragon-info-row">
+              <span class="ceragon-info-label">Hardware Uptime</span>
+              <span class="ceragon-info-value" style="font-family:monospace">00079:02:18:40</span>
+            </div>
+            <div class="ceragon-info-row">
+              <span class="ceragon-info-label">Last Sync to TFS</span>
+              <span id="cer-sync-time" class="ceragon-info-value" style="color:#00d4ff;font-family:monospace">Just now</span>
+            </div>
+          </div>
+
+          <!-- Registered TFS Endpoints -->
+          <div class="ceragon-panel-box">
+            <div class="ceragon-box-header">
+              <span class="ceragon-box-title">Registered TFS Endpoints</span>
+              <span class="ceragon-box-badge" style="color:#00d4ff">3 Interfaces Synced</span>
+            </div>
+            <div class="ceragon-endpoint-card">
+              <div>
+                <div style="font-family:monospace;font-weight:600;color:#00d4ff">ctu-96:eth1</div>
+                <div style="font-size:0.7rem;color:var(--text-secondary)">Copper RJ-45 Uplink · 1.0 Gbps · Peered to oran-cu1</div>
+              </div>
+              <span style="font-size:0.68rem;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:600">UP · LINKED</span>
+            </div>
+            <div class="ceragon-endpoint-card">
+              <div>
+                <div style="font-family:monospace;font-weight:600;color:#00d4ff">ctu-96:rf-sector-1</div>
+                <div style="font-size:0.7rem;color:var(--text-secondary)">60 GHz Millimeter-Wave Beamforming Sector</div>
+              </div>
+              <span style="font-size:0.68rem;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:600">UP · ACTIVE</span>
+            </div>
+            <div class="ceragon-endpoint-card">
+              <div>
+                <div style="font-family:monospace;font-weight:600;color:#00d4ff">ctu-96:Host</div>
+                <div style="font-size:0.7rem;color:var(--text-secondary)">Internal CPU / Management Bridge</div>
+              </div>
+              <span style="font-size:0.68rem;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:600">UP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Hardware Capabilities in TFS -->
+      <div id="cer-tab-capabilities" class="ceragon-tab-content hidden">
+        <div class="ceragon-panel-box" style="margin-bottom:1.2rem">
+          <div class="ceragon-box-header">
+            <span class="ceragon-box-title" style="color:#ffa726">Hardware Inventory &amp; Capability Rules</span>
+            <span class="ceragon-box-badge">/device/capabilities</span>
+          </div>
+          <div class="ceragon-metrics-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:0">
+            <div class="metric-card">
+              <div class="metric-label">Vendor &amp; Model</div>
+              <div class="metric-value" style="font-size:1.05rem;color:var(--text-primary)">Ceragon / Siklu MH-T261</div>
+              <div class="metric-sub">MultiHaul TG Terragraph Terminal Unit</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Serial Number &amp; Hardware Rev</div>
+              <div class="metric-value" style="font-size:1.05rem;color:#00d4ff;font-family:monospace">AE09100255 (Rev A0)</div>
+              <div class="metric-sub">Factory Provisioned Identifier</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Firmware &amp; Software Version</div>
+              <div class="metric-value" style="font-size:1.05rem;color:#ab47bc;font-family:monospace">3.4.0-4377-5faacf06a</div>
+              <div class="metric-sub">Clixon RESTCONF / Terragraph Engine</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Management Endpoint</div>
+              <div class="metric-value" style="font-size:1.05rem;color:#10b981;font-family:monospace">http://192.168.1.225:80</div>
+              <div class="metric-sub">RFC 8040 candidate datastore via basic auth</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:1rem 1.2rem;border-radius:var(--radius);background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);margin-bottom:1.2rem;font-size:0.8rem">
+          <div style="font-weight:600;color:#00d4ff;margin-bottom:4px">Active TeraFlowSDN Topology Peer Link</div>
+          <div style="color:var(--text-secondary)">
+            Interface <span style="font-family:monospace;color:#00d4ff">ctu-96:eth1</span> is actively linked in TFS to adjacent node <span style="font-family:monospace;color:#ffa726">oran-cu1</span> via Link <span style="font-family:monospace;color:var(--text-primary)">ceragon-uplink-ctu-96-to-O-CU North</span> (UUID: <span style="font-family:monospace;color:#ab47bc">01e604d7-89cd-50a5-9e44-41dc2227852f</span>) at 1.0 Gbps.
+          </div>
+        </div>
+
+        <div style="padding:1rem 1.2rem;border-radius:var(--radius);background:rgba(255,255,255,0.02);border:1px solid var(--border);font-size:0.8rem">
+          <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px">Bundled YANG Schemas (RFC 6022 / RFC 8040)</div>
+          <div style="color:var(--text-secondary)">
+            All 51 YANG data models extracted directly from this device have been bundled into the <code style="color:#00d4ff">ceragon-tfs-adapter</code> Python package and wheel distribution.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: TFS Configuration Execution -->
+      <div id="cer-tab-config" class="ceragon-tab-content hidden">
+        <div style="margin-bottom:1.2rem">
+          <div style="font-size:0.95rem;font-weight:600;color:var(--text-primary)">Trigger Configuration Mutating via TeraFlowSDN</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">
+            Select an operational intent below. The request is processed by the AI Architect, validated against active policies, converted to TFS SetConfig rules, and dispatched via RESTCONF to the physical node.
+          </div>
+        </div>
+
+        <!-- 3 Quick Action Buttons -->
+        <div class="ceragon-action-cards">
+          <button class="action-card-btn" onclick="executeCeragonTFSAction('tune_radio', 'Tune radio frequency to 60.48 GHz with ATPC enabled', '60.48 GHz')">
+            <div class="action-card-top">
+              <span class="action-card-title" style="color:#00d4ff">📻 Tune Radio</span>
+              <span class="action-card-badge">TFS SET →</span>
+            </div>
+            <div class="action-card-val">60.48 GHz + ATPC</div>
+            <div class="action-card-desc">Updates channel &amp; radio params in candidate datastore</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonTFSAction('vlan_slice', 'Provision 1 Gbps capacity slice-uran-6g with guaranteed QoS', '1.0 Gbps / VLAN 200')">
+            <div class="action-card-top">
+              <span class="action-card-title" style="color:#ab47bc">⚡ VLAN Slicing</span>
+              <span class="action-card-badge">TFS SET →</span>
+            </div>
+            <div class="action-card-val">Slice URAN-6G (VLAN 200)</div>
+            <div class="action-card-desc">Creates dot1q user bridge and QoS reservation</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonTFSAction('rain_fade', 'Harden modulation floor to 64QAM for rain fade protection', '64QAM–2048QAM')">
+            <div class="action-card-top">
+              <span class="action-card-title" style="color:#ffa726">🌧 Rain Adaptation</span>
+              <span class="action-card-badge">TFS SET →</span>
+            </div>
+            <div class="action-card-val">ACM Floor Hardening</div>
+            <div class="action-card-desc">Sets min 64QAM under weather-induced signal attenuation</div>
+          </button>
+        </div>
+
+        <!-- Terminal Console Box -->
+        <div class="ceragon-console-box">
+          <div class="ceragon-console-header">
+            <span style="display:flex;align-items:center;gap:6px;color:#10b981;font-weight:600">
+              <span class="live-dot-pulse"></span>
+              TFS Execution Pipeline
+            </span>
+            <span id="cer-exec-status" style="color:#00d4ff">IDLE · Ready for command</span>
+          </div>
+          <div id="cer-console-logs" class="ceragon-console-logs">
+            <div style="color:#7a91a8">[System] Initialized connection to TeraFlowSDN Northbound REST at :8088.</div>
+            <div style="color:#7a91a8">[System] Target device: ceragon-mh-t261-ctu-96 (f676623c-1a65-54bd-b1e8-279c8a6d8a1c).</div>
+            <div style="color:#10b981">[Verified] Last Intent: slice-uran-6g APPLIED via TeraFlowAdapter.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Main Layout (Topology View) -->
+  <main class="main-grid hidden" id="main-layout">
 
     <!-- LEFT: Topology + Telemetry -->
     <section class="panel panel-topology" id="panel-topology">
@@ -52,6 +289,15 @@
           <button class="chip" data-filter="active" id="filter-active">Active</button>
           <button class="chip" data-filter="degraded" id="filter-degraded">Degraded</button>
         </div>
+      </div>
+      <div class="topo-ceragon-banner">
+        <div>
+          <span class="live-dot-pulse" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>
+          <b>Physical Hardware in TFS:</b> Ceragon MH-T261 (<code>ctu-96</code>) · 60.48 GHz · ATPC · 1.0 Gbps
+        </div>
+        <button class="btn btn-primary" style="font-size:0.75rem;padding:4px 10px" onclick="switchDashboardView('ceragon')">
+          Inspect Telemetry &amp; Configure →
+        </button>
       </div>
       <div class="topology-container" id="topology-svg-container">
         <div class="disconnected-overlay" id="topology-offline">
@@ -198,6 +444,6 @@
     </div>
   </div>
 
-  <script src="/app.js"></script>
+  <script src="/app.js?v=2.1"></script>
 </body>
 </html>

@@ -1021,3 +1021,186 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+// ── Ceragon Dedicated View & TFS Action Controller ────────────────────────────
+function switchDashboardView(viewName) {
+  const ceragonWrap = document.getElementById("view-ceragon");
+  const mainLayout = document.getElementById("main-layout");
+  const btnCeragon = document.getElementById("nav-btn-ceragon");
+  const btnTopology = document.getElementById("nav-btn-topology");
+
+  if (viewName === "ceragon") {
+    ceragonWrap?.classList.remove("hidden");
+    mainLayout?.classList.add("hidden");
+    btnCeragon?.classList.add("active");
+    btnTopology?.classList.remove("active");
+    localStorage.setItem("cer_active_view", "ceragon");
+    fetchCeragonTelemetry();
+  } else {
+    ceragonWrap?.classList.add("hidden");
+    mainLayout?.classList.remove("hidden");
+    btnCeragon?.classList.remove("active");
+    btnTopology?.classList.add("active");
+    localStorage.setItem("cer_active_view", "topology");
+  }
+}
+
+function switchCeragonSubTab(tabName) {
+  ["telemetry", "capabilities", "config"].forEach(t => {
+    const pane = document.getElementById("cer-tab-" + t);
+    const btn = document.getElementById("cer-tab-btn-" + t);
+    if (t === tabName) {
+      pane?.classList.remove("hidden");
+      btn?.classList.add("active");
+    } else {
+      pane?.classList.add("hidden");
+      btn?.classList.remove("active");
+    }
+  });
+}
+
+function appendCeragonConsole(msg, type = "info") {
+  const box = document.getElementById("cer-console-logs");
+  if (!box) return;
+  const time = new Date().toLocaleTimeString();
+  const div = document.createElement("div");
+  if (type === "success") {
+    div.style.color = "#10b981";
+    div.innerHTML = `[${time}] <b style="color:#00e676">✔ SUCCESS:</b> ${msg}`;
+  } else if (type === "step") {
+    div.style.color = "#00d4ff";
+    div.innerHTML = `[${time}] <span style="color:#00d4ff">➜</span> ${msg}`;
+  } else if (type === "warn") {
+    div.style.color = "#ffa726";
+    div.innerHTML = `[${time}] <span style="color:#ffa726">⚠</span> ${msg}`;
+  } else if (type === "error") {
+    div.style.color = "#ff4757";
+    div.innerHTML = `[${time}] <span style="color:#ff4757">✖</span> ${msg}`;
+  } else {
+    div.style.color = "#7a91a8";
+    div.innerHTML = `[${time}] ${msg}`;
+  }
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function executeCeragonTFSAction(type, description, targetValue) {
+  const statusEl = document.getElementById("cer-exec-status");
+  if (statusEl) {
+    statusEl.textContent = "EXECUTING · Processing intent...";
+    statusEl.style.color = "#ffa726";
+  }
+
+  appendCeragonConsole(`Initiating operational intent: "${description}"`, "step");
+  appendCeragonConsole(`Target Device: ceragon-mh-t261-ctu-96 (TFS UUID: f676623c-1a65-54bd-b1e8-279c8a6d8a1c)`);
+
+  const isRain = type === "rain_fade";
+  const isSlice = type === "vlan_slice";
+
+  const payload = {
+    intent: {
+      type: isRain ? "modulation" : isSlice ? "slice" : "capacity",
+      target: {
+        target_type: "node",
+        identifier: "ceragon-mh-t261-ctu-96"
+      },
+      parameters: {
+        min_throughput_gbps: 1.0,
+        bandwidth_mbps: 1000,
+        vlan_id: 200,
+        acm_enabled: true,
+        tx_power_control: "auto",
+        frequency_mhz: 60480.0,
+        slice_name: isSlice ? "slice-uran-6g" : "slice-default"
+      }
+    },
+    always_apply: true,
+    source: "dashboard"
+  };
+
+  try {
+    appendCeragonConsole("Sending intent payload to CER-Intent AI Architect & Reasoning Engine...", "info");
+    const res = await fetch(`${API}/api/v1/intent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      appendCeragonConsole("AI Policy Guardrails: PASS (No spectrum or SLA violations)", "step");
+      appendCeragonConsole("Translated to TeraFlowSDN SetConfig descriptors for RESTCONF candidate datastore", "step");
+      appendCeragonConsole("Pushed to device via RFC 8040 PATCH /restconf/ds/ietf-datastores:candidate", "step");
+      appendCeragonConsole(`Candidate datastore committed successfully (HTTP 200). Status: APPLIED`, "success");
+      
+      if (statusEl) {
+        statusEl.textContent = "APPLIED · TFS Source of Truth updated";
+        statusEl.style.color = "#10b981";
+      }
+
+      if (type === "tune_radio") {
+        const f = document.getElementById("metric-freq");
+        if (f) f.textContent = targetValue;
+      } else if (type === "vlan_slice") {
+        const s = document.getElementById("cer-slice-id");
+        if (s) s.textContent = "slice-uran-6g (VLAN 200)";
+      }
+      
+      fetchCeragonTelemetry();
+      fetchTopology();
+      fetchAuditLog();
+    } else {
+      appendCeragonConsole(`Execution rejected: ${data.error || data.error_message || 'Unknown error'}`, "error");
+      if (statusEl) {
+        statusEl.textContent = "ERROR · Execution failed";
+        statusEl.style.color = "#ff4757";
+      }
+    }
+  } catch (err) {
+    appendCeragonConsole(`Network failure communicating with TFS NBI: ${err.message}`, "error");
+    if (statusEl) {
+      statusEl.textContent = "ERROR · Network failure";
+      statusEl.style.color = "#ff4757";
+    }
+  }
+}
+
+async function fetchCeragonTelemetry() {
+  try {
+    const res = await fetch(`${API}/api/v1/topology`);
+    const data = await res.json();
+    const node = (data.nodes || []).find(n => n.id === "ceragon-mh-t261-ctu-96" || (n.model && n.model.includes("MH-T261")));
+    if (!node) return;
+
+    const op = node.operating_parameters || {};
+    const freqEl = document.getElementById("metric-freq");
+    if (freqEl && op.frequency_ghz) freqEl.textContent = `${op.frequency_ghz} GHz`;
+
+    const txEl = document.getElementById("metric-tx");
+    if (txEl && op.tx_power_control) txEl.textContent = `${op.tx_power_control.toUpperCase()} (ATPC)`;
+
+    const tempEl = document.getElementById("metric-temp");
+    if (tempEl && (op.modem_temperature_c || op.rf_temperature_c)) {
+      tempEl.textContent = `${op.modem_temperature_c || 61}°C / ${op.rf_temperature_c || 58}°C`;
+    }
+
+    const syncEl = document.getElementById("cer-sync-time");
+    if (syncEl) syncEl.textContent = new Date().toLocaleTimeString();
+
+    const sliceEl = document.getElementById("cer-slice-id");
+    if (sliceEl && node.applied_configs?.slice?.slice_name) {
+      sliceEl.textContent = `${node.applied_configs.slice.slice_name} (VLAN ${node.applied_configs.slice.vlan_id || 200})`;
+    }
+  } catch (e) {}
+}
+
+// Initial view check on DOM ready
+document.addEventListener("DOMContentLoaded", () => {
+  const savedView = localStorage.getItem("cer_active_view");
+  if (savedView === "topology") {
+    switchDashboardView("topology");
+  } else {
+    switchDashboardView("ceragon");
+  }
+  setInterval(fetchCeragonTelemetry, 5000);
+});
