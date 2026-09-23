@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="/socket.io.min.js"></script>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=2.2">
 </head>
 <body>
   <!-- Header -->
@@ -24,12 +24,15 @@
     </div>
     <div class="header-center">
       <div class="main-nav-tabs">
-        <button class="main-nav-btn active" id="nav-btn-ceragon" onclick="switchDashboardView('ceragon')">
-          <span class="live-dot-pulse"></span>
-          <span>📡 Ceragon MH-T261 (TFS Live)</span>
+        <button class="main-nav-btn active" id="nav-btn-topology" onclick="switchDashboardView('topology')">
+          <span>🌐 Network Topology (TFS Unified)</span>
         </button>
-        <button class="main-nav-btn" id="nav-btn-topology" onclick="switchDashboardView('topology')">
-          <span>🌐 Network Topology &amp; Intents</span>
+        <button class="main-nav-btn" id="nav-btn-ceragon" onclick="switchDashboardView('ceragon')">
+          <span class="live-dot-pulse"></span>
+          <span>📡 Physical Ceragon MH-T261</span>
+        </button>
+        <button class="main-nav-btn" id="nav-btn-tfs" onclick="switchDashboardView('tfs')">
+          <span>⚡ TFS Controller &amp; SBI</span>
         </button>
       </div>
       <div class="status-pill" id="conn-status">
@@ -50,7 +53,7 @@
   </header>
 
   <!-- View 1: Ceragon Dedicated Live TFS View -->
-  <div id="view-ceragon" class="ceragon-view-wrap">
+  <div id="view-ceragon" class="ceragon-view-wrap hidden">
     <div class="ceragon-card">
       
       <!-- Top Header Bar -->
@@ -278,14 +281,16 @@
   </div>
 
   <!-- Main Layout (Topology View) -->
-  <main class="main-grid hidden" id="main-layout">
+  <main class="main-grid" id="main-layout">
 
     <!-- LEFT: Topology + Telemetry -->
     <section class="panel panel-topology" id="panel-topology">
       <div class="panel-header">
-        <h2>Network Topology</h2>
+        <h2>Network Topology &amp; Intents</h2>
         <div class="panel-controls">
-          <button class="chip chip-active" data-filter="all" id="filter-all">All</button>
+          <button class="chip chip-active" data-filter="all" id="filter-all">All (36)</button>
+          <button class="chip" data-filter="simulated" id="filter-simulated">TFS Simulated (35)</button>
+          <button class="chip" data-filter="physical" id="filter-physical">Physical SBI (1)</button>
           <button class="chip" data-filter="active" id="filter-active">Active</button>
           <button class="chip" data-filter="degraded" id="filter-degraded">Degraded</button>
         </div>
@@ -293,11 +298,18 @@
       <div class="topo-ceragon-banner">
         <div>
           <span class="live-dot-pulse" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>
-          <b>Physical Hardware in TFS:</b> Ceragon MH-T261 (<code>ctu-96</code>) · 60.48 GHz · ATPC · 1.0 Gbps
+          <b>SDN Controller:</b> ETSI TeraFlowSDN (<code>admin / admin</code>) · 
+          <span class="badge-simulated" style="margin:0 4px">34 TFS Simulated Components</span> · 
+          <span class="badge-physical" style="margin:0 4px">1 Physical Ceragon Node (Southbound REST)</span>
         </div>
-        <button class="btn btn-primary" style="font-size:0.75rem;padding:4px 10px" onclick="switchDashboardView('ceragon')">
-          Inspect Telemetry &amp; Configure →
-        </button>
+        <div class="topo-filter-row">
+          <button class="btn btn-ghost" style="font-size:0.75rem;padding:4px 10px" onclick="switchDashboardView('ceragon')">
+            Physical Node Details →
+          </button>
+          <button class="btn btn-primary" style="font-size:0.75rem;padding:4px 10px;margin-left:6px" onclick="switchDashboardView('tfs')">
+            TFS Architecture →
+          </button>
+        </div>
       </div>
       <div class="topology-container" id="topology-svg-container">
         <div class="disconnected-overlay" id="topology-offline">
@@ -422,6 +434,136 @@
     </aside>
   </main>
 
+  <!-- View 3: TFS Controller & SBI Architecture -->
+  <div id="view-tfs" class="tfs-view-wrap hidden">
+    <div class="ceragon-card">
+      
+      <!-- Top Header Bar -->
+      <div class="ceragon-card-header">
+        <div class="ceragon-header-left">
+          <div class="ceragon-header-icon" style="color:#00d4ff">⚡</div>
+          <div>
+            <div class="ceragon-title-row">
+              <span class="ceragon-device-name">ETSI TeraFlowSDN Controller &amp; Southbound SBI</span>
+              <span class="badge-enabled" style="margin-left:8px">● LIVE CONTROLLER</span>
+            </div>
+            <div class="ceragon-device-sub">Authoritative Source of Truth for Network Topology, Slicing &amp; Southbound Device Control</div>
+          </div>
+        </div>
+
+        <div class="sot-badge">
+          <span class="sot-label">Active Context / Topology:</span>
+          <span class="sot-val">admin / admin</span>
+        </div>
+      </div>
+
+      <!-- Stat Overview Cards -->
+      <div class="tfs-overview-grid" style="padding: 1.2rem 1.5rem 0">
+        <div class="tfs-stat-card">
+          <div class="tfs-stat-title">Controller Endpoint</div>
+          <div class="tfs-stat-value" style="font-size:1.15rem;color:#00d4ff">http://localhost:8088</div>
+          <div class="tfs-stat-sub">REST NBI (Context, Device, Slice Services)</div>
+        </div>
+        <div class="tfs-stat-card">
+          <div class="tfs-stat-title">Managed Devices in TFS</div>
+          <div class="tfs-stat-value" style="color:#10b981">36 Total Devices</div>
+          <div class="tfs-stat-sub">34 TFS Simulated Nodes + 1 Physical Node + 1 Core</div>
+        </div>
+        <div class="tfs-stat-card">
+          <div class="tfs-stat-title">Southbound Control Engine</div>
+          <div class="tfs-stat-value" style="font-size:1.15rem;color:#ab47bc">CeragonDriver (ID: 22)</div>
+          <div class="tfs-stat-sub">RFC 8040 RESTCONF Candidate 2-Phase Commit</div>
+        </div>
+        <div class="tfs-stat-card">
+          <div class="tfs-stat-title">Bundled YANG Models</div>
+          <div class="tfs-stat-value" style="color:#ffa726">51 Extracted Schemas</div>
+          <div class="tfs-stat-sub">Physical hardware definitions &amp; NMDA datastores</div>
+        </div>
+      </div>
+
+      <!-- Architecture Pipeline Card -->
+      <div class="tfs-pipeline-card" style="margin: 1.2rem 1.5rem">
+        <div class="tfs-pipeline-header">
+          <div>
+            <h3>End-to-End Control Pipeline</h3>
+            <p style="font-size:0.75rem;color:var(--text-secondary)">How CER-Intent, ETSI TeraFlowSDN, and the Ceragon Southbound Adapter interact</p>
+          </div>
+          <span class="badge-enabled">AUTOMATED CLOSED-LOOP</span>
+        </div>
+
+        <div class="pipeline-flow-boxes">
+          <div class="pipeline-box">
+            <div class="pipeline-box-step">Step 1 · Northbound</div>
+            <div class="pipeline-box-title">Operator / AI Intent</div>
+            <div class="pipeline-box-desc">Natural language or structured intents (Slicing, Radio Tuning, Rain-Fade ACM floor).</div>
+            <span class="pipeline-box-badge">REST API :5000</span>
+          </div>
+
+          <div class="pipeline-box">
+            <div class="pipeline-box-step">Step 2 · Reasoning</div>
+            <div class="pipeline-box-title">Intent Architect</div>
+            <div class="pipeline-box-desc">Analyzes topology, applies ITU-R P.838 rain models, selects strategies, and enforces guardrails.</div>
+            <span class="pipeline-box-badge">Policy &amp; Validation</span>
+          </div>
+
+          <div class="pipeline-box">
+            <div class="pipeline-box-step">Step 3 · SDN Control</div>
+            <div class="pipeline-box-title">TeraFlowSDN Core</div>
+            <div class="pipeline-box-desc">Maintains authoritative Context, Topology, and CRDB datastore. Translates to CONFIGACTION_SET.</div>
+            <span class="pipeline-box-badge">TFS NBI :8088</span>
+          </div>
+
+          <div class="pipeline-box">
+            <div class="pipeline-box-step">Step 4 · Southbound</div>
+            <div class="pipeline-box-title">Ceragon REST Driver</div>
+            <div class="pipeline-box-desc">Stages candidate datastore mutations, validates, and executes atomic 2-phase commit with rollback.</div>
+            <span class="pipeline-box-badge">RFC 8040 RESTCONF</span>
+          </div>
+
+          <div class="pipeline-box">
+            <div class="pipeline-box-step">Step 5 · Transport</div>
+            <div class="pipeline-box-title">Wireless Transport</div>
+            <div class="pipeline-box-desc">Physical Siklu MH-T261 node (@ 192.168.1.225) + 34 TFS simulated microwave/mmWave routers.</div>
+            <span class="pipeline-box-badge">Physical + Simulated</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TFS Live Device Registry Table -->
+      <div class="tfs-table-wrap" style="margin: 0 1.5rem 1.5rem">
+        <div class="tfs-table-header">
+          <div>
+            <h3>TFS Topology Device Registry</h3>
+            <p style="font-size:0.75rem;color:var(--text-secondary)">All devices managed under ETSI TeraFlowSDN Context: <code>admin</code> / Topology: <code>admin</code></p>
+          </div>
+          <div class="panel-controls">
+            <button class="chip chip-active" id="tbl-filter-all" onclick="filterTFSTable('all')">All (36)</button>
+            <button class="chip" id="tbl-filter-sim" onclick="filterTFSTable('simulated')">Simulated (35)</button>
+            <button class="chip" id="tbl-filter-phys" onclick="filterTFSTable('physical')">Physical (1)</button>
+          </div>
+        </div>
+
+        <table class="tfs-device-table">
+          <thead>
+            <tr>
+              <th>Device Name</th>
+              <th>Hardware Model</th>
+              <th>Role</th>
+              <th>TFS Device Type</th>
+              <th>Southbound Engine</th>
+              <th>TFS Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tfs-devices-tbody">
+            <!-- Dynamically populated by app.js -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Intent Detail Modal -->
   <div class="modal-overlay hidden" id="modal-overlay">
     <div class="modal" id="intent-modal">
@@ -444,6 +586,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=2.1"></script>
+  <script src="/app.js?v=2.2"></script>
 </body>
 </html>

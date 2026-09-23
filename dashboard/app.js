@@ -151,6 +151,9 @@ function setTopology(data) {
   document.getElementById("stat-devices").textContent = (data.nodes || []).length;
   document.getElementById("stat-links").textContent   = (data.links  || []).length;
   initTopologySVG();
+  if (typeof populateTFSDeviceTable === "function") {
+    populateTFSDeviceTable();
+  }
 }
 
 let simulation, svg, linkEls, nodeEls, linkTooltip;
@@ -621,11 +624,20 @@ async function showDeviceModal(node) {
     </div>
   `).join("");
 
+  const isPhys = node.id === "ceragon-mh-t261-ctu-96" || (node.model && node.model.includes("MH-T261"));
+
   body.innerHTML = `
-    <div class="modal-row"><span class="modal-label">Device ID</span><span class="modal-value">${node.id}</span></div>
-    <div class="modal-row"><span class="modal-label">Name</span><span class="modal-value">${node.name}</span></div>
-    <div class="modal-row"><span class="modal-label">Model</span><span class="modal-value" style="color:${MODEL_COLORS[node.model] || MODEL_COLORS.Generic}">${node.model}</span></div>
-    <div class="modal-row"><span class="modal-label">Vendor</span><span class="modal-value">${profile.vendor || 'Unknown'}</span></div>
+    <div class="modal-row"><span class="modal-label">Device Name</span><span class="modal-value" style="font-weight:700">${node.name}</span></div>
+    <div class="modal-row"><span class="modal-label">Device ID</span><span class="modal-value" style="font-family:monospace">${node.id}</span></div>
+    <div class="modal-row"><span class="modal-label">Hardware Model</span><span class="modal-value" style="color:${MODEL_COLORS[node.model] || MODEL_COLORS.Generic};font-weight:700">${node.model}</span></div>
+    <div class="modal-row"><span class="modal-label">Hardware Vendor</span><span class="modal-value">${profile.vendor || (isPhys ? 'Ceragon / Siklu' : 'Ceragon')}</span></div>
+    
+    <div class="section-title" style="margin-top:0.6rem">TFS SDN Controller Integration</div>
+    <div class="modal-row" style="font-size:0.75rem"><span class="modal-label">TFS UUID</span><span class="modal-value" style="font-family:monospace;font-size:0.7rem;color:#00d4ff">${node.tfs_uuid || node.id}</span></div>
+    <div class="modal-row" style="font-size:0.75rem"><span class="modal-label">TFS Context / Topology</span><span class="modal-value">admin / admin</span></div>
+    <div class="modal-row" style="font-size:0.75rem"><span class="modal-label">TFS Device Type</span><span class="modal-value">${isPhys ? '<span class="badge-physical">ceragon-wireless</span>' : '<span class="badge-simulated">emu-packet-router</span>'}</span></div>
+    <div class="modal-row" style="font-size:0.75rem"><span class="modal-label">Southbound Engine</span><span class="modal-value">${isPhys ? '<span class="badge-physical">RFC 8040 RESTCONF (Candidate 2PC)</span>' : '<span class="badge-simulated">TFS Emulated Driver</span>'}</span></div>
+    <div class="modal-row" style="font-size:0.75rem"><span class="modal-label">Control Target</span><span class="modal-value">${isPhys ? '192.168.1.225:80 (Physical)' : '127.0.0.1 (TFS In-Memory)'}</span></div>
     
     <div class="section-title" style="margin-top:0.5rem">Hardware Capabilities</div>
     ${capsHtml}
@@ -1026,23 +1038,123 @@ document.addEventListener("DOMContentLoaded", () => {
 function switchDashboardView(viewName) {
   const ceragonWrap = document.getElementById("view-ceragon");
   const mainLayout = document.getElementById("main-layout");
+  const tfsWrap = document.getElementById("view-tfs");
   const btnCeragon = document.getElementById("nav-btn-ceragon");
   const btnTopology = document.getElementById("nav-btn-topology");
+  const btnTfs = document.getElementById("nav-btn-tfs");
+
+  [ceragonWrap, mainLayout, tfsWrap].forEach(el => el?.classList.add("hidden"));
+  [btnCeragon, btnTopology, btnTfs].forEach(btn => btn?.classList.remove("active"));
 
   if (viewName === "ceragon") {
     ceragonWrap?.classList.remove("hidden");
-    mainLayout?.classList.add("hidden");
     btnCeragon?.classList.add("active");
-    btnTopology?.classList.remove("active");
     localStorage.setItem("cer_active_view", "ceragon");
     fetchCeragonTelemetry();
+  } else if (viewName === "tfs") {
+    tfsWrap?.classList.remove("hidden");
+    btnTfs?.classList.add("active");
+    localStorage.setItem("cer_active_view", "tfs");
+    populateTFSDeviceTable();
   } else {
-    ceragonWrap?.classList.add("hidden");
     mainLayout?.classList.remove("hidden");
-    btnCeragon?.classList.remove("active");
     btnTopology?.classList.add("active");
     localStorage.setItem("cer_active_view", "topology");
+    if (typeof initTopologySVG === "function") {
+      setTimeout(initTopologySVG, 50);
+    }
   }
+}
+
+function filterTopologyNodes(filterType) {
+  ["all", "simulated", "physical", "active", "degraded"].forEach(f => {
+    document.getElementById("filter-" + f)?.classList.toggle("chip-active", f === filterType);
+    const altId = f === "simulated" ? "sim" : f === "physical" ? "phys" : f;
+    document.getElementById("topo-filter-" + altId)?.classList.toggle("chip-active", f === filterType);
+  });
+
+  if (!nodeEls) return;
+
+  nodeEls.transition().duration(250).style("opacity", d => {
+    const isPhys = d.id === "ceragon-mh-t261-ctu-96" || (d.model && d.model.includes("MH-T261"));
+    if (filterType === "all") return 1;
+    if (filterType === "physical") return isPhys ? 1 : 0.15;
+    if (filterType === "simulated") return isPhys ? 0.15 : 1;
+    if (filterType === "active") return d.status === "active" ? 1 : 0.15;
+    if (filterType === "degraded") return d.status === "degraded" ? 1 : 0.15;
+    return 1;
+  });
+
+  if (linkEls) {
+    linkEls.transition().duration(250).style("opacity", d => {
+      if (filterType === "physical") {
+        const isPhysLink = d.src === "ceragon-mh-t261-ctu-96" || d.dst === "ceragon-mh-t261-ctu-96";
+        return isPhysLink ? 1 : 0.1;
+      }
+      return 1;
+    });
+  }
+}
+
+function populateTFSDeviceTable(filterType = "all") {
+  const tbody = document.getElementById("tfs-devices-tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  const nodes = topology.nodes || [];
+  nodes.forEach(node => {
+    const isPhysical = node.id === "ceragon-mh-t261-ctu-96" || (node.model && node.model.includes("MH-T261"));
+    if (filterType === "physical" && !isPhysical) return;
+    if (filterType === "simulated" && isPhysical) return;
+
+    const tr = document.createElement("tr");
+
+    const engineHtml = isPhysical
+      ? `<span class="badge-physical">RFC 8040 RESTCONF (2PC)</span>`
+      : `<span class="badge-simulated">TFS Emulated Driver</span>`;
+
+    const typeHtml = isPhysical
+      ? `<span style="color:#34d399;font-weight:600">ceragon-wireless</span>`
+      : `<span style="color:#7a91a8">emu-packet-router</span>`;
+
+    const modelColor = MODEL_COLORS[node.model] || "#00d4ff";
+
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight:600;display:flex;align-items:center;gap:6px">
+          ${isPhysical ? '<span class="live-dot-pulse"></span>' : '⬡'}
+          <span>${node.name || node.id}</span>
+        </div>
+        <div style="font-size:0.68rem;color:var(--text-muted);font-family:monospace">${node.tfs_uuid || node.id}</div>
+      </td>
+      <td>
+        <span style="font-weight:600;color:${modelColor}">${node.model || 'Universal'}</span>
+        <div style="font-size:0.68rem;color:var(--text-muted)">${node.max_throughput_gbps || 10} Gbps</div>
+      </td>
+      <td><span style="font-size:0.75rem;color:var(--text-secondary)">${node.role || 'transport'}</span></td>
+      <td>${typeHtml}</td>
+      <td>${engineHtml}</td>
+      <td><span class="badge-enabled">ENABLED</span></td>
+      <td>
+        <button class="btn-inspect-node" onclick="inspectNodeInModal('${node.id}')">Inspect</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterTFSTable(filterType) {
+  ["all", "sim", "phys"].forEach(f => {
+    const key = f === "sim" ? "simulated" : f === "phys" ? "physical" : "all";
+    document.getElementById("tbl-filter-" + f)?.classList.toggle("chip-active", key === filterType);
+  });
+  populateTFSDeviceTable(filterType);
+}
+
+function inspectNodeInModal(nodeId) {
+  const node = (topology.nodes || []).find(n => n.id === nodeId);
+  if (!node) return;
+  showNodeModal(node);
 }
 
 function switchCeragonSubTab(tabName) {
@@ -1197,10 +1309,12 @@ async function fetchCeragonTelemetry() {
 // Initial view check on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   const savedView = localStorage.getItem("cer_active_view");
-  if (savedView === "topology") {
-    switchDashboardView("topology");
-  } else {
+  if (savedView === "ceragon") {
     switchDashboardView("ceragon");
+  } else if (savedView === "tfs") {
+    switchDashboardView("tfs");
+  } else {
+    switchDashboardView("topology");
   }
   setInterval(fetchCeragonTelemetry, 5000);
 });
