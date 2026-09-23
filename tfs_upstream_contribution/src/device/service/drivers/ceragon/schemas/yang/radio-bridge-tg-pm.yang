@@ -1,0 +1,332 @@
+module radio-bridge-tg-pm {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/pm";
+
+    prefix "rb-tg-pm";
+
+    import ietf-yang-types {
+        prefix yang;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This module defines performance monitoring";
+
+    revision 2024-12-05 {
+    description
+      "Add item-type to pm-item (this is part of its key)";
+    reference
+      "";
+    }
+
+    revision 2024-12-05 {
+        description
+          "Add period-type input argument to get-pm-items RPC";
+        reference
+          "";
+    }
+
+    revision 2024-12-04 {
+        description
+          "Add get-pm-items & get-pm-item-info RPCs
+          Change grouping name from statistics/link terms to pm";
+        reference
+          "";
+    }
+
+    revision 2024-11-15 {
+        description
+          "Change the name of the integrity leaf to validity";
+        reference
+          "";
+    }
+
+    revision 2024-11-12 {
+        description
+          "Add integrity leaf to statistics-single-period-link-info";
+        reference
+          "";
+    }
+
+    revision 2024-11-04 {
+        description
+          "Add scalar percentage-at-value list: duration as percentage spent at each value";
+        reference
+          "";
+    }
+
+    revision 2024-10-16 {
+        description
+          "Move completion-percentage leaf one level up: per period instead of per scalar";
+        reference
+          "";
+    }
+
+    revision 2024-10-14 {
+        description
+          "Change the name of the integrity leaf to completion-percentage.  
+          Change its type from string to decimal64";
+        reference
+          "";
+    }
+
+    revision 2024-10-10 {
+        description
+          "Add integrity leaf to scalar-values";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision "2022-03-13" {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements
+
+    typedef pm-period-type {
+      type enumeration {
+        enum quarter {
+          description
+            "A period of 15 minutes.";
+        }
+        enum day {
+          description
+            "A period of 24 hours.";
+        }
+      }
+      description
+        "Enumeration of different Performance Monitoring (PM) period types.";
+    }
+
+    typedef pm-item-type {
+      type enumeration {
+        enum rf {
+          description
+            "Performance Monitoring (PM) for each active link, identified by the remote assigned name.";
+        }
+      }
+      description
+        "Enumeration of different types of Performance Monitoring (PM) items. Currently only rf is supported";
+    }
+
+    typedef scalar-sub-value {
+        type decimal64 {
+            fraction-digits 3;
+        }
+        description
+          "A sub value of the scalar";
+    }
+
+    typedef pm-percentage {
+        type decimal64 {
+            fraction-digits 2;
+        }
+        units "percent";
+        default 0;
+        description
+          "Type for percentage values";
+    }
+
+    // grouping statements
+
+
+    grouping pm-item {
+     leaf item-type {
+        type pm-item-type;
+        mandatory true;
+        description
+          "The PM item type. E.g. rf";
+      }
+
+      list names {
+          key "id";
+          leaf id {
+              type uint32;  // Using an unsigned integer for the index
+              description
+                  "A unique identifier for the item.";
+          }
+          leaf name {
+              type string;
+              description
+                  "A single name in the list.";
+          }
+          description
+              "A list of names that represents a PM item.";
+      }
+      description
+          "A grouping that represents a PM item as a list of names.";
+    }
+
+    grouping pm-items {
+        list pm-items {
+            uses pm-item;
+            description
+                "A list of PM items.";
+        }
+        description
+            "A grouping that represents a list of PM items.";
+    }
+
+    grouping scalar-values {
+        leaf min {
+            type scalar-sub-value;
+            config false;
+            description
+              "The minimum value of the scalar";
+        }
+        leaf max {
+            type scalar-sub-value;
+            config false;
+            description
+              "The maximum value of the scalar";
+        }
+        leaf avg {
+            type scalar-sub-value;
+            config false;
+            description
+              "The average value of the scalar";
+        }
+        list percentage-at-value {
+            key value;
+            leaf value {
+                type scalar-sub-value;
+                config false;
+                description
+                  "The value of the scalar";
+            }
+            leaf percentage {
+                type pm-percentage;
+                config false;
+                description
+                  "The proportion of time the scalar maintained the value";
+            }
+            config false;
+            description
+              "List of records of scalar values and slice of time spent at each value";
+        }
+        description
+          "The sub values of the scalar, currently supports minimum, maximum, average and time distribution";
+    }
+    grouping pm-single-period-info {
+        leaf start-period {
+            type yang:date-and-time;
+            config false;
+            description
+              "The start timestamp of the period";
+        }
+        leaf end-period {
+            type yang:date-and-time;
+            config false;
+            description
+              "The end timestamp of the period";
+        }
+        leaf validity {
+            type boolean;
+            default false;
+            config false;
+            description
+              "Indication of missing info in the period due to system restart";
+        }
+        leaf completion-percentage {
+            type pm-percentage;
+            config false;
+            description
+              "The completion status in percentage";
+        }
+        list scalar {
+            key scalar-name;
+            leaf scalar-name {
+                type string;
+                config false;
+                description
+                  "The name of the scalar";
+            }
+            uses scalar-values;
+            config false;
+            description
+              "List of scalar values";
+        }
+        description
+          "Grouping for single period pm info";
+    }
+
+    grouping pm-info {
+        list pm-info-periods {
+            key index;
+            leaf index {
+                type uint32;
+                config false;
+                description
+                  "The index of the period";
+            }
+            uses pm-single-period-info;
+            config false;
+            description
+              "List of pm periods";
+        }
+        description
+          "Grouping of pm info periods";
+    }
+  // data definition statements
+  // rpc statements
+
+  rpc get-pm-items {
+      description
+        "RPC to retrieve all PM items currently in the PM history for a specified item type";
+      input{
+        leaf item-type {
+            type pm-item-type;
+            mandatory true;
+            description
+              "The PM item type. E.g. rf";
+        }
+        leaf period-type {
+            type pm-period-type;
+            mandatory true;
+            description
+              "The PM period-type. E.g. quarter";
+        }
+      }
+      output{
+        uses pm-items;
+      }
+  }
+
+    rpc get-pm-item-info {
+      description
+        "RPC to retrieve the PM info for a specified PM item";
+      input{
+        uses pm-item;
+        leaf period-type {
+            type pm-period-type;
+            mandatory true;
+            description
+              "The PM period-type. E.g. quarter";
+        }
+      }
+      output{
+        uses pm-info;
+      }
+  }
+}

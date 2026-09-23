@@ -1,0 +1,156 @@
+module ieee802-dot1q-cfm-deviations {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/cfm-deviations";
+
+    prefix "dot1q-cfm-deviations";
+
+    import ieee802-dot1q-cfm { prefix "dot1q-cfm"; }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "Deviates from the official CFM model";
+
+    revision 2025-01-30 {
+        description
+          "Initial revision";
+        reference
+          "";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:md-name/dot1q-cfm:none" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:md-name/dot1q-cfm:dns-like-name" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:md-name/dot1q-cfm:mac-address-and-uint" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:mhf-creation" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:fault-alarm-transmission" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:id-permission" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:maintenance-association/dot1q-cfm:ma-name/dot1q-cfm:primary-vid" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:maintenance-association/dot1q-cfm:ma-name/dot1q-cfm:unsigned-int16" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:maintenance-association/dot1q-cfm:ma-name/dot1q-cfm:rfc2865-vpn-id" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:maintenance-association/dot1q-cfm:fault-alarm-transmission" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:maintenance-association/dot1q-cfm:id-permission" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-domain/dot1q-cfm:maintenance-association/dot1q-cfm:mhf-creation" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:enabled" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:ccm-ltm-priority" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:mac-address" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:direction" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:stats/dot1q-cfm:mep-lbr-in" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:stats/dot1q-cfm:mep-lbr-in-out-of-order" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:stats/dot1q-cfm:mep-lbr-bad-msdu" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:stats/dot1q-cfm:mep-unexpected-ltr-in" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:stats/dot1q-cfm:mep-lbr-out" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:mep-db" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:inactive-remote-mep" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:linktrace-reply" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:fault-alarm-transmission" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:lowest-priority-defect" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:fng-alarm-time" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:fng-reset-time" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:fng-state" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:highest-priority-defect" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:error-ccm-last-failure" {
+      deviate "not-supported";
+    }
+
+    deviation "/dot1q-cfm:cfm/dot1q-cfm:maintenance-group/dot1q-cfm:mep/dot1q-cfm:continuity-check/dot1q-cfm:xcon-ccm-last-failure" {
+      deviate "not-supported";
+    }
+}

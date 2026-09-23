@@ -1,0 +1,208 @@
+module radio-bridge-tg-user-bridge {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/user-bridge";
+
+    prefix "tg-u-bridge";
+
+    import radio-bridge-tg-types {
+        prefix rb-tg-types;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "Definitions for the user bridge on TG Radio-bridge devices";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2022-07-26 {
+        description
+          "Updated descriptions";
+        reference
+          "";
+    }
+
+     revision 2022-07-21 {
+        description
+          "Added tunnel id to leg of user bridge";
+        reference
+          "";
+    }
+
+    revision 2022-05-18 {
+        description
+          "Added bond id to leg of user bridge";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-08-05 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements  
+    typedef bridge-port-id {
+        type uint16 {
+            range "1 .. 256";
+        }
+        description
+          "";
+    }
+
+    typedef bridge-id {
+        type uint8 {
+            range "1 .. 64";
+        }
+        description
+          "";
+    }
+
+    typedef bridge-port-type {
+        type enumeration {
+            enum transparent {
+                description
+                  "Input all packets";
+            }
+            enum c-vlan {
+                description
+                  "Input only packets with a specific C-VLAN tag";
+            }
+            enum s-vlan {
+                description
+                  "Input only packets with a specific S-VLAN tag";
+            }
+            enum q-in-q {
+                description
+                  "Input only packets with a specific combination of C- and S-VLAN tags";
+            }
+        }
+        description
+          "Forwarding type for a bridge port";
+    }
+
+    // grouping statements
+    grouping user-bridge-port-top {
+        leaf bridge-port-id {
+            type bridge-port-id;
+            description
+              "The ID of the bridge-port. An arbitrary number that identifies the bridge-port in a list of the bridge-port of the bridge";
+        }
+
+        leaf interface {
+            type union{
+                type rb-tg-types:host-interface-name;
+                type rb-tg-types:embedded-interface-name;
+                type rb-tg-types:rf-interface-name;
+                type rb-tg-types:rf-auto-connect-interface-name;
+                type rb-tg-types:bond-interface-name;
+                type rb-tg-types:tunnel-interface-name;
+            }
+            mandatory true;
+            description
+              "For physical ethernet interface: eth1, eth2, eth3 ...
+               For radio link: rf-<AN>, where <AN> is the network assigned name/ID for the appropriate radio link
+               For auto-connect radio link: rf
+               For host interface: host
+               For bond interface: bond-<id>, where <id> is the name of the bond defined by the bonding yang model
+               For tunnel interface: tunnel-<id>, where <id> is the tunnel id";
+        }
+
+        leaf bridge-port-type {
+            type bridge-port-type;
+            default transparent;
+            description
+              "This bridge-port is transparent (forwards all frames)";
+        }
+
+        leaf s-vlan {
+            // fixme(shmuelh): removed due to ambiguous errors.
+            // when "../bridge-port-type = 's-vlan' or ../bridge-port-type = 'q-in-q'";
+            type rb-tg-types:vlan-id;
+            description
+              "This bridge-port forwards only frames with a specific S-VLAN tag";
+        }
+
+        leaf c-vlan {
+            // fixme(shmuelh): removed due to ambiguous errors.
+            // when "../bridge-port-type = 'c-vlan' or ../bridge-port-type = 'q-in-q'";
+            type rb-tg-types:vlan-id;
+            description
+              "This bridge-port forwards only frames with a specific C-VLAN tag";
+        }
+        description
+          "Top level grouping for a bridge port";
+    }
+
+    grouping bridge-config-top {
+        leaf bridge-id {
+            type bridge-id;
+            description
+              "The ID of the bridge";
+        }
+
+        list bridge-port {
+            key "bridge-port-id";
+            uses user-bridge-port-top;
+
+            description
+              "List of bridge-ports inside of the current bridge";
+        }
+
+        description
+          "Top level grouping for a specific bridge's configuration";
+    }
+
+    grouping user-bridge-top {
+        container user-bridge {
+            description
+              "Top level container for user bridge";
+            list bridge {
+                key "bridge-id";
+
+                uses bridge-config-top;
+
+                container state {
+                    config false;
+                    description
+                      "State data for a bridge";
+                }
+                description
+                  "List of bridges";
+            }
+        }
+        description
+          "Top level grouping for the user bridge";
+    }
+
+    // data definition statements
+    uses user-bridge-top;
+// augment statements
+// rpc statements
+// notification statements
+}

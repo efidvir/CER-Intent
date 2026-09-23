@@ -1,0 +1,45 @@
+{
+  "devices": [
+    {
+      "device_id": {
+        "device_uuid": {
+          "uuid": "ceragon-ip50c-node-1"
+        }
+      },
+      "device_type": "microwave-radio-system",
+      "device_config": {
+        "config_rules": [
+          {
+            "action": 1,
+            "custom": {
+              "resource_key": "_connect/address",
+              "resource_value": "192.168.1.10"
+            }
+          },
+          {
+            "action": 1,
+            "custom": {
+              "resource_key": "_connect/port",
+              "resource_value": "80"
+            }
+          },
+          {
+            "action": 1,
+            "custom": {
+              "resource_key": "_connect/settings",
+              "resource_value": {
+                "username": "admin",
+                "password": "admin",
+                "scheme": "http",
+                "timeout": 20
+              }
+            }
+          }
+        ]
+      },
+      "device_operational_status": 1,
+      "device_drivers": [22],
+      "device_endpoints": []
+    }
+  ]
+}

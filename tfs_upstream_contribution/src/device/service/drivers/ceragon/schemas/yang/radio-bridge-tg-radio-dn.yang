@@ -1,0 +1,1061 @@
+module radio-bridge-tg-radio-dn {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/radio/dn";
+
+    prefix rb-tg-radio-dn;
+    import ietf-yang-smiv2 {
+        prefix "smiv2";
+    }
+
+    import radio-bridge-tg-radio-common {
+        prefix "rb-tg-radio";
+    }
+    import radio-bridge-tg-types {
+        prefix "rb-tg-types";
+    }
+    import radio-bridge-tg-gui {
+        prefix "rb-tg-gui";
+    }
+    import clixon-autocli {
+        prefix autocli;
+    }
+    import clixon-snmp {
+        prefix "cx-snmp";
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This YANG module is part of radio-bridge TG project.
+        It defines the dn radio part of the project";
+
+    revision 2025-10-28 {
+        description
+          "Add new dn-link-state enums - LocalSectorFull & ControlSuperFrameUsed";
+        reference
+          "";
+    }
+
+    revision 2025-09-28 {
+        description
+          "Add new dn-link-state enum - FoundInScanButSsidNotMatching";
+        reference
+          "";
+    }
+
+    revision 2025-09-21 {
+        description
+          "Update some dn-link-state(s) enum names";
+        reference
+          "";
+    }
+
+    revision 2025-09-14 {
+        description
+          "Add new dn-link-state(s) to dn-link-state-type";
+        reference
+          "";
+    }
+
+    revision 2025-06-10 {
+        description
+          "Add ssid-matching leaf to topo scan results
+          Remove device-model leaf from topo scan results
+          Add local-sector leaf to per-link topo scan results
+          Add topo scan progress-status leaf to topo-scan container";
+        reference
+          "";
+    }
+
+    revision 2025-05-20 {
+        description
+          "Change type of sector index in start-topo-scan RPC from leafref to direct one";
+        reference
+          "";
+    }
+
+    revision 2025-03-24 {
+        description
+          "Add manual topo scan";
+        reference
+          "";
+    }
+
+    revision 2024-12-19 {
+        description
+          "Changed description of UnstableWaitingForNextIgnitionPeriod according to design document";
+        reference
+          "";
+    }
+    revision 2024-12-09 {
+        description
+          "Add ignition-try-count state";
+        reference
+          "";
+    }
+
+    revision 2024-11-18 {
+        description
+          "Add link-stability configurations";
+        reference
+          "";
+    }
+
+    revision 2024-04-03 {
+        description
+          "Remove allow-local-sync-free-running config from node-config container";
+        reference
+          "";
+    }
+
+    revision 2023-12-10 {
+        description
+          "add sync state container";
+        reference
+          "";
+    }
+
+    revision 2023-12-06 {
+        description
+          "Added new dn-link-state";
+        reference
+          "";
+    }
+
+    revision 2023-11-24 {
+        description
+          "if any sync is not supported disable the entire rf-sync container";
+        reference
+          "";
+    }
+
+    revision 2023-11-23 {
+        description
+          "declare rb-tg-types:sync-mode-rf feature for entire rf-sync-state container";
+        reference
+          "";
+    }
+
+    revision 2023-11-19 {
+        description
+          "Add allow-local-sync-free-running config to node-config container";
+        reference
+          "";
+    }
+
+    revision 2023-11-06 {
+        description
+          "set default no-sync to sync-mode";
+        reference
+          "";
+    }
+
+    revision 2023-10-24 {
+        description
+          "update link ignition configuration";
+        reference
+          "";
+    }
+
+    revision 2023-10-23 {
+        description
+          "add link ignition configuration";
+        reference
+          "";
+    }
+
+    revision 2023-08-22 {
+        description
+          "add sector-index leaf to rf-sync-clocks-state clocks list";
+        reference
+          "";
+    }
+
+    revision 2023-08-20 {
+        description
+          "ifIndex changed to state-data";
+        reference
+          "";
+    }
+
+    
+    revision 2023-08-08 {
+        description
+          "rf-sync enabled is now true by default";
+        reference
+          "";
+    }
+
+    revision 2023-06-25 {
+        description
+          "rf-sync sync-mode and data will now be controlled via rf-sync container";
+        reference
+          "";
+    }
+
+    revision 2023-06-21 {
+        description
+          "Add default and when statements to responder-node-type";
+        reference
+          "";
+    }
+
+    revision 2023-04-23 {
+        description
+          "Add rf-sync container";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1; 
+           Add allow ptp and gps sync modes
+           only if their features are supported;
+           Remove default sync-mode";
+        reference
+          "";
+    }
+
+    revision 2023-03-28 {
+        description
+          "Use rb-tg-types:InterfaceIndex instead of if-mib:InterfaceIndex";
+        reference
+          "";
+    }
+
+    revision 2023-03-27 {
+        description
+          "Fix descriptions of local-sector-bitmap and remote-sector-bitmap";
+        reference
+          "";
+    }
+
+    revision 2023-02-21 {
+        description
+          "Add config false to disconnected-link container";
+        reference
+          "";
+    }
+
+    revision 2023-02-16 {
+        description
+          "Define IfIndex as key to the configured links SNMP table";
+        reference
+          "";
+    }
+
+    revision 2023-02-12 {
+        description
+          "Add IfIndex to link configured list";
+        reference
+          "";
+    }
+
+    revision 2023-01-22 {
+        description
+          "SNMP Support for radio-dn link configured";
+        reference
+          "";
+    }
+
+    revision 2022-08-09 {
+        description
+          "Added waiting polarity state";
+        reference
+          "";
+    }
+    revision 2021-11-25 {
+        description
+          "Removed ignore-gps added sync-mode";
+        reference
+          "";
+    }
+
+    revision 2021-11-18 {
+        description
+          "1.2.0 release";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-11-22 {
+        description
+          "Initial Revision";
+        reference
+          "";
+    }
+
+    // extension statements
+    // feature statements 
+    // identity statements
+    // typedef statements
+    typedef dn-link-state-type {
+        type enumeration {
+            enum Connected {
+                value "1";
+                description
+                  "The link is connected";
+            }
+            enum LinkAdminDown {
+                value "2";
+                description
+                  "Link admin status is down";
+            }
+            enum SectorAdminDown {
+                value "3";
+                description
+                  "Local sectors of the link are down";
+            }
+            enum WaitingUpstreamConnection {
+                value "4";
+                description
+                  "Waiting for the incoming RF link";
+            }
+            enum WaitingInQueue {
+                value "5";
+                description
+                  "Waiting in queue";
+            }
+            enum WaitingPolarityPeriod {
+                value "6";
+                description
+                  "Waiting for next polarity period. In this state DN-DN links will wait while sector polarity will math current ignition polarity";
+            }
+            enum Ignition {
+                value "7";
+                description
+                  "Link ignition in progress";
+            }
+            enum TriesDepletedWaitingForNextIgnitionPeriod {
+                value "8";
+                description
+                  "Link tried to ignite more than max times. Waiting for next ignition period";
+            }
+            enum UnstableWaitingForNextIgnitionPeriod {
+                value "9";
+                description
+                  "Link has marginal connectivity, waiting for next ignition period";
+            }
+            enum IgnitionDisabledDuringManualTopoScan {
+                value "10";
+                description
+                  "Link ignition is disabled during manual topology scan";
+            }
+            enum NotFoundInScan {
+                value "11";
+                description
+                  "Link ignition candidate (local sector/remote sector) was not found 
+                    during topology scan";
+            }
+            enum OtherLocalOrRemoteSectorFoundInScan {
+                value "12";
+                description
+                  "The configured link ignition candidate (local sector/remote sector) 
+                  was not found during the topology scan, but a different candidate was discovered.";
+            }
+            enum FoundInScanButSsidNotMatching {
+                value "13";
+                description
+                  "The configured link ignition candidate (local sector/remote sector) 
+                  was found during the topology scan, but the SSID or password 
+                  of the scanned (remote) device does not match those of the local device that initiated 
+                  the scan, so the link cannot be ignited.";
+            }
+            enum LocalSectorFull {
+                value "14";
+                description
+                  "The link cannot connect because the local sector has reached the maximum 
+                  number of allowed links (either connected links or links reserved by specific 
+                  local sector configuration).";
+
+            }
+            enum ControlSuperFrameUsed {
+                value "15";
+                description
+                  "The DN link cannot connect because the selected control super frame is 
+                  already assigned to another DN link in this sector (either a connected 
+                  link or one reserved by specific local sector configuration).";
+
+            }
+        }
+        description
+          "Possible states of ignition. Items are ordered by displaying priority";
+    }
+
+    typedef dn-sync-mode-type {
+        type enumeration {
+            enum no-sync {
+                description
+                  "Allows link creation without GPS. This is practical for indoor link tests
+                   or in places where there is no GPS connectivity. Without GPS the system can
+                   create only 1 hop links.";
+            }
+            enum gps-sync {
+                if-feature rb-tg-types:sync-mode-gps;
+
+                description
+                  "Regular sync. RF links will drop when the unit will lose GPS sync.";
+            }
+            enum gps-sync-holdover {
+                if-feature rb-tg-types:sync-mode-gps;
+
+                description
+                  "RF links will not drop when the unit will lose GPS sync. This mode will be a
+                   default sync mode for all N3XX devices.";
+            }
+            enum rf-sync {
+                if-feature rb-tg-types:sync-mode-rf;
+
+                description
+                  "The device will use the HTSF feature to synchronize all
+                   RF sectors from the RF sync of the incoming RF link";
+            }
+            enum ptp {
+                if-feature rb-tg-types:sync-mode-ptp;
+                description
+                  "The device will use PTPv2 (IEEE 1588v2) in order to 
+                   synchronize the node";
+            }
+        }
+        description
+          "Describes DN sync modes";
+    }
+
+    typedef clock-state-type {
+        type enumeration {
+            enum invalid {
+                description
+                  "The device's clock source is invalid.";
+            }
+            enum free-running {
+                description
+                  "The device is free running.";
+            }
+            enum holdover {
+                description
+                  "The device is on holdover.";
+            }
+            enum synced {
+                description
+                  "The device is synced.";
+            }
+        }
+        description
+          "Describes device clock states.";
+    }
+
+    typedef topo-scan-progress-status-type {
+        type enumeration {
+            enum not-started {
+                description
+                  "Topo scan was not started on the sector";
+            }
+            enum in-progress {
+                description
+                  "Topo scan is running on the sector";
+            }
+            enum finished {
+                description
+                  "Topo scan is finished after running on the sector";
+            }
+            enum failed {
+                description
+                  "Topo scan was failed on the sector";
+            }
+        }
+        description
+          "Enum type for topo scan progress statuses";
+    }
+
+    grouping rf-sync-state-grouping {
+        container rf-sync-state {
+            if-feature rb-tg-types:sync-mode-rf;
+
+            config false;
+            leaf used {
+                type boolean;
+                description
+                  "Whether the device is synced via RF";
+            }
+            leaf selected-sector {
+                type rb-tg-types:radio-sector-index;
+                description
+                  "The selected sector that is used as source for the rf-sync";
+            }
+            leaf last-modified {
+                type string;
+                description
+                  "The last clock switch timestamp";
+            }
+            leaf neighbor {
+                type rb-tg-types:node-assigned-name;
+                description
+                  "The current clock source path neighbor's assigned name.";
+            }
+            leaf root {
+                type rb-tg-types:node-assigned-name;
+                description
+                  "The current clock source path root's assigned name.";
+            }
+            uses rf-sync-clocks-state;
+            description
+              "rf-sync state data container";
+        }
+        description
+          "rf-sync state data container grouping";
+    }
+
+    grouping sync-state-grouping {
+      container sync-state {
+          config false;
+          leaf is-locked {
+              type boolean;
+              default "false";
+              description
+                "Whether system sync is locked";
+          }
+          leaf local-sync-state {
+              type clock-state-type;
+              description
+                "The local clock quality.";
+          }
+          description
+            "sync state data container";
+        }
+        description
+          "sync state data container grouping";
+      }
+
+    grouping rf-sync-clocks-state {
+        list clocks {
+            key priority;
+            leaf priority {
+                type uint32;
+                description
+                  "The priority of the clock path (lower index means higher priority).";
+            }
+            leaf sector-index {
+                type rb-tg-types:radio-sector-index;
+                description
+                  "The index of the sector.";
+            }
+            leaf clock-state {
+                type clock-state-type;
+                description
+                  "The clock quality.";
+            }
+            leaf last-modified {
+                type string;
+                description
+                  "The timestamp of the most recent update for this clock";
+            }
+            list path {
+                key index;
+                leaf index {
+                    type uint32;
+                    description
+                      "The index of the node in the path";
+                }
+                leaf assigned-name {
+                    type rb-tg-types:node-assigned-name;
+                    description
+                      "The assigned name of the node.";
+                }
+                description
+                  "The assigned names of all the nodes in the clock path";
+            }
+            description
+              "A list of clock state and the clock path per sector state data sorted by priority.";
+        }
+        description
+          "rf-sync-clocks-state grouping";
+    }
+
+    grouping topo-scan-result-group {
+        leaf remote-assigned-name {
+            type rb-tg-types:node-assigned-name;
+            description
+              "Assigned name of remote node found by scan";
+        }
+        leaf remote-sector {
+            type rb-tg-types:radio-sector-index;
+            description
+              "Sector of remote node found by scan";
+        }
+        leaf icon-type {
+            type rb-tg-gui:product-icon-type;
+            description
+              "Icon type of remote node found by scan";
+        }
+        leaf operation-mode {
+            type rb-tg-radio:operation-mode-type;
+            description
+              "Operation mode of remote node found by scan";
+        }
+        leaf ssid-matching {
+            type boolean;
+            description
+              "Returns true if the SSID and password of the scanned (remote) device match those of the local device that initiated the topology scan; otherwise, returns false";
+        }
+        leaf snr {
+            type rb-tg-radio:snr-type;
+            description
+              "Signal-to-Noise Ratio to remote node found by scan";
+        }
+        leaf rssi {
+            type rb-tg-radio:rssi-type;
+            description
+              "Signal strength in dBm of remote node found by scan";
+        }
+        description
+          "topo scan result data container";
+    }
+
+    grouping topo-scan-per-sector-result {
+        leaf sector-index {
+            type rb-tg-types:radio-sector-index;
+            description
+              "The index of local sector";
+        }
+        leaf progress-status {
+            type topo-scan-progress-status-type;
+            description
+              "The progress status of topo scan on the sector";
+        }
+        list results {
+            key "remote-assigned-name remote-sector";
+            uses topo-scan-result-group;
+            description
+              "List of topo scan results per local sector";
+        }
+        description
+          "topo scan per sector running status and results container";
+    }
+
+    // grouping statements
+    grouping rf-sync-top {
+        container rf-sync {
+            if-feature "rb-tg-types:sync-mode-ptp or rb-tg-types:sync-mode-rf or rb-tg-types:sync-mode-gps";
+            
+            leaf enabled {
+                type boolean;
+                default true;
+                description
+                  "The node can transmit or receive rf-sync data
+                   and use or fallback to rf-sync mode if supported";
+            }
+            leaf allow-free-running {
+                if-feature rb-tg-types:sync-mode-rf;
+                type boolean;
+                default false;
+                description
+                  "The node is allowed to use and ignite links 
+                   even after receiving free-running sync from a remote peer.";
+            }
+            list ignored-neighbors {
+                if-feature rb-tg-types:sync-mode-rf;
+                key assigned-name;
+                leaf assigned-name {
+                    type rb-tg-types:node-assigned-name;
+                    description
+                      "The assigned name of the ignored neighbor node";
+                }
+                description
+                  "A list of neighbors that their clock source should be ignored";
+            }
+            uses rf-sync-state-grouping;
+            description
+              "rf-sync configuration and state data";
+        }
+        description
+          "rf-sync container grouping";
+    }
+    grouping node-dn-top {
+        container node-config {
+            description
+              "The container includes all the configuration that are related to the entire TG unit.";
+            container default-radio-profile {
+                uses rb-tg-radio:radio-frequency;
+                uses rb-tg-radio:radio-polarity;
+                uses rb-tg-radio:radio-golay-index;
+                description
+                  "Defaults for radio configuration (Rx-Tx). Applies to sectors when they have no specified radio configuration.";
+            }
+            leaf is-pop-dn {
+                type boolean;
+                description
+                  "Define this as a POP-DN or a regular Node";
+            }
+            leaf sync-mode {
+                type dn-sync-mode-type;
+                default no-sync;
+                description
+                  "Specify how the node will synchronize with other nodes on the network";
+            }
+            uses sync-state-grouping;
+            uses rf-sync-top;
+        }
+        description
+          "Grouping for node configuration and defaults";
+    }
+    grouping sectors-dn-top {
+        container sectors-config {
+            description
+              "Contain all parameters for sectors.";
+            list sector {
+                key index;
+                leaf index {
+                    type rb-tg-types:radio-sector-index;
+                    description
+                      "The index of the sector.";
+                }
+                // container ssid-profile {
+                // uses ssid-profile;
+                // description
+                // "SSID configuration. 
+                // Must be configured if the respective parameters are unspecified in default-ssid-profile, otherwise overrides them.";
+                // }
+                container radio-profile {
+                    uses rb-tg-radio:radio-frequency;
+                    uses rb-tg-radio:radio-polarity;
+                    uses rb-tg-radio:radio-golay-index;
+                    description
+                      "Radio configuration (Rx-Tx).
+                        Must be configured if the respective parameters are unspecified in default-radio-profile, otherwise overrides them.";
+                }
+                description
+                  "List of all sectors";
+            }
+        }
+        description
+          "Grouping for sectors configuration and default configuration data.";
+    }
+
+    grouping configured-link-top {
+        description
+          "Configuration for a link";
+
+        leaf ifIndex {
+            type rb-tg-types:InterfaceIndex;
+            config false;
+            autocli:hide;
+            autocli:hide-show;
+            description
+              "ifIndex of remote-assigned-name.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.1";
+        }
+
+        leaf remote-assigned-name {
+            type rb-tg-types:node-assigned-name;
+            description
+              "The network assigned name/ID (AN) of the remote unit to which a link is defined.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.2";
+        }
+
+        list remote-sector {
+            key index;
+            leaf index {
+                type rb-tg-types:radio-sector-index;
+                description
+                  "The index of the sector";
+            }
+            // min-elements 1; // TODO(itziks): in the future we will not need to set remote sector if responder-node-type=cn (i.e. TU)
+            description
+              "A list of sectors on the remote unit, to which the link can be setup.";
+        }
+
+        list local-sector {
+            key index; // TODO(itziks): index must exist in sectors list
+            leaf index {
+                type rb-tg-types:radio-sector-index;
+                description
+                  "The index of the sector";
+            }
+            // min-elements 1; // TODO(itziks)
+            description
+              "A list of sectors on the local unit, from which the link can be setup.";
+        }
+
+        leaf control-superframe {
+            type rb-tg-radio:control-superframe;
+            // TODO(itziks): enforce constraints based on responder-node-type (see description below)
+            mandatory true;
+            description
+              "If responder-node-type = Client Node (CN): must be set to unspecified.
+               If responder-node-type = Distribution Node (DN): can be either 0 or 1, but different between remote DNs on the same local sector 
+               (can be max. 2 DN to DN links per sector)";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.4";
+        }
+
+        leaf responder-node-type {
+            when "/rb-tg-radio:radio-common/rb-tg-radio:node-config/rb-tg-radio:operation-mode='BU'" {
+                description
+                  "responder-node-type is only applicable
+                   when the operation mode is BU";
+            }
+            type rb-tg-radio:node-type;
+            default cn;
+            description
+              "The requested node-type of the remote unit. The link will be rejected if the remote unit is already 
+               configured to a different type by another active link";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.3";
+        }
+
+        leaf admin-status {
+            type rb-tg-types:admin-status;
+            default up;
+            description
+              "Defines whether to initiate the link (and keep it up) or drop it (in case it was already established)";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.5";
+        }
+
+        leaf tx-power-control {
+            type rb-tg-radio:tx-power-control-type;
+            description
+              "lock txPower to 6, 31, auto for purpose of naive alignment";
+        }
+
+        leaf local-sector-bitmap {
+            type uint32;
+            config false;
+            description
+              "A bit map representation of the local sectors list. 
+               For example: local sector 1 and local sector 2 will result in 0x3";
+
+            autocli:hide;
+            autocli:hide-show;
+
+            smiv2:defval "0";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.6";
+        }
+
+        leaf remote-sector-bitmap {
+            type uint32;
+            config false;
+            description
+              "A bit map representation of the remote sectors list. 
+               For example: remote sector 1 and remote sector 2 will result in 0x3";
+
+            autocli:hide;
+            autocli:hide-show;
+
+            smiv2:defval "0";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.7";
+        }
+    }
+
+    grouping dn-link-state-group {
+        description
+          "Contains information of ignition process";
+        leaf dn-link-state {
+            type dn-link-state-type;
+            config false;
+            description
+              "Explains state of ignition process";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.8";
+        }
+        leaf ignition-try-count {
+            type uint32;
+            default 0;
+            config false;
+            description
+              "Count of ignition attempts";
+        }
+        container disconnected-link {
+            uses rb-tg-radio:disconnected-link-state;
+            config false;
+            description
+              "Aggregates state and down-cause together";
+        }
+    }
+
+    grouping golay-group {
+        leaf tx-golay-index {
+            type rb-tg-radio:golay-index;
+            description
+              "Tx Golay index of Golay code sequence";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.9";
+        }
+        leaf rx-golay-index {
+            type rb-tg-radio:golay-index;
+            description
+              "Rx Golay index of Golay code sequence";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1.10";
+        }
+        description
+          "For overriding node/sector configuration from link";
+    }
+
+    grouping links-dn-top {
+        container links {
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1";
+            list configured {
+                smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3.1.1";
+                uses configured-link-top;
+                uses dn-link-state-group;
+                uses golay-group;
+                key remote-assigned-name;
+                cx-snmp:table-key "ifIndex";
+
+                description
+                  "A list of all links that the node will try to initiate.";
+            }
+            description
+              "Contains lists of all defined links in this node.";
+        }
+        description
+          "Contains all links configuration";
+    }
+
+    grouping ignition-config-dn-top {
+        container ignition-config {
+            description
+              "The container contains all configuration settings for the radio links ignition procedure.";
+            leaf idle-timer {
+              type uint16 {
+                range "0..3600";
+              }
+              units seconds;
+              default 600;
+              description
+                "The delay between ignition sessions.";
+            }
+            leaf ignition-timer {
+              type uint16 {
+                range "37..3600";
+              }
+              units seconds;
+              default 240;
+              description
+                "The duration of the ignition session.";
+            }
+            leaf retry-count {
+              type uint8 {
+                range "1..32";
+              }
+              default 2;
+              description
+                "Maximum retry count to raise a radio link during one ignition session.";
+            }
+            leaf link-stability-monitor-timer {
+              type uint16 {
+                range "0..3600";
+              }
+              units seconds;
+              default 900;
+              description
+                "The duration when a link shall not fail to become stable.";
+            }
+            leaf link-stability-disconnection-limit {
+              type uint8 {
+                range "1..15";
+              }
+              default 3;
+              description
+                "Maximum disconnection count of link in monitor timer to consider the link is unstable.";
+            }
+        }
+        description
+          "Grouping for ignition algorithm functionality settings";
+    }
+
+    grouping topo-scan-top {
+        container topo-scan {
+            config false;
+            leaf progress-status {
+              type topo-scan-progress-status-type;
+              default not-started;
+              description
+                "This is the overall status of the scan, not per sector.";
+            }
+            list per-sector-results {
+                key sector-index;
+                uses topo-scan-per-sector-result;
+                description
+                  "List of local sectors, their topo scan progress and results";
+            }
+            list per-link-results {
+                key remote-assigned-name;
+
+                leaf local-sector {
+                  type rb-tg-types:radio-sector-index;
+                  description
+                  "local sector index";
+                }
+                
+                uses topo-scan-result-group;
+                description
+                  "List of best scan results for each link found by scan";
+            }
+            description
+              "Contains manual topo scan start, progress and results";
+        }
+        description
+          "Grouping for manual topo scan feature";
+    }
+
+    grouping radio-dn-top {
+        container radio-dn {
+            description
+              "Top level container for TG node radio";
+            uses node-dn-top;
+            uses sectors-dn-top;
+            uses links-dn-top;
+            uses ignition-config-dn-top;
+            uses topo-scan-top;
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.2.3";
+        }
+        description
+          "Top level grouping of radio data";
+    }
+
+    // data definition statements
+    uses radio-dn-top;
+// augment statements
+// rpc statements
+    rpc start-topo-scan {
+        description
+          "Start topo scan on a list of local sectors";
+        input {
+            list sectors {
+                key index;
+                leaf index {
+                    type rb-tg-types:radio-sector-index;
+                    description
+                      "The index of the sector";
+                }
+                description
+                  "List of local sectors to run topo scan on";
+            }
+        }
+    }
+
+}
+// notification statements
+

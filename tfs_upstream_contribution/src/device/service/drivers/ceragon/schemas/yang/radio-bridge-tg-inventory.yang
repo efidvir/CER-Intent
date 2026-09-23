@@ -1,0 +1,607 @@
+module radio-bridge-tg-inventory {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/inventory";
+
+    prefix "rb-tg-inv";
+
+    import ietf-yang-smiv2 {
+        prefix "smiv2";
+    }
+
+     import SNMPv2-TC {
+        prefix "snmpv2-tc";
+    }
+
+    import clixon-autocli {
+        prefix autocli;
+    }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "TODO";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2023-02-02 {
+        description
+          "Fix pyang check warnings";
+        reference
+          "";
+    }
+
+    revision 2023-01-31 {
+        description
+          "Added autohide for vendor-type";
+        reference
+          "https://oidref.com/1.3.6.1.2.1.47.1.1.1.1";
+    }
+
+    revision 2023-01-30 {
+        description
+          "Added entPhysicalAlias and entPhysicalAssetID";
+        reference
+          "https://oidref.com/1.3.6.1.2.1.47.1.1.1.1";
+    }
+
+    revision 2023-01-10 {
+        description
+          "Support for SNMP entPhysicalTable";
+        reference
+          "https://oidref.com/1.3.6.1.2.1.47.1.1.1.1";
+    }
+
+    revision 2023-01-05 {
+        description
+          "Set index as the key and change all strings to DisplayStrings";
+        reference
+          "";
+    }
+
+    revision 2022-12-20 {
+        description
+          "Support for SNMP entPhysicalTable";
+        reference
+          "https://oidref.com/1.3.6.1.2.1.47.1.1.1.1";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-12-02 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+
+    // typedef statements
+    typedef PhysicalIndex {
+        type int32 {
+            range "1..2147483647";
+        }
+        description
+            "An arbitrary value that uniquely identifies the physical
+              entity.  The value should be a small positive integer.
+              Index values for different physical entities are not
+              necessarily contiguous.";
+        smiv2:display-hint "d";
+    }
+
+    typedef PhysicalIndexOrZero {
+        type int32 {
+            range "0..2147483647";
+        }
+        description
+          "This TEXTUAL-CONVENTION is an extension of the
+            PhysicalIndex convention, which defines a greater than zero
+            value used to identify a physical entity.  This extension
+            permits the additional value of zero.  The semantics of the
+            value zero are object-specific and must, therefore, be
+            defined as part of the description of any object that uses
+            this syntax.  Examples of the usage of this extension are
+            situations where none or all physical entities need to be
+            referenced.";
+        smiv2:display-hint "d";
+    }
+
+    typedef IANAPhysicalClass {
+        type enumeration {
+            enum "other" {
+                value "1";
+                description
+                    "The enumeration 'other' is applicable if the physical
+                      entity class is known but does not match any of the
+                      supported values.";
+            }
+            enum "unknown" {
+                value "2";
+                description
+                    "The enumeration 'unknown' is applicable if the physical
+                      entity class is unknown to the agent.";
+            }
+            enum "chassis" {
+                value "3";
+                description
+                    "The enumeration 'chassis' is applicable if the physical
+                      entity class is an overall container for networking
+                      equipment. Any class of physical entity, except a stack,
+                      may be contained within a chassis; a chassis may only
+                      be contained within a stack.";
+            }
+            enum "backplane" {
+                value "4";
+                description
+                    "The enumeration 'backplane' is applicable if the physical
+                      entity class is some sort of device for aggregating and
+                      forwarding networking traffic, such as a shared
+                      backplane in a modular ethernet switch. Note that an
+                      agent may model a backplane as a single physical entity,
+                      which is actually implemented as multiple discrete
+                      physical components (within a chassis or stack).";
+            }
+            enum "container" {  // e.g., chassis slot or daughter-card holder
+                value "5";
+                description
+                    "The enumeration 'container' is applicable if the
+                      physical entity class is capable of containing one or
+                      more removable physical entities, possibly of different
+                      types. For example, each (empty or full) slot in a
+                      chassis will be modeled as a container. Note that all
+                      removable physical entities should be modeled within
+                      a container entity, such as field-replaceable modules,
+                      fans, or power supplies. Note that all known containers
+                      should be modeled by the agent, including empty
+                      containers.";
+            }
+            enum "powerSupply" {
+                value "6";
+                description
+                    "The enumeration 'powerSupply' is applicable if the
+                      physical entity class is a power-supplying component.";
+            }
+            enum "fan" {
+                value "7";
+                description
+                    "The enumeration 'fan' is applicable if the physical
+                      entity class is a fan or other heat-reduction component.";
+            }
+            enum "sensor" {
+                value "8";
+                description
+                    "The enumeration 'sensor' is applicable if the physical
+                      entity class is some sort of sensor, such as a
+                      temperature sensor within a router chassis.";
+            }
+            enum "module" {     // e.g., plug-in card or daughter-card
+                value "9";
+                description
+                    "The enumeration 'module' is applicable if the physical
+                      entity class is some sort of self-contained sub-system.
+                      If the enumeration 'module' is removable, then it should
+                      be modeled within a container entity; otherwise, it
+                      should be modeled directly within another physical
+                      entity (e.g., a chassis or another module).";
+            }
+            enum "port" {
+                value "10";
+                description
+                    "The enumeration 'port' is applicable if the physical
+                      entity class is some sort of networking port, capable
+                      of receiving and/or transmitting networking traffic.";
+            }
+            enum "stack" {      // e.g., stack of multiple chassis entities
+                value "11";
+                description
+                    "The enumeration 'stack' is applicable if the physical
+                      entity class is some sort of super-container (possibly
+                      virtual) intended to group together multiple chassis
+                      entities. A stack may be realized by a 'virtual' cable,
+                      a real interconnect cable attached to multiple chassis,
+                      or multiple interconnect cables. A stack should not be
+                      modeled within any other physical entities, but a stack
+                      may be contained within another stack. Only chassis
+                      entities should be contained within a stack.";
+            }
+            enum "cpu" {
+                value "12";
+                description
+                    "The enumeration 'cpu' is applicable if the physical
+                      entity class is some sort of central processing unit.";
+            }
+            enum "energyObject" {
+                value "13";
+                description
+                    "The enumeration 'energyObject' is applicable if the
+                      physical entity is some sort of energy object, i.e.,
+                      a piece of equipment that is part of or attached to
+                      a communications network that is monitored, controlled,
+                      or aids in the management of another device for Energy
+                      Management.";
+            }
+            enum "battery" {
+                value "14";
+                description
+                    "The enumeration 'battery' is applicable if the physical
+                      entity class is some sort of battery.";
+            }
+        }
+        description
+            "An enumerated value that provides an indication of the
+              general hardware type of a particular physical entity.
+              There are no restrictions as to the number of
+              entPhysicalEntries of each entPhysicalClass, which must
+              be instantiated by an agent.";
+  }
+
+    // grouping statements
+    grouping inventory-top {
+        description
+          "a grouping for the inventory tree";
+
+        container inventory {
+            config false;
+            description
+              "The inventory tree";
+
+            smiv2:oid "1.3.6.1.2.1.47.1.1.1";
+
+            list component {
+                key "index";
+                description
+                  "List of components.";
+
+                smiv2:oid "1.3.6.1.2.1.47.1.1.1.1";
+
+                leaf name {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "The name assigned to this component.";
+
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.7";
+                }
+
+                leaf index {
+                    type rb-tg-inv:PhysicalIndex;
+                    description
+                        "The index for this entry.";
+
+                    smiv2:max-access "not-accessible";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.1";
+                }
+
+                leaf description {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "A textual description of the component. This node should contain a string that identifies the manufacturer's name
+                       for the component and should be set to a distinct value for each version or model of the component.";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.2";
+                }
+
+                leaf vendor-type {
+                    type snmpv2-tc:AutonomousType;
+                    description
+                        "An indication of the vendor-specific hardware type of the
+                          physical entity.  Note that this is different from the
+                          definition of MIB-II's sysObjectID.
+
+                          An agent should set this object to an enterprise-specific
+                          registration identifier value indicating the specific
+                          equipment type in detail.  The associated instance of
+                          entPhysicalClass is used to indicate the general type of
+                          hardware device.
+
+                          If no vendor-specific registration identifier exists for
+                          this physical entity, or the value is unknown by this agent,
+                          then the value { 0 0 } is returned.";
+
+                    smiv2:defval "zeroDotZero";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.3";
+
+                    autocli:hide;
+                    autocli:hide-show;
+                }
+
+                leaf parent {
+                    type leafref {
+                        path "../../component/name";
+                    }
+                    description
+                      "The name of the component that physically contains this component.
+
+                       If this leaf is not instantiated, it indicates that this component is not contained in any other component.
+
+                       In the event that a physical component is contained by more than one physical component (e.g., double-wide
+                       modules), this node contains the name of one of these components.  An implementation MUST use the same name
+                       every time this node is instantiated.";
+                }
+
+                leaf parent-index {
+                    type rb-tg-inv:PhysicalIndexOrZero;
+                    description
+                        "The value of parent-index for the physical entity that
+                          'contains' this physical entity.  A value of zero indicates
+                          this physical entity is not contained in any other physical
+                          entity.  Note that the set of 'containment' relationships
+                          define a strict hierarchy; that is, recursion is not
+                          allowed.
+                          In the event that a physical entity is contained by more
+                          than one physical entity (e.g., double-wide modules), this
+                          object should identify the containing entity with the lowest
+                          value of entPhysicalIndex.";
+
+                    autocli:hide;
+                    autocli:hide-show;
+
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.4";
+                }
+
+                leaf physical-class {
+                    type IANAPhysicalClass;
+                    description
+                        "An indication of the general hardware type of the physical
+                          entity.
+
+                          An agent should set this object to the standard enumeration
+                          value that most accurately indicates the general class of
+                          the physical entity, or the primary class if there is more
+                          than one entity.
+
+                          If no appropriate standard registration identifier exists
+                          for this physical entity, then the value 'other(1)' is
+                          returned.  If the value is unknown by this agent, then the
+                          value 'unknown(2)' is returned.";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.5";
+                }
+
+                leaf parent-rel-pos {
+                    type int32 {
+                        range "-1 .. 2147483647";
+                    }
+                    description
+                        "An indication of the relative position of this 'child'
+                         component among all its 'sibling' components.  Sibling
+                         components are defined as entPhysicalEntries that share the
+                         same instance values of each of the entPhysicalContainedIn
+                         and entPhysicalClass objects.
+
+                         An NMS can use this object to identify the relative ordering
+                         for all sibling components of a particular parent
+                         (identified by the entPhysicalContainedIn instance in each
+                         sibling entry).
+
+                         If possible, this value should match any external labeling
+                         of the physical component.  For example, for a container
+                         (e.g., card slot) labeled as 'slot #3',
+                         entPhysicalParentRelPos should have the value '3'.  Note
+                         that the entPhysicalEntry for the module plugged in slot 3
+                         should have an entPhysicalParentRelPos value of '1'.
+
+                         If the physical position of this component does not match
+                         any external numbering or clearly visible ordering, then
+                         user documentation or other external reference material
+                         should be used to determine the parent-relative position.
+                         If this is not possible, then the agent should assign a
+                         consistent (but possibly arbitrary) ordering to a given set
+                         of 'sibling' components, perhaps based on internal
+                         representation of the components.
+
+                         If the agent cannot determine the parent-relative position
+                         for some reason, or if the associated value of
+                         entPhysicalContainedIn is '0', then the value '-1' is
+                         returned.  Otherwise, a non-negative integer is returned,
+                         indicating the parent-relative position of this physical
+                         entity.
+
+                         Parent-relative ordering normally starts from '1' and
+                         continues to 'N', where 'N' represents the highest
+                         positioned child entity.  However, if the physical entities
+                         (e.g., slots) are labeled from a starting position of zero,
+                         then the first sibling should be associated with an
+                         entPhysicalParentRelPos value of '0'.  Note that this
+                         ordering may be sparse or dense, depending on agent
+                         implementation.
+
+                         The actual values returned are not globally meaningful, as
+                         each 'parent' component may use different numbering
+                         algorithms.  The ordering is only meaningful among siblings
+                         of the same parent component.
+
+                         The agent should retain parent-relative position values
+                         across reboots, either through algorithmic assignment or use
+                         of non-volatile storage.";
+
+                    autocli:hide;
+                    autocli:hide-show;
+
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.6";
+                }
+
+                list child {
+                    key "name";
+                    description
+                      "List of names of children nodes.";
+                    leaf name {
+                        type snmpv2-tc:DisplayString;
+                        description
+                          "The name assigned to this child node.";
+                    }
+                }
+
+                leaf hardware-rev {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "The vendor-specific hardware revision string for the component.
+                       The preferred value is the hardware revision identifier actually printed on the component itself (if present).";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.8";
+                }
+
+                leaf firmware-rev {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "The vendor-specific firmware revision string for the component.";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.9";
+                }
+
+                leaf software-rev {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "The vendor-specific software revision string for the component.";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.10";
+                }
+
+                leaf serial-num {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "The vendor-specific serial number string for the component.
+                       The preferred value is the serial number string actually printed on the component itself (if present).";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.11";
+                }
+
+                leaf mfg-name {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "The name of the manufacturer of this physical component.
+                       The preferred value is the manufacturer name string actually printed on the component itself (if present).
+
+                       Note that comparisons between instances of the model-name, firmware-rev, software-rev, and the serial-num nodes are
+                       only meaningful amongst component with the same value of mfg-name.
+
+                       If the manufacturer name string associated with the physical component is unknown to the server, then this node is not instantiated.";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.12";
+                }
+
+                leaf model-name {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "The vendor-specific model name identifier string associated with this physical component.
+                       The preferred value is the customer-visible part number, which may be printed on the component itself.
+
+                       If the model name string associated with the physical component is unknown to the server, then this node is not instantiated.";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.13";
+                }
+
+                leaf entPhysicalEntry {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "This object is an 'alias' name for the physical entity, as specified by a network manager, and provides a non-volatile 'handle' for the physical entity.
+
+                      On the first instantiation of a physical entity, the value of entPhysicalAlias associated with that entity is set to the zero-length string. However, the agent may set the
+                      value to a locally unique default value, instead of a zero-length string.
+
+                      If write access is implemented for an instance of entPhysicalAlias, and a value is written into the instance, the agent must retain the supplied value in the
+                      entPhysicalAlias instance (associated with the same physical entity) for as long as that entity remains instantiated. This includes instantiations across all
+                      re-initializations/reboots of the network management system, including those resulting in a change of the physical entity's entPhysicalIndex value.";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.14";
+
+                    autocli:hide;
+                    autocli:hide-show;
+                }
+
+                leaf entPhysicalAssetID {
+                    type snmpv2-tc:DisplayString;
+                    description
+                      "This object is a user-assigned asset tracking identifier (as specified by a network manager) for the physical entity, and provides non-volatile storage of this information.
+
+                      On the first instantiation of a physical entity, the value of entPhysicalAssetID associated with that entity is set to the zero-length string.
+
+                      Not every physical component will have an asset tracking identifier, or even need one. Physical entities for which the associated value of the entPhysicalIsFRU object is equal
+                      to 'false(2)' (e.g., the repeater ports within a repeater module), do not need their own unique asset tracking identifier. An agent does not have to provide write access
+                      for such entities, and may instead return a zero-length string.
+
+                      If write access is implemented for an instance of entPhysicalAssetID, and a value is written into the instance, the agent must retain the supplied value in the
+                      entPhysicalAssetID instance (associated with the same physical entity) for as long as that entity remains instantiated. This includes instantiations across all
+                      re-initializations/reboots of the network management system, including those resulting in a change of the physical entity's entPhysicalIndex value.
+
+                      If no asset tracking information is associated with the physical component, then this object will contain a zero-length string.";
+
+                    smiv2:defval "";
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.15";
+
+                    autocli:hide;
+                    autocli:hide-show;
+                }
+
+                leaf is-fru {
+                    type boolean;
+                    description
+                      "This node indicates whether or not this component is considered a 'field replaceable unit' by the vendor.
+                       If this node contains the value 'true', then this component identifies a field replaceable unit.
+                       For all components that are permanently contained within a field replaceable unit, the value 'false' should be returned for this node.";
+
+                    smiv2:defval false;
+                    smiv2:max-access "read-only";
+                    smiv2:oid "1.3.6.1.2.1.47.1.1.1.1.16";
+                }
+            }
+        }
+    }
+    // data definition statements
+    uses inventory-top;
+
+    smiv2:alias "entityMIB" {
+        smiv2:oid "1.3.6.1.2.1.47";
+    }
+
+    smiv2:alias "entityMIBObjects" {
+        smiv2:oid "1.3.6.1.2.1.47.1";
+    }
+
+    smiv2:alias "entityPhysical" {
+        smiv2:oid "1.3.6.1.2.1.47.1.1";
+    }
+// augment statements
+// rpc statements
+// notification statements
+}

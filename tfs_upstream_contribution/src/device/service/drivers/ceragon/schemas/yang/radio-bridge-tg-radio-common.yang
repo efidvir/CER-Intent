@@ -1,0 +1,1259 @@
+module radio-bridge-tg-radio-common {
+
+    yang-version "1.1";
+
+// namespace
+    namespace "http://siklu.com/yang/tg/radio";
+
+    prefix rb-tg-radio;
+    import ietf-yang-types {
+        prefix yang;
+    }
+    import radio-bridge-tg-types {
+        prefix "rb-tg-types";
+    }
+
+    import clixon-autocli {
+        prefix autocli;
+    }
+
+    import clixon-snmp {
+        prefix "cx-snmp";
+    }
+
+    import ietf-yang-smiv2 {
+        prefix "smiv2";
+    }
+// meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This YANG module is part of radio-bridge TG project.
+        It defines the radio part of the project";
+
+    revision 2024-12-23 {
+        description
+          "Remove rf-statistics from state-data";
+        reference
+          "";
+    }
+    
+    revision 2024-01-16 {
+        description
+          "Add range to dn-link-monitor timeout";
+        reference
+          "";
+    }
+
+    revision 2024-01-16 {
+        description
+          "Add dn-link-monitor leaves";
+        reference
+          "";
+    }
+
+    revision 2023-08-16 {
+        description
+          "Remove leaf rf-sync-available from state-data";
+        reference
+          "";
+    }
+
+    revision 2023-05-05 {
+        description
+          "Added rf-sync-available parameter to RF sector state data";
+        reference
+          "";
+    }
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2023-03-16 {
+        description
+          "Use rb-tg-types:InterfaceIndex instead of if-mib:InterfaceIndex";
+        reference
+          "";
+    }
+
+    revision 2023-02-22 {
+        description
+          "Change value of unspecified enum of Control Superframe to 255 to align with TG spec";
+        reference
+          "";
+    }
+
+    revision 2023-02-20 {
+        description
+          "Range of tx-power-index-type changed to 6..31";
+        reference
+          "";
+    }
+
+    revision 2023-02-16 {
+        description
+          "Define IfIndex as key to the active links SNMP table";
+        reference
+          "";
+    }
+
+    revision 2023-02-15 {
+        description
+          "Change yang OIDs to OIDs declared by the MIB";
+        reference
+          "";
+    }
+
+    revision 2023-02-14 {
+        description
+          "Change type of snr-type to decimal64";
+        reference
+          "";
+    }
+
+    revision 2023-02-12 {
+        description
+          "Add IfIndex to link active list";
+        reference
+          "";
+    }
+
+    revision 2023-02-02 {
+        description
+          "Remove remote-mac-addr OID";
+        reference
+          "";
+    }
+
+    revision 2023-02-02 {
+        description
+          "Adaptation for SNMP use";
+        reference
+          "";
+    }
+
+    revision 2023-01-22 {
+        description
+          "add numeric values to golay-index, control-superframe & node-type types in order to make them SNMP compatible";
+        reference
+          "";
+    }
+
+    revision 2023-01-12 {
+        description
+          "Added active-tile-count leaf";
+        reference
+          "";
+    }
+
+    revision 2023-01-03 {
+        description
+          "Added link-uptime-string leaf and hide link-uptime";
+        reference
+          "";
+    }
+
+    revision 2022-11-02 {
+        description
+          "Added antenna-mode enumeration for sector state node which
+           represents type of antenna that installed at sector.";
+        reference
+          "";
+    }
+
+    revision 2022-03-17 {
+        description
+          "Added support for links performance monitoring statistics by day and quarter";
+        reference
+          "";
+    }
+
+    revision 2021-11-18 {
+        description
+          "1.2.0 release";
+        reference
+          "";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2021-04-21 {
+        description
+          "Initial Revision";
+        reference
+          "";
+    }
+
+// extension statements
+// feature statements
+// identity statements
+// typedef statements
+    typedef golay-index {
+        type enumeration {
+            enum unspecified {
+                value "0";
+                description
+                  "Not specified in this level";
+            }
+            enum 1 {
+                value "1";
+                description
+                  ""; // TODO
+            }
+            enum 2 {
+                value "2";
+                description
+                  ""; // TODO
+            }
+        }
+        default "unspecified";
+        description
+          "Index of the radio Golay code sequence.
+           Must be specified in TG node defaults and/or for each sector.
+           Could be overridden in link
+           Based on TG radio definitions.";
+    }
+
+    typedef polarity-type {
+        type enumeration {
+            enum unspecified {
+                description
+                  "Not specified in this level";
+            }
+            enum even {
+                description
+                  "even polarity";
+            }
+            enum hybrid-even {
+                description
+                  "hybrid-even polarity";
+            }
+            enum odd {
+                description
+                  "odd polarity";
+            }
+            enum hybrid-odd {
+                description
+                  "hybrid-odd polarity";
+            }
+        }
+        default "unspecified";
+        description
+          "Time slot parameter to reduce interference from other TG nodes.
+            Must be specified in TG node defaults and/or for each sector.
+            According to TG radio definitions.";
+    }
+
+    typedef frequency-channel {
+        type  enumeration {
+            enum unspecified {
+                description
+                  "Not specified in this level";
+            }
+            enum 58320 {
+                description
+                  "RF channel 1, 58320MHz";
+            }
+            enum 60480 {
+                description
+                  "RF channel 2, 60480MHz";
+            }
+            enum 62640 {
+                description
+                  "RF channel 3, 62640MHz";
+            }
+            enum 64800 {
+                description
+                  "RF channel 4, 64800MHz";
+            }
+        }
+        units "MHz";
+        default "unspecified";
+        description
+          "Frequency of the radio channel.
+           Must be specified in TG node defaults and/or for each sector.";
+    }
+
+    typedef control-superframe {
+        type enumeration {
+            enum 0 {
+                value "0";
+                description
+                  "Control superframe 0";
+            }
+            enum 1 {
+                value "1";
+                description
+                  "Control superframe 1";
+            }
+            enum unspecified {
+                value "255";
+                description
+                  "Control superframe is unspecified.";
+            }
+        }
+        default "unspecified";
+        description
+          "Time slot at which the local node exchanges control information with the remote node.
+           Only valid for DN to DN RF links. For DN to CN RF links must be set to unspecified.";
+    }
+
+    typedef link-role {
+        type enumeration {
+            enum initiator {
+                value 1;
+                description
+                  "The local node initiated the link";
+            }
+            enum responder {
+                value 2;
+                description
+                  "The local node accepted the link";
+            }
+        }
+        description
+          "Whether the local node initiated the link or responded to the link request";
+    }
+    typedef ssid-name {
+        type rb-tg-types:radio-bridge-tg-string {
+            length "8..61";
+        }
+        description
+          "A string Identifier of the radio network";
+    }
+
+    typedef rf-link-password {
+        type rb-tg-types:radio-bridge-tg-string {
+            length "8..61";
+        }
+        description
+          "A password for the radio network";
+    }
+    typedef node-type {
+        type enumeration {
+            enum dn {
+                value "1";
+                description
+                  "The TG unit is a Distribution Node (DN)";
+            }
+            enum cn {
+                value "2";
+                description
+                  "The TG unit is a Client Node (CN)";
+            }
+        }
+        description
+          "Whether the TG unit is a distribution or a client node. A TU node is always CN";
+    }
+
+    typedef rssi-type {
+        type int8;
+        units "dBm";
+        description
+          "Received signal strength indicator. Range: -200dBm to 0dBm, resolution of 1dBm";
+    }
+
+    typedef snr-type {
+        type decimal64 {
+            fraction-digits 1;
+        }
+        units "dB";
+        description
+          "Signal-to-Noise Ratio. Range: -50dB to +100dB, resolution of 0.1dB";
+        smiv2:display-hint "255a";
+    }
+
+    typedef mcs-index-type {
+        type uint8;
+        description
+          "Modulation and coding scheme index";
+    }
+
+    typedef tx-power-index-type {
+        type uint8 {
+            range 6..31;
+        }
+        description
+          "Transmit power in relative units.
+           For MCS 10 and higher the index limit is 25, for MCS 9 and lower the limit is 31.";
+    }
+
+    typedef rf-link-speed-type {
+        type uint16;
+        units "Mbps";
+        description
+          "Over-the-air (OTA) rate, in Mbps";
+    }
+
+    typedef per-rate-type {
+        type string;
+        units "percent";
+        description
+          "Packet Error Rate (PER), in percentage";
+        smiv2:display-hint "255a";
+    }
+    typedef sync-mode-type {
+        type enumeration {
+            enum rf {
+                description
+                  "The RF is used for syncing";
+            }
+            enum internal {
+                description
+                  "Internal system is used for syncing";
+            }
+            enum no-sync {
+                description
+                  "No syncing is in progress";
+            }
+        }
+        description
+          "type of sector syncing either by internal system, RF, or no syncing";
+    }
+    typedef sector-mode {
+        type union {
+            type enumeration {
+                enum down {
+                    description
+                      "The sector is set to admin down";
+                }
+                enum uninitialized {
+                    description
+                      "Sector's starting state.
+                       Listening for links on every channel, polarity and Golay index.
+                       Can not initiate links.";
+                }
+                enum cn-link-up {
+                    description
+                      "The sector has an incoming link.
+                       Applicable only for CN nodes.";
+                }
+                enum initialized {
+                    description
+                      "The sector's channel and polarity parameters are configured.
+                       Does not listen for links.
+                       Applicable only for DN nodes.";
+                }
+                enum responder {
+                    description
+                      "The sector is initialized and listening for an incoming link (with its configured parameters).
+                       All configured sectors enter this state if non of the sectors have incoming links.
+                       The sector might have links it initiated previously.
+                       Applicable only for DN nodes.";
+                }
+                enum link-ignition {
+                    description
+                      "The sector is trying the initiate a link.
+                       Applicable only for DN nodes.";
+                }
+            }
+            type rb-tg-types:value-not-available;
+        }
+        description
+          "The mode of a sector: configuration state and whether or not it is trying to initiate links or listen for them.";
+    }
+
+    typedef operation-mode-type {
+        type enumeration {
+            enum BU {
+                description
+                  "The unit will operate as a base unit. In this operational mode the unit can do the following:
+                   1. connect to incoming connection requests from other BU units.
+                   2. initialize connection to other BU or TU units.";
+            }
+            enum TU {
+                description
+                  "The unit will operate as a terminal unit. In this operational mode the unit can
+                   connect to incoming connection requests from other BU units.";
+            }
+            enum P2P {
+                description
+                  "The unit will operate as a long reach unit. In this operational mode the unit can do the following:
+                   1. connect to incoming connection requests from other P2P units.
+                   2. initialize connection to other P2P units.";
+            }
+        }
+        description
+          "Whether the unit will operate as a base, terminal or a long reach unit";
+    }
+    typedef beam-index-type {
+        type uint16;
+        description
+          "Tx/Rx beam index";
+    }
+    typedef beam-angle-type {
+        type int16 {
+            range -180..180;
+        }
+        units "degrees";
+        description
+          "Beam direction for azimuth or elevation";
+    }
+    typedef active-tiles-count-type {
+        type uint8 {
+            range 1..8;
+        }
+        description
+          "Count of active RF tiles";
+    }
+    typedef link-distances-type {
+        type enumeration {
+            enum Normal {
+                description
+                  "Mode for links of short distances.";
+            }
+            enum Long {
+                description
+                  "Mode for links of long distances.";
+            }
+            enum Extra-long {
+                description
+                  "Mode for links of extra-long distances.";
+            }
+        }
+        description
+          "The distance mode of a link. Higher distance modes have lower data rates.
+           A higher distance mode will work for a shorter distance than intended
+           (with a reduced data rate), however the opposite will not work.";
+    }
+
+    typedef tx-power-control-type {
+        type union {
+            type  enumeration {
+                enum auto {
+                    value 0;
+                    description
+                      "ATPC enabled";
+                }
+                enum max {
+                    value 31;
+                    description
+                      "tx-power-index = 31";
+                }
+                enum min {
+                    value 6;
+                    description
+                      "tx-power-index = 6";
+                }
+            }
+            type tx-power-index-type;
+        }
+        description
+          "tx-power index to be locked for alignment";
+    }
+    typedef link-down-cause {
+        type enumeration {
+            enum SystemError {
+                description
+                  "The system has experienced an unexpected but recoverable error
+                   while igniting this link.";
+            }
+            enum NoGpsSync {
+                description
+                  "Could no synchronize with GPS.";
+            }
+            enum LinkTrainingFailed {
+                description
+                  "Could not complete the link training procedure. That can indicate
+                   invalid polarity, remote unit name, configuration and invalid
+                   physical configuration.";
+            }
+            enum HeartbeatLossDetected {
+                description
+                  "Heartbeat loss detected: that usually indicates of a poor radio
+                   connectivity or a lot of noise which caused the link not be able
+                   to stay up.";
+            }
+            enum LinkNegotiationFailed {
+                description
+                  "Could not complete ignition due to link negotiation and state of
+                   the other peer: that can indicate of an invalid ssid / password.";
+            }
+            enum LinkUpChannelChanged {
+                description
+                  "Channel has been changed, but the sector has a link up with a different
+                   channel (usually happens when the sector is a responder and tries to
+                   change the channel)";
+            }
+        }
+        description
+          "Explains down cause of not connected links";
+    }
+
+    typedef antenna-mode-type {
+        type enumeration {
+            enum dish {
+                description
+                  "External dish antenna";
+            }
+            enum normal {
+                description
+                  "Single tile integrated beam forming antenna 90deg";
+            }
+            enum massive2 {
+                description
+                  "Two tiles integrated beam forming antenna 90deg";
+            }
+            enum diversity {
+                description
+                  "Integrated beam forming antenna 180deg in diversity mode";
+            }
+            enum spider {
+                description
+                  "Antenna emulator";
+            }
+            enum unknown {
+                description
+                  "Used if impossible to determine the type of antenna";
+            }
+        }
+        description
+          "Represents all supported types and modes of the antenna";
+    }
+
+// grouping statements
+    grouping node-top {
+        container node-config {
+            description
+              "The container includes all the configuration that are related to the entire node.";
+            container default-ssid-profile {
+                uses ssid-profile;
+                description
+                  "Defaults for ssid configuration. Applies also to sectors without specified SSID configuration";
+            }
+            leaf operation-mode {
+                type operation-mode-type;
+                description
+                  "The unit will operate in this mode. The options are: BU, TU or P2P.
+                   When moving from P2P to BU or TU and vice versa, a system reboot is needed.";
+            }
+            leaf link-distance {
+                type link-distances-type;
+                default Long;
+                description
+                  "The distance mode of the link. The options are: Normal, Long and Extra-long.
+                   Changing the distance mode requires a system reboot.";
+            }
+            list available-operation-mode {
+                key "operation-mode";
+                config false;
+                leaf operation-mode {
+                    type operation-mode-type;
+                    description
+                      "The unit can operate in this mode";
+                }
+                description
+                  "A list of operational modes that the unit can be switched to";
+            }
+            leaf tx-power-control {
+                type tx-power-control-type;
+                default auto;
+                description
+                  "lock txPower to 6, 31, auto for purpose of naive alignment
+                    for entire node";
+            }
+            leaf dn-link-monitor-timeout {
+                type uint32 {
+                  range 60..86400;
+                }
+                units seconds;
+                default 600;
+                description
+                  "Timeout for the no links, in seconds. range: 1 minute to 1 day.
+                  If there is a sector with configuration of link-monitor-enabled equal true, 
+                  and there are no active DN links in this sector in a period equal to this 
+                  timeout then the system will perform a reboot.
+                  The monitor is triggering a reboot only for DN links (links where the remote peer 
+                  is a DN).";
+            }
+        }
+        description
+          "Grouping for node configuration and defaults";
+    }
+
+    grouping radio-frequency {
+        leaf frequency {
+            type frequency-channel;
+            description
+              "Channel frequency index";
+        }
+        description
+          "Radio frequency grouping";
+    }
+    grouping radio-polarity {
+        leaf polarity {
+            type polarity-type;
+            description
+              "Polarity type";
+        }
+        description
+          "Radio polarity grouping";
+    }
+    grouping radio-golay-index {
+        leaf tx-golay-index {
+            type golay-index;
+            description
+              "Tx Golay index of Golay code sequence";
+        }
+        leaf rx-golay-index {
+            type golay-index;
+            description
+              "Rx Golay index of Golay code sequence";
+        }
+        description
+          "Radio golay index grouping for both Rx and Tx";
+    }
+
+    grouping ssid-profile {
+        leaf ssid {
+            type ssid-name;
+            default "MultiHaul";
+            description
+              "A string Identifier of the radio network";
+        }
+        leaf password {
+            type rf-link-password;
+            default "MultiHaul";
+            description
+              "The password for the radio network";
+        }
+        description
+          "SSID parameters";
+    }
+
+    grouping sectors-top {
+        container sectors-config {
+            description
+              "Contain all parameters for sectors";
+            list sector {
+                key index;
+                leaf index {
+                    type rb-tg-types:radio-sector-index;
+                    description
+                      "The index of the sector";
+                }
+                leaf alias {
+                    type rb-tg-types:radio-bridge-tg-string{
+                        length "0..20";
+                    }
+                    description
+                      "The alias name of sector given by user.";
+                }
+                leaf admin-status {
+                    type rb-tg-types:admin-status;
+                    description
+                      "Whether the sector is configured up (enabled) or down (disabled)";
+                }
+                container dn-link-monitor {
+                    leaf enabled {
+                      type boolean;
+                      default "false";
+                      description
+                        "Controls the behavior of the link monitor for the sector.
+                        If it is true and there are no active DN links in this sector 
+                        in a period equal to dn-link-monitor-timeout configuration,
+                        then the system will perform a reboot.
+                        The monitor is triggering a reboot only for DN links (links where the 
+                        remote peer is a DN).";
+                      }
+                    description
+                        "Contains parameters for the dn-link-monitor feature";
+                }
+
+                container state {
+                    config false;
+                    leaf mac-addr {
+                        type yang:mac-address;
+                        description
+                          "MAC address of the local sector";
+                    }
+                    leaf sector-state {
+                        type sector-mode;
+                        description
+                          "Current mode of sector";
+                    }
+                    uses radio-frequency;
+                    leaf antenna-mode {
+                        type antenna-mode-type;
+                        description
+                          "Type and mode of antenna";
+                    }
+                    leaf sync-mode {
+                        type sync-mode-type;
+                        description
+                          "type of sector syncing either by GPS or RF";
+                    }
+                    container temperatures {
+                        leaf modem-temperature {
+                            type rb-tg-types:temperature-celsius;
+                            description
+                              "Sector's modem temperature, in Celsius";
+                        }
+                        list rf {
+                            key index;
+                            leaf index {
+                                type uint8;
+                                description
+                                  "Sector RF index";
+                            }
+                            leaf rf-temperature {
+                                type rb-tg-types:temperature-celsius;
+                                description
+                                  "RF temperature, in Celsius";
+                            }
+                            description
+                              "List of the RF temperatures";
+                        }
+                        description
+                          "The temperatures of the Sector's components.";
+                    }
+
+                    description
+                      "The state of the sector";
+                }
+                description
+                  "List of all sectors";
+            }
+        }
+        description
+          "Grouping for sectors configuration and default configuration data";
+    }
+
+    grouping link-state-counters {
+        description
+          "counters for a link";
+        leaf rx-ok {
+            type uint64;
+            description
+              "Number of successfully received frames/MPDUs.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.24";
+        }
+        leaf tx-ok {
+            type uint64;
+            description
+              "Number of successfully transmitted frames/MPDUs.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.25";
+        }
+        leaf tx-fail {
+            type uint64;
+            description
+              "Number of transmission failures.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.27";
+        }
+        leaf rx-fail {
+            type uint64;
+            description
+              "Number of CRC failed frames received (Once CRC fail, cannot trust RA as well).";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.26";
+        }
+        leaf rx-hcs-fail {
+            type uint64;
+            description
+              "Number of received frames with HCS failed PLCP header.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.28";
+        }
+        leaf tx-failures {
+            type uint64;
+            description
+              "Total number of TX packets dropped due to lifetime expiry.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.29";
+        }
+        leaf rx-failures {
+            type uint64;
+            description
+              "Total number of RX packets failures.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.30";
+        }
+        leaf rx-drop-buf-size {
+            type uint64;
+            description
+              "Total RX Discard count due to Buffer overflow.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.31";
+        }
+        leaf rx-drop-encryption-fail {
+            type uint64;
+            description
+              "Total RX Discard count due to Encryption failure.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.32";
+        }
+        leaf rx-drop-ra-mismatch {
+            type uint64;
+            description
+              "Total RX Discard count due to RA mismatch.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.33";
+        }
+        leaf rx-drop-unexpected {
+            type uint64;
+            description
+              "Total RX Discard count due to other unexpected reasons or PER emulator.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.34";
+        }
+    }
+    grouping beam-info-rx {
+        leaf beam-index-rx {
+            type beam-index-type;
+            description
+              "Index of active beam";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.16";
+        }
+        leaf beam-azimuth-rx {
+            type beam-angle-type;
+            description
+              "Azimuth direction of active beam";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.17";
+        }
+        leaf beam-elevation-rx {
+            type beam-angle-type;
+            description
+              "Elevation direction of active beam";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.18";
+        }
+        leaf active-tile-count-rx {
+            type active-tiles-count-type;
+            description
+              "Count of active RF tiles";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.19";
+        }
+        description
+          "Beam information for RX beam";
+    }
+
+    grouping beam-info-tx {
+        leaf beam-index-tx {
+            type beam-index-type;
+            description
+              "Index of active beam";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.20";
+        }
+        leaf beam-azimuth-tx {
+            type beam-angle-type;
+            description
+              "Azimuth direction of active beam";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.21";
+        }
+        leaf beam-elevation-tx {
+            type beam-angle-type;
+            description
+              "Elevation direction of active beam";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.22";
+        }
+        leaf active-tile-count-tx {
+            type active-tiles-count-type;
+            description
+              "Count of active RF tiles";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.23";
+        }
+        description
+          "Beam information for TX beam";
+    }
+
+    grouping active-link-health-state {
+        description
+          "link health status values";
+
+        leaf rssi {
+            type rssi-type;
+            description
+              "Received Signal Strength Indicator";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.7";
+        }
+        leaf snr {
+            type snr-type;
+            description
+              "Signal-to-Noise Ratio";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.8";
+        }
+        leaf mcs-rx {
+            type mcs-index-type;
+            description
+              "modulation and coding scheme index of Rx";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.9";
+        }
+        leaf mcs-tx {
+            type mcs-index-type;
+            description
+              "modulation and coding scheme index of Tx";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.10";
+        }
+        leaf tx-per {
+            type per-rate-type;
+            description
+              "Packet Error Rate (PER), in percentage. 2 fraction-digits accuracy";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.12";
+        }
+        leaf rx-per {
+            type per-rate-type;
+            description
+              "Packet Error Rate (PER), in percentage. 2 fraction-digits accuracy";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.11";
+        }
+        leaf tx-power-index {
+            type tx-power-index-type;
+            description
+              "Transmit power index (relative). Range: 0-31";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.13";
+        }
+        leaf speed-rx {
+            type rf-link-speed-type;
+            description
+              "Rx OTA data speed (Mbps)";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.14";
+        }
+        leaf speed-tx {
+            type rf-link-speed-type;
+            description
+              "Tx OTA data speed (Mbps)";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.15";
+        }
+        uses beam-info-rx;
+        uses beam-info-tx;
+        uses link-state-counters;
+    }
+
+    // Unused
+    grouping link-state-instantaneous-counters {
+        description
+          "Instantaneous counters for a link";
+        leaf rx-packets {
+            type uint64;
+            description
+              "Receive packets/second";
+        }
+        leaf rx-bytes {
+            type uint64;
+            description
+              "Received bytes/second";
+        }
+        leaf rx-errors {
+            type uint64;
+            description
+              "Received errors/second";
+        }
+        leaf rx-dropped {
+            type uint64;
+            description
+              "Receive dropped/second";
+        }
+
+        leaf tx-packets {
+            type uint64;
+            description
+              "Transmit packets/second";
+        }
+        leaf tx-bytes {
+            type uint64;
+            description
+              "Transmit bytes/second";
+        }
+        leaf tx-errors {
+            type uint64;
+            description
+              "Transmit errors/second";
+        }
+        leaf tx-dropped {
+            type uint64;
+            description
+              "Transmit dropped/second";
+        }
+    }
+
+    grouping active-link-state {
+        description
+          "Contains a link status data";
+        leaf ifIndex {
+            type rb-tg-types:InterfaceIndex;
+            autocli:hide;
+            autocli:hide-show;
+            description
+              "ifIndex of remote-assigned-name.";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.1";
+        }
+        leaf remote-assigned-name {
+            type rb-tg-types:node-assigned-name;
+            description
+              "The network Assigned Name/ID of the remote unit";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.2";
+        }
+        leaf actual-remote-sector-index {
+            type rb-tg-types:radio-sector-index;
+            description
+              "The remote sector index that the link is associated to (in the remote unit)";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.3";
+        }
+        leaf actual-local-sector-index {
+            type rb-tg-types:radio-sector-index;
+            description
+              "The local sector index that the link is associated from";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.4";
+        }
+        leaf remote-mac-addr {
+            type yang:mac-address;
+            description
+              "MAC address of the remote sector";
+        }
+        leaf local-role {
+            type link-role;
+            description
+              "Describes whether the local unit initiated the link or responded to it";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.5";
+        }
+        leaf link-uptime-ticks {
+            autocli:hide;
+            autocli:hide-show;
+            type yang:timeticks;
+            description
+              "The value of uptime-hundredths-seconds at the time the RF link was changed state to UP";
+            smiv2:max-access "read-only";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1.6";
+        }
+        leaf link-uptime {
+            autocli:hide;
+            autocli:hide-show;
+            type uint64;
+            units "seconds";
+            description
+              "Total uptime of link since its initiation. The time is presented in seconds";
+        }
+        leaf link-uptime-string {
+            type string;
+            description
+              "Total uptime of link since its initiation, presented in format of DDDDD:HH:MM:SS";
+        }
+        uses active-link-health-state;
+    }
+
+    grouping disconnected-link-state {
+        description
+          "Contains a disconnected link cause data";
+        list local-sector {
+            key index;
+            description
+              "A list of local-sectors which received response during disconnection";
+            leaf index {
+                type rb-tg-types:radio-sector-index;
+                description
+                  "The index of the local sector";
+            }
+            list remote-sector {
+                key index;
+                description
+                  "A list of remote-sectors from received response during disconnection";
+                leaf index {
+                    type rb-tg-types:radio-sector-index;
+                    description
+                      "The index of the remote sector";
+                }
+                leaf down-cause {
+                    type link-down-cause;
+                    description
+                      "Explains down cause.";
+                }
+                leaf last-update {
+                    type string;
+                    description
+                      "Timestamp of latest down-cause";
+                }
+            }
+        }
+    }
+
+    grouping links-top {
+        container links {
+            config false;
+            list active {
+                cx-snmp:table-key "ifIndex";
+                uses active-link-state;
+                key remote-assigned-name;
+                config false;
+
+                description
+                  "A list of all connected RF links (initiated and responded)";
+                smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1.1";
+            }
+            list disconnected {
+                uses disconnected-link-state;
+                leaf remote-assigned-name {
+                    type rb-tg-types:node-assigned-name;
+                    description
+                      "The network Assigned Name/ID of the remote unit";
+                }
+                key remote-assigned-name;
+                config false;
+
+                description
+                  "A list of all disconnected RF links (that were once initiated)";
+            }
+            description
+              "Contains lists of all links";
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3.1";
+        }
+        description
+          "Contains parameters for all RF links (active and not currently active)";
+    }
+    grouping radio-top {
+        container radio-common {
+            description
+              "Top level container for TG unit radio information";
+            uses node-top;
+            uses sectors-top;
+            uses links-top;
+            smiv2:oid "1.3.6.1.4.1.31926.35.1.1.3";
+        }
+        description
+          "Top level grouping of radio data";
+    }
+
+    // data definition statements
+    uses radio-top;
+    // rpc statements
+    rpc clear-all-fw-counters {
+        description
+          "RPC for clearing the FW counters for all links";
+    }
+}

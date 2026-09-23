@@ -1,0 +1,127 @@
+module radio-bridge-tg-snmp {
+
+    yang-version "1.1";
+
+    // namespace
+    namespace "http://siklu.com/yang/tg/snmp";
+
+    prefix "rb-tg-snmp";
+
+    import ietf-snmp { prefix "ietf-snmp"; }
+
+    // meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "Augments the official ietf-snmp model";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2023-03-16 {
+        description
+          "Remove if-mib deviations.";
+        reference
+          "";
+    }
+
+    revision 2023-01-25 {
+        description
+          "Add support for ifOutDiscards";
+        reference
+          "https://datatracker.ietf.org/doc/rfc6020";
+    }
+
+    revision 2023-01-04 {
+        description
+          "Add support for ifPromiscuousMode, ifConnectorPresent, ifLinkUpDownTrapEnable, ifName";
+        reference
+          "https://datatracker.ietf.org/doc/rfc6020";
+    }
+
+    revision 2022-10-18 {
+        description
+          "Disable ietf-snmp/engine as unnecessary";
+        reference
+          "https://datatracker.ietf.org/doc/html/rfc6643";
+    }
+
+    revision 2022-09-15 {
+        description
+          "Add IF-MIB models";
+        reference
+          "https://datatracker.ietf.org/doc/html/rfc6643";
+    }
+
+    revision 2022-08-27 {
+        description
+          "v1 and v2c community support";
+        reference
+          "https://www.rfc-editor.org/rfc/rfc3584.html#page-26";
+    }
+
+    revision 2022-08-08 {
+        description
+          "Initial revision";
+        reference
+          "https://www.rfc-editor.org/rfc/rfc1157.html";
+    }
+
+    // extension statements
+    // feature statements
+    // identity statements
+    // typedef statements
+    // grouping statements
+    // data definition statements
+    // augment statements
+
+    // deviation statements
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:engine" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:community/ietf-snmp:context" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:community/ietf-snmp:target-tag" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:community/ietf-snmp:name/ietf-snmp:binary-name" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:notify" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:target" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:target-params" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:usm" {
+      deviate "not-supported";
+    }
+
+    deviation "/ietf-snmp:snmp/ietf-snmp:vacm" {
+      deviate "not-supported";
+    }
+
+  
+    // rpc statements
+    // notification statements
+}

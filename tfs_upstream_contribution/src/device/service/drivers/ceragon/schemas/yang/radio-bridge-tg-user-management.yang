@@ -1,0 +1,136 @@
+module radio-bridge-tg-user-management {
+
+    yang-version "1.1";
+
+// namespace
+    namespace "http://siklu.com/yang/tg/user-management";
+
+    prefix "rb-tg-um";
+// import some basic types
+    import clixon-autocli {
+        prefix autocli;
+    }
+// meta
+    organization
+      "Siklu";
+
+    contact
+      "Support: <https://siklu.com/contact/>";
+
+    description
+      "This YANG module is part of MultiHaul(tm) TG project.
+        It defines the username/password management of the project";
+
+    revision 2023-04-20 {
+        description
+          "Change yang version to 1.1";
+        reference
+          "";
+    }
+
+    revision 2023-02-26 {
+        description
+          "Set length limitation for user name";
+        reference
+          "";
+    }
+
+    revision 2022-02-14 {
+        description
+          "drop clixon-lib";
+        reference
+          "clixon CHANGELOG.md";
+    }
+
+    revision 2022-02-07 {
+        description
+          "import clixon-autocli";
+        reference
+          "clixon CHANGELOG.md";
+    }
+
+    revision 2021-05-25 {
+        description
+          "Release";
+        reference
+          "";
+    }
+
+    revision 2020-11-01 {
+        description
+          "Initial revision";
+        reference
+          "TBD";
+    }
+
+// extension statements
+// feature statements
+// identity statements
+// typedef statements
+// grouping statements
+    grouping user-management-top {
+        description
+          "Top level grouping for user management";
+        container user-management {
+            description
+              "Top level container for user management";
+            list user {
+                key "username";
+                description
+                  "username";
+                leaf username {
+                    type string{
+                      length "1..32";
+                      pattern '[A-Za-z0-9.\-_]+';
+                    }
+                    description
+                      "username - The characters that are allowed for username are 
+                       uppercase and lowercase letters, digits 
+                       and the following three characters _-.";
+                }
+
+                leaf password {
+                    autocli:hide;
+                    autocli:hide-show;
+                    type string{
+                        length "63";
+                        pattern
+                          '$5$[A-Za-z0-9/.]+$[A-Za-z0-9/.]+';
+                    }
+                    description
+                      "A POSIX crypt formatted string of 63 characters 
+                       but it's not tested to pass user auth";
+                }
+            }
+        }
+    }
+    // data definition statements
+    uses user-management-top;
+    // rpc statements
+    rpc crypt-password {
+        description
+          "RPC for applying POSIX crypt() on password string";
+        input{
+            leaf password {
+                type string{
+                    length "5..40";
+                    pattern
+                      '[!-~]+';
+                }
+                mandatory true;
+                description
+                  "password - The characters that are allowed for password
+                   are all printable ones. Length should be from 5 to 40
+                   characters.";
+            }
+        }
+        output{
+            leaf hash {
+                type string;
+                mandatory true;
+                description
+                  "hash string from POSIX crypt with lenth of 63 characters";
+            }
+        }
+    }
+}
