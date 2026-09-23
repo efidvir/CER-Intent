@@ -1,135 +1,301 @@
-# Ceragon Wireless Transport Southbound Driver for ETSI TeraFlowSDN
+# Ceragon Wireless Transport Southbound Driver Specification
 
-## 1. Overview & Architectural Scope
+## 1. Executive Summary & Purpose
 
-The **Ceragon Southbound Driver** (`src/device/service/drivers/ceragon/`) provides native ETSI TeraFlowSDN (TFS) control over Ceragon wireless radio links and transport equipment.
+This document specifies the technical design, architectural interfaces, data models, and operational workflows of the **Ceragon Southbound Driver** (`src/device/service/drivers/ceragon/`) for **ETSI TeraFlowSDN (TFS)**.
 
-It interacts with the physical equipment via **RFC 8040 RESTCONF** and the **RFC 6834 / RFC 7950 candidate datastore architecture**, translating high-level transport intents into atomic configuration mutations across millimeter-wave (mmWave), E-band, and multi-core microwave radio networks.
+The driver provides native SDN control, monitoring, dynamic configuration, and network slicing over Ceragon wireless radio links and transport equipment—including **MultiHaul TG mmWave (Terragraph)**, **EtherHaul E-Band**, and **CeraOS multi-core microwave systems**—using **RFC 8040 RESTCONF** and the **RFC 8342 Network Management Datastore Architecture (NMDA)**.
 
+---
+
+## 2. System Architecture
+
+```mermaid
+flowchart TD
+    subgraph TFS_CORE ["ETSI TeraFlowSDN Core"]
+        NBI["Northbound API (REST / IETF Network)"]
+        TOPOLOGY["Topology Service"]
+        MONITORING["Monitoring & Telemetry Service"]
+        CONTEXT["Context Service (CRDB)"]
+        DEVICE_SVC["Device Service (gRPC :2020)"]
+    end
+
+    subgraph DRIVER_LAYER ["Ceragon Southbound Driver (SBI)"]
+        DF["DriverFactory"]
+        CD["CeragonDriver (implements _Driver)"]
+        TOOLS["Tools (Resource Rules & Endpoint Mapping)"]
+        CLIENT["CeragonRestClient (RFC 8040 Engine)"]
+        MODELS["Normalized Transport Domain Models"]
+        SCHEMAS["51 Bundled YANG Schemas"]
+    end
+
+    subgraph HARDWARE_PLANE ["Physical Wireless Transport Equipment"]
+        T261["Ceragon / Siklu MultiHaul TG MH-T261\n(60 GHz V-Band Terragraph)"]
+        EH["Ceragon EtherHaul EH-8010FX\n(70/80 GHz E-Band Multi-Gigabit)"]
+        IP50["Ceragon CeraOS IP-50C / IP-50E\n(Multi-Core Microwave XPIC)"]
+    end
+
+    NBI --> DEVICE_SVC
+    DEVICE_SVC --> CONTEXT
+    DEVICE_SVC --> TOPOLOGY
+    MONITORING -.-> DEVICE_SVC
+    DEVICE_SVC --> DF
+    DF --> CD
+
+    CD --> TOOLS
+    CD --> CLIENT
+    CLIENT --> MODELS
+    CD -.-> SCHEMAS
+
+    CLIENT ===|"RESTCONF HTTP/HTTPS :80/:443\n(RFC 8040 Candidate Datastore / 2PC)"| T261
+    CLIENT ===|"RESTCONF HTTP/HTTPS :80/:443"| EH
+    CLIENT ===|"REST / NETCONF :80/:830"| IP50
 ```
-                      ┌──────────────────────────────────────┐
-                      │      ETSI TeraFlowSDN Controller     │
-                      │               Release 7.0            │
-                      └──────────────────┬───────────────────┘
-                                         │
-                         gRPC Internal Service Bus
-                                         │
-                      ┌──────────────────▼───────────────────┐
-                      │           TFS DeviceService          │
-                      │  src/device/service/drivers/ceragon/ │
-                      │                                      │
-                      │      ┌─────────────────────────┐     │
-                      │      │      CeragonDriver      │     │
-                      │      │   (_Driver Subclass)    │     │
-                      │      └────────────┬────────────┘     │
-                      │                   │                  │
-                      │      ┌────────────▼────────────┐     │
-                      │      │    CeragonRestClient    │     │
-                      │      │  RFC 8040 Candidate/Tx  │     │
-                      │      └────────────┬────────────┘     │
-                      └───────────────────┼──────────────────┘
-                                          │
-                  RFC 8040 RESTCONF HTTP/HTTPS Basic Auth
-                                          │
-         ┌────────────────────────────────┼────────────────────────────────┐
-         │                                │                                │
-┌────────▼──────────────┐      ┌──────────▼────────────┐       ┌───────────▼───────────┐
-│     MultiHaul TG      │      │       EtherHaul       │       │        CeraOS         │
-│  MH-T261, T280, N366  │      │  EH-8010FX, EH-2500   │       │   IP-50C, IP-50E,     │
-│ 60 GHz Terragraph     │      │ 70/80 GHz E-Band      │       │   IP-20C, IP-20N      │
-│ Beamforming mmWave    │      │ Multi-Gigabit Carrier │       │ Multi-Core Microwave  │
-└───────────────────────┘      └───────────────────────┘       └───────────────────────┘
+
+---
+
+## 3. Class Design & Component Responsibilities
+
+```mermaid
+classDiagram
+    class _Driver {
+        <<abstract>>
+        +Connect() bool
+        +Disconnect() bool
+        +GetInitialConfig() list
+        +GetConfig(resource_keys) list
+        +SetConfig(resources) list
+        +DeleteConfig(resources) list
+        +SubscribeState(subscriber) bool
+        +UnsubscribeState(subscriber) bool
+    }
+
+    class CeragonDriver {
+        -str address
+        -int port
+        -dict settings
+        -CeragonRestClient client
+        -Lock lock
+        +Connect() bool
+        +Disconnect() bool
+        +GetInitialConfig() list
+        +GetConfig(resource_keys) list
+        +SetConfig(resources) list
+        +DeleteConfig(resources) list
+        +SubscribeState(subscriber) bool
+        +UnsubscribeState(subscriber) bool
+    }
+
+    class CeragonRestClient {
+        -str base_url
+        -Session session
+        -int timeout
+        +probe_device() dict
+        +get_system_info() dict
+        +get_interfaces() list
+        +get_radio_sectors() list
+        +stage_candidate(path, payload) bool
+        +commit_candidate() bool
+        +discard_candidate() bool
+    }
+
+    class Tools {
+        <<utility>>
+        +extract_endpoints(device_state) list
+        +format_resource_rules(device_state) list
+        +parse_config_rule(key, value) tuple
+    }
+
+    class CeragonDeviceState {
+        +str node_name
+        +str serial_number
+        +str hardware_rev
+        +str software_version
+        +list interfaces
+        +list radio_sectors
+        +dict operating_params
+    }
+
+    _Driver <|-- CeragonDriver
+    CeragonDriver --> CeragonRestClient
+    CeragonDriver --> Tools
+    CeragonRestClient --> CeragonDeviceState
 ```
 
 ---
 
-## 2. Hardware Compatibility Matrix
+## 4. RESTCONF Candidate Datastore & Transaction Management
 
-| Product Family | Supported Models | Frequency Band | Modulation / Capacity | Interface Types | Datastore Architecture |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **MultiHaul TG** | `MH-T261`, `MH-T280`, `MH-N366` | 57–66 GHz (V-Band) | MCS1–MCS12 (up to 3.8 Gbps) | 1G/10G RJ-45 & SFP+ | Clixon RFC 8040 Candidate |
-| **EtherHaul** | `EH-8010FX`, `EH-2500FX`, `EH-1200` | 70/80 GHz (E-Band) | QPSK to 128QAM (up to 10 Gbps) | 1G/10G SFP+ | RESTCONF Candidate |
-| **CeraOS Microwave**| `IP-50C`, `IP-50E`, `IP-20C`, `IP-20N` | 6–42 GHz (Microwave) | 4QAM to 4096QAM, XPIC, MRMC | Multi-Gigabit Carrier Ethernet | CeraOS REST / NETCONF |
+Ceragon devices employ a candidate datastore engine. Applying configuration changes directly to the running datastore is prohibited by hardware security policies to prevent service interruption during multi-attribute mutations.
 
----
+### The 2-Phase Commit (2PC) Lifecycle
 
-## 3. TFS Driver Lifecycle Implementation
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Operator as TFS Service / Intent Layer
+    participant DEV_SVC as TFS DeviceService
+    participant DRIVER as CeragonDriver
+    participant REST as CeragonRestClient
+    participant HW as Ceragon Hardware (Candidate DS)
 
-The driver subclasses `device.service.driver_api._Driver._Driver` and implements all standard methods:
+    Operator->>DEV_SVC: ConfigureDevice(DeviceConfigRules)
+    DEV_SVC->>DRIVER: SetConfig(resources)
 
-### 3.1. `Connect()`
-* Establishes a session pool using `requests.Session` with HTTP Basic Authentication.
-* Verifies datastore reachability via `/restconf/data/ietf-yang-library:yang-library`.
-* Re-connection is idempotent and thread-safe via `threading.Lock`.
-
-### 3.2. `GetInitialConfig()`
-* Discovers physical hardware inventory (`serial_number`, `hardware_rev`, `software_version`, `model`).
-* Extracts all physical and radio interfaces, creating standard TFS `EndPoint` tuples:
-  * Copper endpoints: `(endpoint_uuid, "copper", [101, 102, 201, 202])`
-  * Radio endpoints: `(endpoint_uuid, "radio", [101, 102, 201, 202])`
-* Populates initial resource rules:
-  * `/device/hardware_info`
-  * `/device/capabilities`
-  * `/device/operating_parameters`
-  * `/device/endpoints`
-  * `/radio/sector[...]`
-
-### 3.3. `GetConfig(resource_keys)`
-* Queries live operational telemetry from the physical hardware:
-  * Frequency (`frequency_ghz`, `frequency_mhz`, `channel_id`)
-  * Transmit power control status (`tx_power_control: "auto"` / ATPC)
-  * Thermal sensors (`modem_temperature_c`, `rf_temperature_c`)
-  * Link health (`snr_db`, `rssi_dbm`, `link_loss_ratio`)
-
-### 3.4. `SetConfig(resources)`
-Translates TFS resource mutations into RFC 8040 candidate datastore modifications using a **2-Phase Commit** sequence:
-1. **Stage**: Dispatches `PATCH` to `/restconf/ds/ietf-datastores:candidate`.
-2. **Commit**: Executes `POST /restconf/operations/ietf-netconf:commit`.
-3. **Rollback**: If validation fails or the physical link drops, triggers `POST /restconf/operations/ietf-netconf:discard-changes`.
-
-Supported Resource Keys:
-* `/radio/tuning` $\rightarrow$ tunes channel frequency, channel bandwidth, and ATPC parameters.
-* `/slice[...]` or `/vlan[...]` $\rightarrow$ provisions IEEE 802.1Q sub-interfaces, VLAN tags, and bandwidth shaping.
-* `/modulation/acm_floor` $\rightarrow$ sets minimum ACM modulation floor for rain-fade protection.
-
-### 3.5. `DeleteConfig(resources)`
-* Teardown of VLAN sub-interfaces and release of allocated QoS capacity.
+    Note over DRIVER,HW: Phase 1: Staging Mutation in Candidate Datastore
+    DRIVER->>REST: stage_candidate(path, payload)
+    REST->>HW: PATCH /restconf/ds/ietf-datastores:candidate/ietf-interfaces:interfaces
+    
+    alt Staging Accepted (HTTP 200 / 204)
+        HW-->>REST: 204 No Content
+        Note over DRIVER,HW: Phase 2: Atomic Commit to Running Datastore
+        DRIVER->>REST: commit_candidate()
+        REST->>HW: POST /restconf/operations/ietf-netconf:commit
+        
+        alt Commit Accepted (HTTP 200)
+            HW-->>REST: 200 OK
+            DRIVER-->>DEV_SVC: [(rule_key, True)]
+            DEV_SVC-->>Operator: Configuration Applied Successfully
+        else Commit Rejected (Validation / Conflict)
+            HW-->>REST: 409 Conflict / 400 Bad Request
+            DRIVER->>REST: discard_candidate()
+            REST->>HW: POST /restconf/operations/ietf-netconf:discard-changes
+            HW-->>REST: 200 OK (Rolled Back)
+            DRIVER-->>DEV_SVC: [(rule_key, False)]
+            DEV_SVC-->>Operator: Error: Commit Failed (Rolled Back)
+        end
+    else Staging Rejected (HTTP 4xx / 5xx)
+        HW-->>REST: 400 Bad Request (Invalid Payload)
+        DRIVER->>REST: discard_candidate()
+        REST->>HW: POST /restconf/operations/ietf-netconf:discard-changes
+        HW-->>REST: 200 OK
+        DRIVER-->>DEV_SVC: [(rule_key, False)]
+        DEV_SVC-->>Operator: Error: Staging Rejected
+    end
+```
 
 ---
 
-## 4. Bundled YANG Schema Library
+## 5. Supported TFS Configuration Rules & Resource Keys
 
-The driver includes all **51 RFC-compliant YANG schema data models** directly extracted from physical hardware:
-* **RFC 7950 / RFC 8040 NMDA Models**: `ietf-datastores`, `ietf-yang-library`, `ietf-netconf`, `ietf-netconf-nmda`.
-* **Interface & Bridge Models**: `ietf-interfaces`, `iana-if-type`, `ieee802-dot1q-types`, `ieee802-dot1q-cfm`.
-* **Hardware & System Models**: `ietf-hardware`, `ietf-system`, `ietf-snmp`.
-* **Wireless mmWave & Radio Models**: `radio-bridge-tg`, `radio-bridge-tg-acm`, `radio-bridge-tg-bond`, `radio-bridge-tg-gps`.
+### 5.1. Connection Management Rules
 
----
+| Resource Key | Type | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `_connect/address` | `string` | Target node IPv4 or IPv6 address | `"192.168.1.225"` |
+| `_connect/port` | `integer` | RESTCONF management port | `80` (HTTP) or `443` (HTTPS) |
+| `_connect/settings` | `dict` | Credentials and connection timeout | `{"username": "admin", "password": "...", "scheme": "http", "timeout": 15}` |
 
-## 5. Sample TFS Device Descriptors
+### 5.2. Telemetry & Inventory Rules (Read-Only)
 
-To onboard a Ceragon node in TFS:
+| Resource Key | Return Type | Description |
+| :--- | :--- | :--- |
+| `/device/hardware_info` | `dict` | Vendor metadata: `{"serial_number": "AE09100255", "hardware_rev": "A0", "software_version": "3.4.0-...", "uptime": "..."}` |
+| `/device/capabilities` | `dict` | Device capabilities: `{"vendor": "Ceragon", "model": "MH-T261", "role": "transport_mmwave", "max_throughput_gbps": 1.0, "beamforming": true}` |
+| `/device/operating_parameters` | `dict` | Live telemetry: `{"admin_status": "UP", "frequency_ghz": 60.48, "modem_temperature_c": 61, "rf_temperature_c": 58, "tx_power_control": "auto"}` |
 
+### 5.3. Dynamic Control Rules (Read/Write)
+
+#### `/radio/tuning`
+Configures carrier channel frequency and ATPC:
 ```json
 {
-  "devices": [
-    {
-      "device_id": {"device_uuid": {"uuid": "ceragon-mh-t261-ctu-96"}},
-      "device_type": "microwave-radio-system",
-      "device_config": {
-        "config_rules": [
-          {"action": 1, "custom": {"resource_key": "_connect/address", "resource_value": "192.168.1.225"}},
-          {"action": 1, "custom": {"resource_key": "_connect/port", "resource_value": "80"}},
-          {"action": 1, "custom": {"resource_key": "_connect/settings", "resource_value": {
-            "username": "admin", "password": "admin", "scheme": "http", "timeout": 15
-          }}}
-        ]
-      },
-      "device_operational_status": 1,
-      "device_drivers": [22],
-      "device_endpoints": []
+  "action": 1,
+  "custom": {
+    "resource_key": "/radio/tuning",
+    "resource_value": {
+      "sector_id": "rf-sector-1",
+      "frequency_mhz": 60480.0,
+      "tx_power_control": "auto",
+      "target_mcs": 8
     }
-  ]
+  }
 }
 ```
+
+#### `/slice/<slice_name>`
+Allocates an IEEE 802.1Q transport slice:
+```json
+{
+  "action": 1,
+  "custom": {
+    "resource_key": "/slice/slice-uran-6g",
+    "resource_value": {
+      "vlan_id": 200,
+      "bandwidth_mbps": 1000,
+      "priority": 7,
+      "member_interfaces": ["eth1", "rf-sector-1"]
+    }
+  }
+}
+```
+
+#### `/modulation/acm_floor`
+Enforces minimum Adaptive Coding and Modulation (ACM) floor for rain fade resilience:
+```json
+{
+  "action": 1,
+  "custom": {
+    "resource_key": "/modulation/acm_floor",
+    "resource_value": {
+      "sector_id": "rf-sector-1",
+      "min_modulation": "QPSK",
+      "min_mcs": 2,
+      "atpc_boost_dbm": 3.0
+    }
+  }
+}
+```
+
+---
+
+## 6. Bundled YANG Schema Catalog (51 Models)
+
+All 51 RFC-compliant data models bundled in `src/device/service/drivers/ceragon/schemas/yang/` are extracted directly from production hardware:
+
+### A. Radio & Wireless Millimeter-Wave Models
+- `radio-bridge-tg-radio-common.yang`: Core radio parameters, channel plans, antenna profiles.
+- `radio-bridge-tg-radio-dn.yang`: Terragraph Distribution Node (DN) beamforming and sectors.
+- `radio-bridge-tg-acm.yang`: Adaptive Coding and Modulation state machines and hysteresis.
+- `radio-bridge-tg-bond.yang`: Wireless link bonding and LAG aggregation.
+- `radio-bridge-tg-spider-attenuation-control.yang`: Dynamic RF attenuation and beam shaping.
+- `radio-bridge-tg-gps.yang`: Synchronous Ethernet and GPS timing synchronization.
+
+### B. Transport & Bridging Models
+- `radio-bridge-tg-interfaces.yang`: Physical port and radio interface definitions.
+- `radio-bridge-tg-user-bridge.yang`: User plane Ethernet bridging and VLAN isolation.
+- `radio-bridge-tg-tunnel.yang`: Point-to-Point and Point-to-Multipoint transport tunneling.
+- `radio-bridge-tg-cfm.yang`: IEEE 802.1ag Connectivity Fault Management (CFM).
+- `ieee802-dot1q-cfm.yang`, `ieee802-dot1q-cfm-types.yang`, `ieee802-dot1q-types.yang`: Standard IEEE 802.1Q definitions.
+
+### C. System, OAM & Maintenance Models
+- `radio-bridge-tg-system.yang`: System hostname, location, operational mode.
+- `radio-bridge-tg-inventory.yang`: Hardware inventory, board revisions, serial numbers.
+- `radio-bridge-tg-software-upgrade.yang`: Dual-image software upgrade and bank switching.
+- `radio-bridge-tg-rollback.yang`: Automatic configuration rollback timer.
+- `radio-bridge-tg-pm.yang`: Performance monitoring and 15-min / 24-hr historical bins.
+- `radio-bridge-tg-events.yang`, `radio-bridge-tg-logging.yang`: Alarm and syslog notifications.
+
+### D. IETF & Standard Base Models
+- `ietf-datastores.yang`: RFC 8342 NMDA datastore definitions.
+- `ietf-yang-library.yang`: RFC 8525 YANG library module catalog.
+- `ietf-restconf.yang`: RFC 8040 RESTCONF protocol definitions.
+- `ietf-netconf.yang`, `ietf-netconf-nmda.yang`, `ietf-netconf-acm.yang`: Netconf access control and operations.
+- `ietf-interfaces.yang`, `ietf-ip.yang`, `ietf-inet-types.yang`, `ietf-yang-types.yang`: Standard network primitives.
+
+---
+
+## 7. Quality Assurance & Test Verification
+
+The driver includes a comprehensive test suite in [`src/device/tests/test_driver_ceragon.py`](../src/device/tests/test_driver_ceragon.py) covering:
+
+| Test Case | Method Verified | Success Criteria |
+| :--- | :--- | :--- |
+| `test_driver_lifecycle` | `Connect()` / `Disconnect()` | Session creation, keepalive verification, idempotent teardown. |
+| `test_get_initial_config` | `GetInitialConfig()` | Accurate extraction of inventory and generation of TFS `EndPoint` structures. |
+| `test_get_config` | `GetConfig()` | Telemetry retrieval for operating parameters, temperatures, and link metrics. |
+| `test_set_config_radio_tuning` | `SetConfig()` | Candidate staging of frequency tuning and atomic commit. |
+| `test_set_config_slice_creation` | `SetConfig()` | Dynamic IEEE 802.1Q sub-interface creation and token-bucket bandwidth reservation. |
+| `test_set_config_acm_floor` | `SetConfig()` | Enforcing ACM minimum modulation floor for rain-fade mitigation. |
+| `test_candidate_datastore_rollback`| `SetConfig()` | Validates execution of `discard-changes` when candidate staging rejects payload. |
+| `test_yang_schema_availability` | `schemas` module | Confirms presence, integrity, and readability of all 51 YANG definitions. |
