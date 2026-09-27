@@ -1195,3 +1195,389 @@ input:checked + .slider:before { transform: translateX(14px); background-color: 
   background: var(--accent-dim);
   border-color: var(--accent);
 }
+
+/* ============================================================
+   Digital Twin Cross-Repo Operations Dashboard Styles
+   ============================================================ */
+
+.dt-view-wrap {
+  width: 100%;
+  max-width: 1480px;
+  margin: 1.5rem auto;
+  padding: 0 1rem 3rem;
+}
+
+.dt-env-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(13, 20, 32, 0.7);
+  border-bottom: 1px solid var(--border);
+}
+
+.dt-env-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+}
+
+.dt-env-name {
+  color: var(--text-secondary);
+}
+
+.dt-env-val {
+  color: #00d4ff;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.dt-stepper-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(10, 18, 32, 0.4);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.dt-step-card {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.dt-step-card.active {
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.3);
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.dt-step-card.completed {
+  border-color: #00e676;
+  background: rgba(0, 230, 118, 0.08);
+}
+
+.dt-step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+
+.dt-step-num {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.dt-step-badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.dt-step-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.dt-step-sub {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.dt-step-metric {
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.08);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.dt-step-arrow {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  user-select: none;
+}
+
+.dt-main-grid {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .dt-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dt-panel-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.dt-panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.85rem;
+}
+
+.dt-badge-sm {
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(0, 212, 255, 0.1);
+  color: #00d4ff;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.dt-field-group {
+  margin-bottom: 0.75rem;
+}
+
+.dt-field-group label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.dt-select, .dt-textarea {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.dt-select:focus, .dt-textarea:focus {
+  border-color: #c084fc;
+}
+
+.dt-scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dt-scenario-card {
+  display: block;
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dt-scenario-card input {
+  position: absolute;
+  opacity: 0;
+}
+
+.dt-scenario-card.active {
+  border-color: #c084fc;
+  background: rgba(192, 132, 252, 0.12);
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.2);
+}
+
+.dt-sc-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dt-sc-domain {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.dt-params-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.dt-param-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.dt-param-row input[type="range"] {
+  flex: 1;
+}
+
+.dt-param-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #00d4ff;
+  min-width: 60px;
+  text-align: right;
+}
+
+.dt-action-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.dt-sub-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.dt-sub-actions button {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.dt-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .dt-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dt-compare-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.dt-compare-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dt-metric-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dt-m-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.dt-m-row span {
+  color: var(--text-secondary);
+}
+
+.dt-m-row strong {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary);
+}
+
+.dt-safety-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.dt-safety-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.dt-check-icon {
+  color: #00e676;
+  font-weight: bold;
+  margin-right: 0.3rem;
+}
+
+.dt-terminal {
+  background: #040810;
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  height: 180px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #a6d8ff;
+}
+
+.dt-term-line {
+  margin-bottom: 0.25rem;
+  word-break: break-all;
+}
+
+.dt-term-ts {
+  color: var(--text-muted);
+  margin-right: 0.4rem;
+}
+
+.dt-term-ok {
+  color: #00e676;
+}
+
+.dt-term-warn {
+  color: #ffa726;
+}
+
+.dt-term-highlight {
+  color: #c084fc;
+}
+

@@ -34,6 +34,10 @@
         <button class="main-nav-btn" id="nav-btn-tfs" onclick="switchDashboardView('tfs')">
           <span>⚡ TFS Controller &amp; SBI</span>
         </button>
+        <button class="main-nav-btn" id="nav-btn-dt" onclick="switchDashboardView('digital-twin')">
+          <span class="live-dot-pulse" style="background:#c084fc;box-shadow:0 0 10px #c084fc"></span>
+          <span>🔮 Cross-Repo Digital Twin (NS-3 &amp; TFS)</span>
+        </button>
       </div>
       <div class="status-pill" id="conn-status">
         <span class="status-dot"></span>
@@ -559,6 +563,304 @@
             <!-- Dynamically populated by app.js -->
           </tbody>
         </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- View 4: Digital Twin Cross-Repo Operations -->
+  <div id="view-digital-twin" class="dt-view-wrap hidden">
+    <div class="ceragon-card">
+      
+      <!-- Top Header Bar -->
+      <div class="ceragon-card-header" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(0, 212, 255, 0.1) 100%); border-bottom: 1px solid rgba(192, 132, 252, 0.25);">
+        <div class="ceragon-header-left">
+          <div class="ceragon-header-icon" style="color:#c084fc; text-shadow:0 0 12px rgba(192,132,252,0.6)">🔮</div>
+          <div>
+            <div class="ceragon-title-row">
+              <span class="ceragon-device-name" style="background: linear-gradient(90deg, #c084fc, #00d4ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-weight:700;">
+                Telecom Digital Twin (NDT) — Cross-Repo Closed-Loop Operations
+              </span>
+              <span class="badge-enabled" style="background:rgba(192,132,252,0.18); border-color:#c084fc; color:#e9d5ff; margin-left:8px">
+                ● 5-STAGE CLOSED LOOP
+              </span>
+            </div>
+            <div class="ceragon-device-sub">
+              Cross-Repository Orchestration: Intent (TMF921) → Co-Simulation to NS-3 (efid@cersrv-029) → TFS State Sync (:8088) → Decision Engine → Hardware 2PC Actuation (192.168.1.225)
+            </div>
+          </div>
+        </div>
+
+        <div class="sot-badge" style="border-color: rgba(192,132,252,0.3)">
+          <span class="sot-label">Standards Anchors:</span>
+          <span class="sot-val" style="color:#c084fc">3GPP TS 28.561 | ITU-T Y.3090 | IETF DTI</span>
+        </div>
+      </div>
+
+      <!-- Environment Connectivity Bar -->
+      <div class="dt-env-bar">
+        <div class="dt-env-pill" id="env-intent">
+          <span class="status-dot green"></span>
+          <span class="dt-env-name">Intent Engine:</span>
+          <span class="dt-env-val">CER-Intent (:5000)</span>
+        </div>
+        <div class="dt-env-pill" id="env-tfs">
+          <span class="status-dot green"></span>
+          <span class="dt-env-name">SDN Controller:</span>
+          <span class="dt-env-val" id="dt-tfs-status">TFS (:8088 / :8004)</span>
+        </div>
+        <div class="dt-env-pill" id="env-ns3">
+          <span class="status-dot green"></span>
+          <span class="dt-env-name">Discrete-Event Core:</span>
+          <span class="dt-env-val" id="dt-ns3-status">NS-3 v3.45 (cersrv-029)</span>
+        </div>
+        <div class="dt-env-pill" id="env-hw">
+          <span class="status-dot green"></span>
+          <span class="dt-env-name">Physical Hardware:</span>
+          <span class="dt-env-val" id="dt-hw-status">Ceragon MH-T261 (192.168.1.225)</span>
+        </div>
+        <button class="btn btn-ghost" onclick="checkDigitalTwinHealth()" style="font-size:0.75rem; padding:0.25rem 0.6rem; border:1px solid rgba(0,212,255,0.2)">
+          🔄 Re-probe Systems
+        </button>
+      </div>
+
+      <!-- 5-Stage Visual Stepper Flow -->
+      <div class="dt-stepper-container">
+        <div class="dt-step-card" id="dt-step-1">
+          <div class="dt-step-header">
+            <span class="dt-step-num">STAGE 1</span>
+            <span class="dt-step-badge" id="badge-step-1">READY</span>
+          </div>
+          <div class="dt-step-title">Declarative Intent</div>
+          <div class="dt-step-sub">TMF921 Ingestion &amp; SLA Contract</div>
+          <div class="dt-step-metric" id="metric-step-1">Latency &le; 1.5ms</div>
+        </div>
+
+        <div class="dt-step-arrow">➔</div>
+
+        <div class="dt-step-card" id="dt-step-2">
+          <div class="dt-step-header">
+            <span class="dt-step-num">STAGE 2</span>
+            <span class="dt-step-badge" id="badge-step-2">SYNCED</span>
+          </div>
+          <div class="dt-step-title">TFS State Sync</div>
+          <div class="dt-step-sub">ITU-T Y.3090 Shadow Datastore</div>
+          <div class="dt-step-metric" id="metric-step-2">34 Nodes | MCS 8</div>
+        </div>
+
+        <div class="dt-step-arrow">➔</div>
+
+        <div class="dt-step-card" id="dt-step-3">
+          <div class="dt-step-header">
+            <span class="dt-step-num">STAGE 3</span>
+            <span class="dt-step-badge" id="badge-step-3">IDLE</span>
+          </div>
+          <div class="dt-step-title">NS-3 Simulation</div>
+          <div class="dt-step-sub">Discrete-Event Prediction (cersrv-029)</div>
+          <div class="dt-step-metric" id="metric-step-3">Queue &amp; Loss Modeling</div>
+        </div>
+
+        <div class="dt-step-arrow">➔</div>
+
+        <div class="dt-step-card" id="dt-step-4">
+          <div class="dt-step-header">
+            <span class="dt-step-num">STAGE 4</span>
+            <span class="dt-step-badge" id="badge-step-4">WAITING</span>
+          </div>
+          <div class="dt-step-title">Decision Engine</div>
+          <div class="dt-step-sub">Pre-Flight Safety Verification</div>
+          <div class="dt-step-metric" id="metric-step-4">4/4 Envelope Gates</div>
+        </div>
+
+        <div class="dt-step-arrow">➔</div>
+
+        <div class="dt-step-card" id="dt-step-5">
+          <div class="dt-step-header">
+            <span class="dt-step-num">STAGE 5</span>
+            <span class="dt-step-badge" id="badge-step-5">STANDBY</span>
+          </div>
+          <div class="dt-step-title">Hardware 2PC</div>
+          <div class="dt-step-sub">TFS Candidate &amp; Physical RESTCONF</div>
+          <div class="dt-step-metric" id="metric-step-5">Device: ctu-96</div>
+        </div>
+      </div>
+
+      <!-- Main Operational Grid -->
+      <div class="dt-main-grid">
+        
+        <!-- Left Column: Controls & Scenario Configurator -->
+        <div class="dt-col-left">
+          
+          <!-- Box 1: Intent Declaration -->
+          <div class="dt-panel-box">
+            <div class="dt-panel-title">
+              <span>🎯 Step 1: Declare Business / SLA Intent</span>
+              <span class="dt-badge-sm">TM Forum TMF921</span>
+            </div>
+            <div class="dt-field-group">
+              <label>Select Intent Preset or Enter Custom Intent:</label>
+              <select id="dt-intent-select" onchange="onDigitalTwinIntentSelected()" class="dt-select">
+                <option value="Ensure URLLC latency < 1.5ms and availability > 99.999% during adverse conditions">URLLC Critical: Latency &lt; 1.5ms &amp; Availability &gt; 99.999%</option>
+                <option value="Green Telco: Maximize energy savings during off-peak hours with zero SLA drop">Green Telco: 20% Off-Peak Energy Conservation</option>
+                <option value="Stadium Event: Protect transport network against 3.5x burst traffic surges">Stadium Event: 3.5x Traffic Surge Protection</option>
+                <option value="Fiber Cut Resilience: Enforce sub-50ms TI-LFA failover protection on backhaul">Fiber Cut Resilience: Sub-50ms TI-LFA Failover</option>
+                <option value="Monsoon Mitigation: Maintain link stability during severe ITU-R P.838 rain fade">Monsoon Weather: ITU-R P.838 Rain Fade Hardening</option>
+              </select>
+              <textarea id="dt-intent-text" rows="2" class="dt-textarea" placeholder="Describe intent in Natural Language or SLA constraints..."></textarea>
+            </div>
+          </div>
+
+          <!-- Box 2: Generic Multi-Domain Simulation Scenario -->
+          <div class="dt-panel-box">
+            <div class="dt-panel-title">
+              <span>⚡ Step 2: Configure What-If Simulation Domain (NS-3)</span>
+              <span class="dt-badge-sm">Generic Telco Scenarios</span>
+            </div>
+
+            <div class="dt-scenario-grid">
+              <label class="dt-scenario-card active" onclick="selectDtScenario('traffic_surge', this)">
+                <input type="radio" name="dt_scenario" value="traffic_surge" checked>
+                <div class="dt-sc-name">Traffic Surge</div>
+                <div class="dt-sc-domain">Bufferbloat &amp; Congestion</div>
+              </label>
+
+              <label class="dt-scenario-card" onclick="selectDtScenario('link_failure', this)">
+                <input type="radio" name="dt_scenario" value="link_failure">
+                <div class="dt-sc-name">Fiber Link Cut</div>
+                <div class="dt-sc-domain">TI-LFA Fast Reroute</div>
+              </label>
+
+              <label class="dt-scenario-card" onclick="selectDtScenario('energy_saving_sleep', this)">
+                <input type="radio" name="dt_scenario" value="energy_saving_sleep">
+                <div class="dt-sc-name">Green Energy Sleep</div>
+                <div class="dt-sc-domain">Carrier Off-Peak Standby</div>
+              </label>
+
+              <label class="dt-scenario-card" onclick="selectDtScenario('slice_admission', this)">
+                <input type="radio" name="dt_scenario" value="slice_admission">
+                <div class="dt-sc-name">Slice Admission</div>
+                <div class="dt-sc-domain">URLLC PDB &amp; PER Check</div>
+              </label>
+
+              <label class="dt-scenario-card" onclick="selectDtScenario('channel_degradation', this)">
+                <input type="radio" name="dt_scenario" value="channel_degradation">
+                <div class="dt-sc-name">Channel Rain Fade</div>
+                <div class="dt-sc-domain">ITU-R P.838 Modulation</div>
+              </label>
+            </div>
+
+            <!-- Dynamic Scenario Parameters -->
+            <div id="dt-params-wrap" class="dt-params-wrap">
+              <div class="dt-param-row" id="param-burst">
+                <label>Traffic Burst Multiplier:</label>
+                <input type="range" id="param-burst-slider" min="1.0" max="6.0" step="0.5" value="3.5" oninput="document.getElementById('param-burst-val').innerText = this.value + 'x'">
+                <span id="param-burst-val" class="dt-param-val">3.5x</span>
+              </div>
+              <div class="dt-param-row hidden" id="param-rain">
+                <label>ITU-R P.838 Rain Rate (mm/hr):</label>
+                <input type="range" id="param-rain-slider" min="5" max="120" step="5" value="55" oninput="document.getElementById('param-rain-val').innerText = this.value + ' mm/hr'">
+                <span id="param-rain-val" class="dt-param-val">55 mm/hr</span>
+              </div>
+            </div>
+
+            <!-- Execution Actions -->
+            <div class="dt-action-row">
+              <button class="btn btn-primary" id="btn-run-loop" onclick="triggerDigitalTwinLoop()" style="flex:1; justify-content:center; font-size:1rem; padding:0.75rem 1rem; background: linear-gradient(135deg, #7c3aed, #00d4ff); font-weight:600; box-shadow:0 0 15px rgba(0,212,255,0.3)">
+                🚀 Execute End-to-End Closed Loop
+              </button>
+            </div>
+
+            <div class="dt-sub-actions">
+              <button class="btn btn-ghost" onclick="stepDtStage(1)">1. Intent</button>
+              <button class="btn btn-ghost" onclick="stepDtStage(2)">2. Sync TFS</button>
+              <button class="btn btn-ghost" onclick="stepDtStage(3)">3. Run NS-3</button>
+              <button class="btn btn-ghost" onclick="stepDtStage(4)">4. Engine</button>
+              <button class="btn btn-ghost" onclick="stepDtStage(5)">5. Actuate HW</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Cyber-Physical Mirror & Results -->
+        <div class="dt-col-right">
+          
+          <!-- Mirror Status Comparison -->
+          <div class="dt-comparison-grid">
+            
+            <!-- Column 1: Live Hardware Baseline -->
+            <div class="dt-compare-card">
+              <div class="dt-compare-header">
+                <span>📡 Physical Hardware (Live)</span>
+                <span class="badge-enabled">TFS SYNCHRONIZED</span>
+              </div>
+              <div class="dt-metric-list">
+                <div class="dt-m-row"><span>Carrier Frequency:</span><strong id="m-phys-freq">60.48 GHz</strong></div>
+                <div class="dt-m-row"><span>Adaptive Modulation:</span><strong id="m-phys-mcs" style="color:#00d4ff">MCS 8 (64-QAM)</strong></div>
+                <div class="dt-m-row"><span>Live Latency:</span><strong id="m-phys-lat" style="color:#00e676">0.65 ms</strong></div>
+                <div class="dt-m-row"><span>Operating RSSI / SNR:</span><strong id="m-phys-rf">-58.4 dBm / 24.1 dB</strong></div>
+                <div class="dt-m-row"><span>Device Temperature:</span><strong id="m-phys-temp">61 °C</strong></div>
+              </div>
+            </div>
+
+            <!-- Column 2: NS-3 Predicted Stress State -->
+            <div class="dt-compare-card" id="card-pred-stress" style="border-color: rgba(255, 71, 87, 0.3)">
+              <div class="dt-compare-header">
+                <span>💻 NS-3 Discrete Simulation</span>
+                <span class="badge-disabled" id="badge-verdict" style="background:rgba(255,71,87,0.15); color:#ff4757">SIMULATING</span>
+              </div>
+              <div class="dt-metric-list">
+                <div class="dt-m-row"><span>Predicted Latency:</span><strong id="m-pred-lat" style="color:#ff4757; font-size:1.15rem">-- ms</strong></div>
+                <div class="dt-m-row"><span>Queue Buffer Depth:</span><strong id="m-pred-queue">-- packets</strong></div>
+                <div class="dt-m-row"><span>Packet Loss Rate:</span><strong id="m-pred-loss">-- %</strong></div>
+                <div class="dt-m-row"><span>Effective Throughput:</span><strong id="m-pred-tp">-- Mbps</strong></div>
+                <div class="dt-m-row"><span>SLA Margin:</span><strong id="m-pred-margin" style="color:#ffa726">Evaluating...</strong></div>
+              </div>
+            </div>
+
+            <!-- Column 3: Post-Mitigation 2PC Actuated State -->
+            <div class="dt-compare-card" style="border-color: rgba(0, 230, 118, 0.3)">
+              <div class="dt-compare-header">
+                <span>✅ Actuated Physical State</span>
+                <span class="badge-enabled" id="badge-actuation" style="color:#00e676">TFS 2PC COMMITTED</span>
+              </div>
+              <div class="dt-metric-list">
+                <div class="dt-m-row"><span>Remediated Latency:</span><strong id="m-act-lat" style="color:#00e676; font-size:1.15rem">-- ms</strong></div>
+                <div class="dt-m-row"><span>Applied Mitigation:</span><strong id="m-act-action" style="color:#c084fc">--</strong></div>
+                <div class="dt-m-row"><span>Enforced Modulation Floor:</span><strong id="m-act-mcs">--</strong></div>
+                <div class="dt-m-row"><span>QoS Bandwidth Reserved:</span><strong id="m-act-bw">-- Mbps</strong></div>
+                <div class="dt-m-row"><span>SLA Protection Status:</span><strong id="m-act-sla" style="color:#00e676">--</strong></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Pre-Flight Safety Verification Checklist -->
+          <div class="dt-panel-box" style="margin-top:1rem">
+            <div class="dt-panel-title">
+              <span>🛡️ Pre-Flight Closed-Loop Safety Verification</span>
+              <span class="badge-enabled">3GPP TS 28.561 Gatekeeper</span>
+            </div>
+            <div class="dt-safety-grid">
+              <div class="dt-safety-item"><span class="dt-check-icon">✔</span> RF Carrier within 57–71 GHz V-Band: <strong style="color:#00e676">PASS</strong></div>
+              <div class="dt-safety-item"><span class="dt-check-icon">✔</span> ACM Modulation Floor Resilience (&ge; MCS 2): <strong style="color:#00e676">PASS</strong></div>
+              <div class="dt-safety-item"><span class="dt-check-icon">✔</span> Operating Thermal Limit &lt; 85°C (Current: 61°C): <strong style="color:#00e676">PASS</strong></div>
+              <div class="dt-safety-item"><span class="dt-check-icon">✔</span> URLLC Protected Slice Headroom (&ge; 100 Mbps): <strong style="color:#00e676">PASS</strong></div>
+            </div>
+          </div>
+
+          <!-- Real-Time Wire Execution Trace -->
+          <div class="dt-panel-box" style="margin-top:1rem">
+            <div class="dt-panel-title">
+              <span>📜 Real-Time Cross-Repo Wire Execution Trace</span>
+              <span class="dt-badge-sm">REST / SSH / 2PC Audit</span>
+            </div>
+            <div class="dt-terminal" id="dt-terminal-trace">
+              <div class="dt-term-line">[Ready] Digital Twin Cross-Repo Operations initialized. Standing by for execution.</div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
     </div>
