@@ -1581,3 +1581,68 @@ input:checked + .slider:before { transform: translateX(14px); background-color: 
   color: #c084fc;
 }
 
+@keyframes flowAnim {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+
+.flow-line {
+  stroke-dasharray: 8, 4;
+  animation: flowAnim 1.2s linear infinite;
+}
+
+.flow-line-rev {
+  stroke-dasharray: 8, 4;
+  animation: flowAnim 1.2s linear infinite reverse;
+}
+
+.node-box {
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-box:hover rect {
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.dt-flow-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 1.5rem;
+}
+
+.dt-flow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dt-flow-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dt-flow-title {
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #c084fc, #00d4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dt-inspector-box {
+  background: var(--bg-card);
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+}
+
+

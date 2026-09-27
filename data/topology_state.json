@@ -1003,18 +1003,19 @@
           "operation_mode": "TU",
           "serial_number": "AE09100255",
           "software_version": "3.4.0-4377-5faacf06a",
-          "uptime": "00079:02:06:48",
+          "uptime": "00079:04:11:06",
           "vendor": "Siklu"
         }
       },
       "operating_parameters": {
+        "active_slice": "slice-uran-6g",
         "admin_status": "UP",
         "antenna_mode": "massive2",
-        "frequency_ghz": 58.32,
-        "frequency_mhz": 58320.0,
-        "last_synced_at": "2026-09-22T10:12:36.761898+00:00",
-        "modem_temperature_c": 61,
-        "rf_temperature_c": 58,
+        "frequency_ghz": 60.48,
+        "frequency_mhz": 60480.0,
+        "last_synced_at": "2026-09-22T12:16:54.445833+00:00",
+        "modem_temperature_c": 68,
+        "rf_temperature_c": 64,
         "tx_power_control": "auto"
       }
     },
@@ -1544,38 +1545,2038 @@
     }
   ],
   "source": "TeraFlowSDN",
-  "last_synced": "2026-09-22T10:12:44.149699+00:00",
+  "last_synced": "2026-09-23T09:53:09.820885+00:00",
   "devices": {
-    "ceragon-mh-t261-ctu-96": {
+    "oran-cu1": {
       "configs": {
-        "slice": {
-          "config_type": "slice",
+        "radio": {
+          "config_type": "radio",
           "parameters": {
-            "slice_id": "slice-uran-6g",
-            "slice_name": "Slice-URAN-6G",
-            "vlan_id": 200,
-            "min_throughput_gbps": 1.0
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
           },
-          "intent_id": "intent-test-12345678",
-          "applied_at": "2026-09-22T10:13:38.484780+00:00",
+          "intent_id": "71f8e8c7-07e7-4347-ac9c-2e6baa434d83",
+          "applied_at": "2026-09-23T10:09:22.591059+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-71f8e8c7\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-cu1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+        }
+      },
+      "last_updated": "2026-09-23T10:09:22.591059+00:00"
+    },
+    "mw-hub-4": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "71f8e8c7-07e7-4347-ac9c-2e6baa434d83",
+          "applied_at": "2026-09-23T10:09:22.920107+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-71f8e8c7\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-hub-4</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+        }
+      },
+      "last_updated": "2026-09-23T10:09:22.920107+00:00"
+    },
+    "oran-du3": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "71f8e8c7-07e7-4347-ac9c-2e6baa434d83",
+          "applied_at": "2026-09-23T10:09:23.013160+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-71f8e8c7\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-du3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+        }
+      },
+      "last_updated": "2026-09-23T10:09:23.013160+00:00"
+    },
+    "oran-core": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "71f8e8c7-07e7-4347-ac9c-2e6baa434d83",
+          "applied_at": "2026-09-23T10:09:23.130030+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-71f8e8c7\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-core</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enab"
+        }
+      },
+      "last_updated": "2026-09-23T10:09:23.130030+00:00"
+    },
+    "oran-ru-1a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "71f8e8c7-07e7-4347-ac9c-2e6baa434d83",
+          "applied_at": "2026-09-23T10:09:23.238430+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-71f8e8c7\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-ru-1a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+        }
+      },
+      "last_updated": "2026-09-23T10:09:23.238430+00:00"
+    },
+    "oran-du1": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "71f8e8c7-07e7-4347-ac9c-2e6baa434d83",
+          "applied_at": "2026-09-23T10:09:23.315869+00:00",
+          "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-71f8e8c7\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-du1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+        }
+      },
+      "last_updated": "2026-09-23T10:09:23.315869+00:00"
+    },
+    "oran-cu2": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:27.413907+00:00",
           "yang_xml_snippet": ""
         }
       },
-      "last_updated": "2026-09-22T10:13:38.484780+00:00"
+      "last_updated": "2026-09-23T10:09:27.413907+00:00"
+    },
+    "mw-tail-4a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:29.472843+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:29.472843+00:00"
+    },
+    "oran-ru-3a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:31.072763+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:31.072763+00:00"
+    },
+    "mw-hub-1": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:32.525389+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:32.525389+00:00"
+    },
+    "oran-ru-4b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:34.171325+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:34.171325+00:00"
+    },
+    "oran-ru-3b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:36.449015+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:36.449015+00:00"
+    },
+    "oran-du4": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:38.029308+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:38.029308+00:00"
+    },
+    "mmw-tail-4b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "512QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:39.888107+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:39.888107+00:00"
+    },
+    "oran-ru-1b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:41.800691+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:41.800691+00:00"
+    },
+    "oran-ru-2b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:43.798943+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:43.798943+00:00"
+    },
+    "mw-tail-1a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:45.518748+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:45.518748+00:00"
+    },
+    "oran-ru-4a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:47.008392+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:47.008392+00:00"
+    },
+    "mw-agg-2": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:48.753007+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:48.753007+00:00"
+    },
+    "mw-agg-1": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:50.396927+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:50.396927+00:00"
+    },
+    "mmw-tail-1b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "512QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:51.941512+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:51.941512+00:00"
+    },
+    "mw-agg-3": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:53.459940+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:53.459940+00:00"
+    },
+    "mw-tail-2a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:55.539181+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:55.539181+00:00"
+    },
+    "mmw-tail-2b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "512QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:57.331844+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:57.331844+00:00"
+    },
+    "oran-cu4": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:09:59.344841+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:09:59.344841+00:00"
+    },
+    "oran-cu3": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:10:01.442729+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:10:01.442729+00:00"
+    },
+    "mw-hub-2": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:10:03.155998+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:10:03.155998+00:00"
+    },
+    "mw-hub-3": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:10:05.255201+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:10:05.255201+00:00"
+    },
+    "edge-dc-1": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:10:06.621356+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:10:06.621356+00:00"
+    },
+    "oran-du2": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:10:08.311558+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:10:08.311558+00:00"
+    },
+    "mw-tail-3a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:10:09.891311+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:10:09.891311+00:00"
+    },
+    "mmw-tail-3b": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "512QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:10:11.995715+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:10:11.995715+00:00"
+    },
+    "ceragon-mh-t261-ctu-96": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:12:15.381387+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:12:15.381387+00:00"
+    },
+    "oran-ru-2a": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "1024QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:12:17.370541+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:12:17.370541+00:00"
+    },
+    "mw-agg-4": {
+      "configs": {
+        "radio": {
+          "config_type": "radio",
+          "parameters": {
+            "min_modulation": "QPSK",
+            "max_modulation": "2048QAM",
+            "acm_enabled": true,
+            "tx_power_dbm": null,
+            "mrmc_script_id": null
+          },
+          "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+          "applied_at": "2026-09-23T10:12:19.130006+00:00",
+          "yang_xml_snippet": ""
+        }
+      },
+      "last_updated": "2026-09-23T10:12:19.130006+00:00"
     }
   },
   "config_history": [
     {
-      "device_id": "ceragon-mh-t261-ctu-96",
-      "config_type": "slice",
+      "device_id": "mw-agg-2",
+      "config_type": "radio",
       "parameters": {
-        "slice_id": "slice-uran-6g",
-        "slice_name": "Slice-URAN-6G",
-        "vlan_id": 200,
-        "min_throughput_gbps": 1.0
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
       },
-      "intent_id": "intent-test-12345678",
-      "applied_at": "2026-09-22T10:13:38.484780+00:00",
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:47.727427+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:48.115614+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:48.338073+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:48.753007+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:49.122021+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:49.435494+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:49.624934+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:49.941151+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:50.035411+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:50.396927+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-1b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:50.492287+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-1b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-1b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:50.862618+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-1b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:51.020398+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-1b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-1b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:51.372051+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-1b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:51.584111+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-1b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-1b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:51.941512+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:52.079089+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:52.417165+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:52.581943+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:52.922199+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:53.129445+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:53.459940+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-tail-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:53.550736+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-tail-2a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "mw-tail-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:53.814194+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-tail-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:54.485669+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-tail-2a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "mw-tail-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:54.840088+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-tail-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:55.042489+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-tail-2a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "mw-tail-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:55.539181+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-2b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:55.780043+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-2b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-2b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:56.166980+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-2b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:56.392064+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-2b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-2b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:56.777249+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-2b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:56.885407+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-2b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-2b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:57.331844+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-cu4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:57.666652+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-cu4</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-cu4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:57.953114+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-cu4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:58.167401+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-cu4</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-cu4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:58.581947+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-cu4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:59.018748+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-cu4</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-cu4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:59.344841+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-cu3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:09:59.644898+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-cu3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-cu3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:00.023035+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-cu3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:00.433811+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-cu3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-cu3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:00.756271+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-cu3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:01.021206+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-cu3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-cu3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:01.442729+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-hub-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:01.637739+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-hub-2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-hub-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:02.008081+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-hub-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:02.201365+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-hub-2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-hub-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:02.644432+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-hub-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:02.798411+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-hub-2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-hub-2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:03.155998+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-hub-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:03.328768+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-hub-3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-hub-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:03.750286+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-hub-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:03.930770+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-hub-3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-hub-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:04.284460+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-hub-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:04.961803+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-hub-3</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-hub-3",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:05.255201+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "edge-dc-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:05.401036+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>edge-dc-1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enab"
+    },
+    {
+      "device_id": "edge-dc-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:05.708416+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "edge-dc-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:05.837764+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>edge-dc-1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enab"
+    },
+    {
+      "device_id": "edge-dc-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:06.130348+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "edge-dc-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:06.313377+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>edge-dc-1</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enab"
+    },
+    {
+      "device_id": "edge-dc-1",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:06.621356+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-du2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:06.799849+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-du2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-du2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:07.154986+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-du2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:07.373290+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-du2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-du2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:07.761672+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-du2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:07.979682+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-du2</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "oran-du2",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:08.311558+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-tail-3a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:08.545179+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-tail-3a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "mw-tail-3a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:08.892425+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-tail-3a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:09.006237+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-tail-3a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "mw-tail-3a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:09.312281+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-tail-3a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:09.495573+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-tail-3a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "mw-tail-3a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:09.891311+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-3b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:09.998244+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-3b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-3b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:10.448787+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-3b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:11.007803+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-3b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-3b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:11.336611+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mmw-tail-3b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:11.598150+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mmw-tail-3b</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:en"
+    },
+    {
+      "device_id": "mmw-tail-3b",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "512QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:11.995715+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "ceragon-mh-t261-ctu-96",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:52.175715+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>ceragon-mh-t261-ctu-96</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n        "
+    },
+    {
+      "device_id": "ceragon-mh-t261-ctu-96",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:10:52.768882+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "ceragon-mh-t261-ctu-96",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:11:33.228951+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>ceragon-mh-t261-ctu-96</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n        "
+    },
+    {
+      "device_id": "ceragon-mh-t261-ctu-96",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:11:33.987125+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "ceragon-mh-t261-ctu-96",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:14.587564+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>ceragon-mh-t261-ctu-96</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n        "
+    },
+    {
+      "device_id": "ceragon-mh-t261-ctu-96",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:15.381387+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-ru-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:15.951537+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-ru-2a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "oran-ru-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:16.348348+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-ru-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:16.469099+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-ru-2a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "oran-ru-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:16.862821+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "oran-ru-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:17.059909+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>oran-ru-2a</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:ena"
+    },
+    {
+      "device_id": "oran-ru-2a",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "1024QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:17.370541+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:17.600432+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-4</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:17.966660+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:18.117102+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-4</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:18.536040+00:00",
+      "yang_xml_snippet": ""
+    },
+    {
+      "device_id": "mw-agg-4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:18.713289+00:00",
+      "yang_xml_snippet": "<ns0:rpc xmlns:ns0=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:ns1=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\" message-id=\"cer-intent-7b65b8e3\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n  <ns0:edit-config>\n    <ns0:target>\n      <ns0:running />\n    </ns0:target>\n    <ns0:config>\n      <ns1:radio-link-cfg xmlns=\"urn:ceragon:params:xml:ns:yang:ceragon-radio-link:1.0\">\n        <ns1:link-id>mw-agg-4</ns1:link-id>\n        <ns1:carrier>\n          <ns1:acm>\n            <ns1:enabl"
+    },
+    {
+      "device_id": "mw-agg-4",
+      "config_type": "radio",
+      "parameters": {
+        "min_modulation": "QPSK",
+        "max_modulation": "2048QAM",
+        "acm_enabled": true,
+        "tx_power_dbm": null,
+        "mrmc_script_id": null
+      },
+      "intent_id": "7b65b8e3-60ca-4db4-96c1-f853947de43f",
+      "applied_at": "2026-09-23T10:12:19.130006+00:00",
       "yang_xml_snippet": ""
     }
   ]

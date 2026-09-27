@@ -1554,6 +1554,86 @@ async function stepDtStage(stageNum) {
   appendDtLog(`Stage ${stageNum} step completed successfully.`, "ok");
 }
 
+// ── Illustrative Cyber-Physical Flow Inspector ──────────────────────────────────
+const ciStageDetails = {
+  1: {
+    title: "STAGE 1: Declarative Intent Ingestion",
+    status: "INGESTED",
+    host: "CER-Intent Flask Server (http://localhost:5000/api/v1/intent)",
+    models: "NLP Intent Parser, Declarative Target Constraints, SLA Validation Matrix",
+    proto: "REST HTTP POST application/json (RFC 8259)"
+  },
+  2: {
+    title: "STAGE 2: DTI Scenario Core & Sandbox",
+    status: "SANDBOX READY",
+    host: "Digital Twin Server (http://localhost:9100/api/v1/dti/scenarios)",
+    models: "What-If Scenario Sandbox Router, Perturbation Injection Vector",
+    proto: "RESTCONF / DTI JSON Payload Evaluation"
+  },
+  3: {
+    title: "STAGE 3: NS-3 Discrete Simulation Core",
+    status: "SIMULATING",
+    host: "efid@cersrv-029 (/home/efid/ns3-dev/ns3)",
+    models: "M/M/1/K Queueing, DropTail QueueDisc, Friis FSPL, ITU-R P.838 Rain Fade",
+    proto: "SSH BatchMode & Co-Simulation Bridge (:9099)"
+  },
+  4: {
+    title: "STAGE 4: AI Decision Engine & Safety Gatekeeper",
+    status: "PRE-FLIGHT PASS",
+    host: "Ceragon Autonomic Controller / Heuristic Solver",
+    models: "4/4 Boundary Envelopes (RF, Thermal, Modulation, Reserve Capacity)",
+    proto: "Pre-Commit Transaction Validator"
+  },
+  5: {
+    title: "STAGE 5: ETSI TeraFlowSDN Controller",
+    status: "2PC COMMITTED",
+    host: "TeraFlowSDN Microservices (http://localhost:8088)",
+    models: "Context CockroachDB, Device Service, 2-Phase Commit Atomic Engine",
+    proto: "REST NBI / Candidate Datastore Write"
+  },
+  6: {
+    title: "STAGE 6: Physical Ceragon Hardware Actuation",
+    status: "RESTCONF 200 OK",
+    host: "https://192.168.1.225/restconf/ds/ietf-datastores:candidate",
+    models: "Terragraph V-Band Beamforming Phased Array (32 Elements), Hitless ACM",
+    proto: "HTTPS PATCH with Basic Authentication (admin:admin)"
+  },
+  7: {
+    title: "STAGE 7: 34-Node O-RAN Transport Mesh",
+    status: "ACTIVE MESH",
+    host: "Context: admin / Topology: admin",
+    models: "TI-LFA Fast Rerouting, CSPF Multi-Constrained Routing Graph",
+    proto: "CockroachDB Synchronized Topology State"
+  },
+  8: {
+    title: "STAGE 8: Southbound Telemetry Synchronizer",
+    status: "SYNC: 100%",
+    host: "Background Telemetry Daemon (1s Interval)",
+    models: "EWMA Telemetry Filter, RSL/SNR Calibration, Thermal Tracking",
+    proto: "RFC 8040 RESTCONF Operational Datastore Polling"
+  }
+};
+
+function inspectFlowStage(id) {
+  const d = ciStageDetails[id];
+  if (!d) return;
+  const elStage = document.getElementById("ci-insp-stage");
+  const elStatus = document.getElementById("ci-insp-status");
+  const elHost = document.getElementById("ci-insp-host");
+  const elModels = document.getElementById("ci-insp-models");
+  const elProto = document.getElementById("ci-insp-proto");
+
+  if (elStage) elStage.textContent = d.title;
+  if (elStatus) elStatus.textContent = `STATUS: ${d.status}`;
+  if (elHost) elHost.textContent = d.host;
+  if (elModels) elModels.textContent = d.models;
+  if (elProto) elProto.textContent = d.proto;
+
+  if (typeof appendDtLog === "function") {
+    appendDtLog(`[Architecture Flow] Inspected ${d.title}`, "info");
+  }
+}
+
 // Initial view check on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   const savedView = localStorage.getItem("cer_active_view");
