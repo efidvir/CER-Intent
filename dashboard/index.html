@@ -624,6 +624,26 @@
         </button>
       </div>
 
+      <!-- Sub-Tabs Navigation for Digital Twin -->
+      <div class="ceragon-nav-tabs" style="margin: 0.75rem 1.5rem 0.75rem; display: flex; gap: 0.5rem; align-items: center;">
+        <button class="ceragon-subtab active" id="dt-subtab-netanim" onclick="switchDtSubView('netanim')">
+          🎮 NetAnim Discrete Player &amp; Datastore Diff
+        </button>
+        <button class="ceragon-subtab" id="dt-subtab-macro" onclick="switchDtSubView('macro')">
+          🗺️ Macro Architecture &amp; Closed-Loop Engine
+        </button>
+        <a href="http://localhost:9200/" target="_blank" class="btn btn-ghost" style="margin-left: auto; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 212, 255, 0.3); color: #00d4ff;">
+          <span>↗ Open Standalone (:9200)</span>
+        </a>
+      </div>
+
+      <!-- Subview 1: Interactive NetAnim & TFS Datastore Diff Player -->
+      <div id="dt-subview-netanim" style="padding: 0 1.25rem 1.25rem;">
+        <iframe src="/digital_twin.html" style="width: 100%; height: 980px; border: 1px solid rgba(192, 132, 252, 0.25); border-radius: 14px; background: #020617;" allowfullscreen></iframe>
+      </div>
+
+      <!-- Subview 2: Macro Architecture & 5-Stage Stepper -->
+      <div id="dt-subview-macro" class="hidden">
       <!-- Illustrative Whole-Flow Cyber-Physical Architecture Diagram -->
       <div class="dt-flow-box">
         <div class="dt-flow-header">
@@ -1055,6 +1075,8 @@
 
       </div>
 
+      </div> <!-- end dt-subview-macro -->
+
     </div>
   </div>
 
@@ -1081,5 +1103,18 @@
   </div>
 
   <script src="/app.js?v=2.2"></script>
+  <script>
+    function switchDtSubView(subView) {
+      const isNetanim = subView === 'netanim';
+      const elNetanim = document.getElementById('dt-subview-netanim');
+      const elMacro = document.getElementById('dt-subview-macro');
+      const btnNetanim = document.getElementById('dt-subtab-netanim');
+      const btnMacro = document.getElementById('dt-subtab-macro');
+      if (elNetanim) elNetanim.classList.toggle('hidden', !isNetanim);
+      if (elMacro) elMacro.classList.toggle('hidden', isNetanim);
+      if (btnNetanim) btnNetanim.classList.toggle('active', isNetanim);
+      if (btnMacro) btnMacro.classList.toggle('active', !isNetanim);
+    }
+  </script>
 </body>
 </html>

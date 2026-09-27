@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cross-Repo Telecom Digital Twin Operations Dashboard</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.4)); opacity: 1; }
+      50% { filter: drop-shadow(0 0 16px rgba(192, 132, 252, 0.9)); opacity: 0.85; }
+    }
+    @keyframes dropFlash {
+      0% { fill: #ef4444; filter: drop-shadow(0 0 12px #ef4444); }
+      50% { fill: #7f1d1d; }
+      100% { fill: #ef4444; filter: drop-shadow(0 0 6px #ef4444); }
+    }
+    .flow-line {
+      stroke-dasharray: 6, 3;
+      animation: dash 1s linear infinite;
+    }
+    @keyframes dash {
+      to { stroke-dashoffset: -18; }
+    }
+    .drop-anim {
+      animation: dropFlash 0.5s ease-in-out infinite alternate;
+    }
+    pre code {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.18);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.35);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(6, 182, 212, 0.25));
+      border-color: rgba(168, 85, 247, 0.6);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased p-4 md:p-6 min-h-screen">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Top Navigation & System Status Header -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden backdrop-blur-md">
+      <div class="absolute -right-12 -top-12 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-12 -bottom-12 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+        <div class="flex items-center gap-4">
+          <div class="w-13 h-13 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/40 flex items-center justify-center text-3xl shadow-inner">
+            🔮
+          </div>
+          <div>
+            <div class="flex items-center gap-3">
+              <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                Telecom Digital Twin — Operations &amp; Simulation Platform
+              </h1>
+              <span id="profile-indicator-badge" class="px-2.5 py-0.5 text-xs font-mono font-bold rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                ● Detecting...
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Co-Simulation &amp; Closed-Loop Control: Declarative Intent (TMF921) ↔ ETSI TeraFlowSDN (:8088) ↔ Discrete NS-3.45 (efid@cersrv-029) ↔ Physical Ceragon V-Band (192.168.1.225)
+            </p>
+          </div>
+        </div>
+
+        <!-- 3 Primary Navigation Tabs -->
+        <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+          <button id="tab-btn-sim" onclick="switchMainTab('simulation')" class="tab-btn active px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all flex items-center gap-2">
+            <span>🎮</span> NS-3 Discrete Animator
+          </button>
+          <button id="tab-btn-tfs" onclick="switchMainTab('tfs-internals')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-2">
+            <span>⚙️</span> TFS Microservices &amp; Diff
+          </button>
+          <button id="tab-btn-loop" onclick="switchMainTab('closed-loop')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-2">
+            <span>🔁</span> 5-Stage Closed Loop
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Health Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>
+        <div class="text-xs">
+          <span class="text-slate-400 block text-[10px]">INTENT ENGINE</span>
+          <strong class="text-slate-200 font-mono">TMF921 Port 5000</strong>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+        <span id="tfs-status-dot" class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>
+        <div class="text-xs">
+          <span class="text-slate-400 block text-[10px]">TFS SDN CONTROLLER</span>
+          <strong id="tfs-status-txt" class="text-slate-200 font-mono">localhost:8088 (WebUI :8004)</strong>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+        <span id="hw-status-dot" class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>
+        <div class="text-xs">
+          <span class="text-slate-400 block text-[10px]">CERAGON TRANSCEIVER</span>
+          <strong id="hw-status-txt" class="text-slate-200 font-mono">192.168.1.225 (ctu-96)</strong>
+        </div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+        <span id="ns3-status-dot" class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></span>
+        <div class="text-xs">
+          <span class="text-slate-400 block text-[10px]">NS-3 CO-SIMULATION CORE</span>
+          <strong id="ns3-status-txt" class="text-slate-200 font-mono">efid@cersrv-029 (v3.45)</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 1: NS-3 DISCRETE-EVENT SIMULATION ANIMATOR (NETANIM-STYLE PLAYER) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-simulation" class="space-y-5">
+      
+      <!-- Simulation Control & Scrubber Toolbar -->
+      <div class="bg-slate-900 border border-cyan-500/40 rounded-2xl p-5 shadow-lg space-y-4">
+        
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-xl">
+              🎮
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-base font-bold text-white font-mono">
+                  NS-3 Discrete-Event Network Animator (NetAnim Interactive)
+                </h2>
+                <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  Microsecond Timeline
+                </span>
+              </div>
+              <p class="text-xs text-slate-400">
+                Visualizing exact discrete packet transmissions, queue buffer allocations, head-of-line servicing, and tail drops.
+              </p>
+            </div>
+          </div>
+
+          <!-- Simulation Triggers & Scenario Select -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <select id="sim-scenario-select" class="bg-slate-950 border border-slate-700 text-xs rounded-xl px-3 py-2 text-cyan-300 font-mono outline-none">
+              <option value="none">🟢 Baseline Normal (1 Gbps Hop 1, Clear Weather)</option>
+              <option value="traffic_surge" selected>📈 Traffic Surge (3.5x Bulk Burst &amp; Congestion)</option>
+              <option value="rain_degradation">🌧️ Rain Attenuation (ACM Collapse: 1Gbps &rarr; 100Mbps)</option>
+              <option value="wifi_interference">📡 Severe WiFi Airtime Contention</option>
+            </select>
+
+            <select id="sim-qos-select" class="bg-slate-950 border border-slate-700 text-xs rounded-xl px-3 py-2 text-emerald-300 font-mono outline-none">
+              <option value="true">🛡️ TSN QoS Active (PfifoFast Priority Band 0)</option>
+              <option value="false" selected>⚠️ QoS Disabled (FIFO Queue &mdash; Bufferbloat Breach)</option>
+            </select>
+
+            <button id="btn-trigger-real-sim" onclick="runRealDiscreteSim()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-bold text-xs shadow-[0_0_12px_rgba(0,212,255,0.4)] hover:opacity-95 transition-all flex items-center gap-1.5 cursor-pointer">
+              <span id="btn-sim-icon">🚀</span>
+              <span id="btn-sim-text">Run Real NS-3 Simulation</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- NetAnim VCR Controller Bar -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          <!-- Playback Controls -->
+          <div class="flex items-center gap-2">
+            <button id="vcr-play-btn" onclick="toggleSimPlayback()" class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-bold flex items-center justify-center hover:opacity-90 shadow-md">
+              <span id="vcr-play-icon">▶</span>
+            </button>
+            <button onclick="stepSimTime(-0.020)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-300" title="Step Back 20ms">
+              ⏮ -20ms
+            </button>
+            <button onclick="stepSimTime(+0.020)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-300" title="Step Forward 20ms">
+              ⏭ +20ms
+            </button>
+            <button onclick="resetSimTime()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-300" title="Reset Timeline">
+              ⏹ Reset
+            </button>
+
+            <!-- Speed Multipliers -->
+            <div class="flex items-center gap-1 ml-2 border-l border-slate-800 pl-3">
+              <span class="text-[10px] text-slate-500 font-mono">Speed:</span>
+              <button onclick="setSimSpeed(0.2, this)" class="speed-btn px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">0.2x</button>
+              <button onclick="setSimSpeed(0.5, this)" class="speed-btn px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">0.5x</button>
+              <button onclick="setSimSpeed(1.0, this)" class="speed-btn px-2 py-0.5 rounded text-[10px] font-mono bg-purple-600 text-white font-bold">1x</button>
+              <button onclick="setSimSpeed(2.0, this)" class="speed-btn px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">2x</button>
+            </div>
+          </div>
+
+          <!-- Scrubber Slider & Simulation Time Clock -->
+          <div class="flex items-center gap-4 flex-1 max-w-xl">
+            <input type="range" id="sim-scrubber" min="0" max="2.5" step="0.001" value="0.0" oninput="onScrubberInput(parseFloat(this.value))" class="w-full accent-cyan-400 cursor-pointer">
+            <div class="min-w-28 text-right">
+              <span class="text-[10px] text-slate-500 font-mono block">SIM TIME (t)</span>
+              <span id="sim-clock-display" class="text-sm font-bold font-mono text-cyan-300">0.000000 s</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- NetAnim Discrete Visual Canvas -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-x-auto">
+        <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-3">
+          <span class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00d4ff]"></span>
+            <span>Heterogeneous Multi-Hop Topology &mdash; Physical Link State &amp; Queue Buffers</span>
+          </span>
+          <div class="flex items-center gap-4 text-[11px]">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span> TSN Micro-Packet (128B / AC_VO)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> Bulk Video Frame (1400B / AC_BE)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Dropped Packet (Buffer Overflow)</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 1140 320" class="w-full h-auto select-none font-sans" xmlns="http://www.w3.org/2000/svg" id="svg-netanim">
+          <defs>
+            <linearGradient id="link-hop1-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#34d399" stop-opacity="0.8"/>
+            </linearGradient>
+            <linearGradient id="link-hop2-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#c084fc" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#00d4ff" stop-opacity="0.8"/>
+            </linearGradient>
+          </defs>
+
+          <!-- ── PHYSICAL LINKS ── -->
+          <!-- Sta0 -> AP0 -->
+          <line x1="90" y1="70" x2="200" y2="70" stroke="#34d399" stroke-width="2.5" stroke-dasharray="4,4"/>
+          <text x="145" y="55" fill="#34d399" font-size="8.5" font-family="monospace" text-anchor="middle">WiFi 5GHz (AC_VO)</text>
+
+          <!-- Sta1 -> AP1 -->
+          <line x1="90" y1="240" x2="200" y2="240" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="4,4"/>
+          <text x="145" y="225" fill="#fbbf24" font-size="8.5" font-family="monospace" text-anchor="middle">WiFi 5GHz (AC_BE)</text>
+
+          <!-- AP0 -> C0 -->
+          <path d="M 310 70 L 365 70 Q 390 70 390 100 L 390 125" stroke="#00d4ff" stroke-width="2" fill="none"/>
+          <text x="350" y="62" fill="#00d4ff" font-size="8" font-family="monospace">10G ETH</text>
+
+          <!-- AP1 -> C0 -->
+          <path d="M 310 240 L 365 240 Q 390 240 390 210 L 390 185" stroke="#fbbf24" stroke-width="2" fill="none"/>
+          <text x="350" y="232" fill="#fbbf24" font-size="8" font-family="monospace">10G ETH</text>
+
+          <!-- HOP 1: C0 <-> C1 (60 GHz V-Band) -->
+          <line x1="475" y1="155" x2="575" y2="155" stroke="url(#link-hop1-grad)" stroke-width="6" stroke-linecap="round" id="wire-hop1"/>
+          <text x="525" y="142" fill="#00d4ff" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle" id="wire-hop1-txt">60 GHz V-Band (1 Gbps / 0.15ms)</text>
+
+          <!-- Backbone: C1 <-> C2 (10G ETH) -->
+          <line x1="685" y1="155" x2="735" y2="155" stroke="#a78bfa" stroke-width="3" stroke-dasharray="5,3"/>
+          <text x="710" y="142" fill="#a78bfa" font-size="8" font-family="monospace" text-anchor="middle">10G Interconnect</text>
+
+          <!-- HOP 2: C2 <-> C3 (80 GHz E-Band) -->
+          <line x1="845" y1="155" x2="905" y2="155" stroke="url(#link-hop2-grad)" stroke-width="6" stroke-linecap="round" id="wire-hop2"/>
+          <text x="875" y="142" fill="#c084fc" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">80 GHz E-Band (10 Gbps)</text>
+
+          <!-- C3 -> Sink -->
+          <line x1="1015" y1="155" x2="1045" y2="155" stroke="#34d399" stroke-width="2.5"/>
+
+          <!-- ── IN-FLIGHT DYNAMIC PACKET LAYER ── -->
+          <g id="dynamic-packets-layer"></g>
+
+          <!-- ── NODES ── -->
+          <!-- 1. STA 0 (TSN Sensor) -->
+          <g transform="translate(20, 30)">
+            <rect width="70" height="75" rx="10" fill="#090d16" stroke="#34d399" stroke-width="1.5"/>
+            <text x="35" y="22" fill="#34d399" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">TSN SENSOR</text>
+            <text x="35" y="38" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">STA 0</text>
+            <text x="35" y="52" fill="#94a3b8" font-size="8" text-anchor="middle">1ms Period</text>
+            <text x="35" y="66" fill="#34d399" font-size="8" font-family="monospace" text-anchor="middle">TOS 0xc0</text>
+          </g>
+
+          <!-- 2. WiFi AP 0 -->
+          <g transform="translate(200, 30)">
+            <rect width="110" height="75" rx="10" fill="#090d16" stroke="#00d4ff" stroke-width="1.5"/>
+            <text x="55" y="22" fill="#00d4ff" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">WIFI AP 0</text>
+            <text x="55" y="38" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">TSN-AP0-SLICED</text>
+            <text x="55" y="52" fill="#34d399" font-size="8.5" font-weight="bold" text-anchor="middle">EDCA: AC_VO</text>
+            <text x="55" y="66" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle">Cont: 68.4 &mu;s</text>
+          </g>
+
+          <!-- 3. STA 1 (Bulk Cam) -->
+          <g transform="translate(20, 200)">
+            <rect width="70" height="75" rx="10" fill="#090d16" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="35" y="22" fill="#fbbf24" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">BULK CAM</text>
+            <text x="35" y="38" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">STA 1</text>
+            <text x="35" y="52" fill="#94a3b8" font-size="8" text-anchor="middle">Video Surge</text>
+            <text x="35" y="66" fill="#fbbf24" font-size="8" font-family="monospace" text-anchor="middle">TOS 0x00</text>
+          </g>
+
+          <!-- 4. WiFi AP 1 -->
+          <g transform="translate(200, 200)">
+            <rect width="110" height="75" rx="10" fill="#090d16" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="55" y="22" fill="#fbbf24" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">WIFI AP 1</text>
+            <text x="55" y="38" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">TSN-AP1-BE</text>
+            <text x="55" y="52" fill="#fbbf24" font-size="8.5" font-weight="bold" text-anchor="middle">EDCA: AC_BE</text>
+            <text x="55" y="66" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle">Cont: 412.5 &mu;s</text>
+          </g>
+
+          <!-- 5. CERAGON NODE 0 (ctu-96 Ingress with Dedicated Buffer Slots) -->
+          <g transform="translate(365, 95)" id="node-ceragon0">
+            <rect width="110" height="120" rx="12" fill="#090d16" stroke="#00d4ff" stroke-width="2" id="c0-box"/>
+            <text x="55" y="20" fill="#00d4ff" font-size="9.5" font-weight="bold" font-family="monospace" text-anchor="middle">CERAGON 0 (Ingress)</text>
+            <text x="55" y="35" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">MH-T261 (ctu-96)</text>
+            <text x="55" y="48" fill="#34d399" font-size="8" font-family="monospace" text-anchor="middle">192.168.1.225</text>
+
+            <!-- Buffer Queue Slots Visualizer (10 slots) -->
+            <text x="55" y="62" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle">INGRESS BUFFER (150 PKT)</text>
+            <g transform="translate(10, 68)">
+              <!-- 10 Visual Buffer Slots -->
+              <rect x="0" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-0"/>
+              <rect x="9" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-1"/>
+              <rect x="18" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-2"/>
+              <rect x="27" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-3"/>
+              <rect x="36" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-4"/>
+              <rect x="45" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-5"/>
+              <rect x="54" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-6"/>
+              <rect x="63" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-7"/>
+              <rect x="72" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-8"/>
+              <rect x="81" y="0" width="7" height="14" rx="1.5" fill="#1e293b" id="qslot-9"/>
+            </g>
+
+            <text x="55" y="96" fill="#38bdf8" font-size="8" font-family="monospace" text-anchor="middle" id="c0-qdepth-txt">Queue: 0 / 150 pkts</text>
+            <text x="55" y="109" fill="#ef4444" font-size="7.5" font-family="monospace" font-weight="bold" text-anchor="middle" id="c0-drop-txt"></text>
+          </g>
+
+          <!-- 6. CERAGON NODE 1 (Hop 1 Peer) -->
+          <g transform="translate(575, 110)">
+            <rect width="110" height="90" rx="12" fill="#090d16" stroke="#00d4ff" stroke-width="1.5"/>
+            <text x="55" y="22" fill="#00d4ff" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">CERAGON 1</text>
+            <text x="55" y="38" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">MH-T261 Peer</text>
+            <text x="55" y="52" fill="#94a3b8" font-size="8" text-anchor="middle">Hop 1 Demux / 60G</text>
+            <text x="55" y="72" fill="#34d399" font-size="8" font-family="monospace" text-anchor="middle">Demod: MCS 8</text>
+          </g>
+
+          <!-- 7. CERAGON NODE 2 (IP-50C Gateway) -->
+          <g transform="translate(735, 110)">
+            <rect width="110" height="90" rx="12" fill="#090d16" stroke="#c084fc" stroke-width="1.5"/>
+            <text x="55" y="22" fill="#c084fc" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">CERAGON 2</text>
+            <text x="55" y="38" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">IP-50C Gateway</text>
+            <text x="55" y="52" fill="#94a3b8" font-size="8" text-anchor="middle">Hop 2 E-Band TX</text>
+            <text x="55" y="72" fill="#c084fc" font-size="8" font-family="monospace" text-anchor="middle">10 Gbps Trunk</text>
+          </g>
+
+          <!-- 8. CERAGON NODE 3 (IP-50C Terminal) -->
+          <g transform="translate(905, 110)">
+            <rect width="110" height="90" rx="12" fill="#090d16" stroke="#c084fc" stroke-width="1.5"/>
+            <text x="55" y="22" fill="#c084fc" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">CERAGON 3</text>
+            <text x="55" y="38" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">IP-50C Terminal</text>
+            <text x="55" y="52" fill="#94a3b8" font-size="8" text-anchor="middle">Hop 2 Egress / 80G</text>
+            <text x="55" y="72" fill="#34d399" font-size="8" font-family="monospace" text-anchor="middle">Low PDB Jitter</text>
+          </g>
+
+          <!-- 9. TSN SINK -->
+          <g transform="translate(1045, 110)">
+            <rect width="75" height="90" rx="10" fill="#090d16" stroke="#34d399" stroke-width="1.5"/>
+            <text x="37" y="22" fill="#34d399" font-size="8.5" font-weight="bold" font-family="monospace" text-anchor="middle">TSN SINK</text>
+            <text x="37" y="40" fill="#ffffff" font-size="10.5" font-weight="bold" text-anchor="middle">Sink Node</text>
+            <text x="37" y="56" fill="#94a3b8" font-size="8" text-anchor="middle">Port 5001/5002</text>
+            <text x="37" y="74" fill="#34d399" font-size="8" font-family="monospace" text-anchor="middle">SLA &le; 1.5ms</text>
+          </g>
+
+        </svg>
+      </div>
+
+      <!-- Live Discrete Event Stream Log Table (NetAnim Packet Trace Format) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-white font-mono">📜 Live Discrete Packet Event Trace</span>
+            <span id="trace-events-count-badge" class="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/20 text-purple-300">
+              0 events loaded
+            </span>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono">Synchronized with NetAnim timeline scrubber</span>
+        </div>
+
+        <div class="overflow-x-auto max-h-56">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="text-slate-400 bg-slate-950/80 sticky top-0 border-b border-slate-800">
+              <tr>
+                <th class="py-2 px-3">Sim Time (s)</th>
+                <th class="py-2 px-3">Node</th>
+                <th class="py-2 px-3">Event Type</th>
+                <th class="py-2 px-3">Flow</th>
+                <th class="py-2 px-3">Pkt ID</th>
+                <th class="py-2 px-3">Size (B)</th>
+                <th class="py-2 px-3">Queue Occupancy</th>
+                <th class="py-2 px-3">Event Annotation &amp; State</th>
+              </tr>
+            </thead>
+            <tbody id="trace-table-body" class="divide-y divide-slate-800/60">
+              <tr>
+                <td colspan="8" class="text-center py-6 text-slate-500">
+                  Click "Run Real NS-3 Simulation" or step through the timeline to stream discrete events.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Flow KPI Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
+          <span class="text-[10px] text-slate-400 font-mono block">E2E TSN URLLC LATENCY</span>
+          <div class="flex items-baseline justify-between">
+            <span id="kpi-tsn-lat" class="text-xl font-bold font-mono text-emerald-400">0.88 ms</span>
+            <span id="kpi-tsn-sla-pill" class="px-2 py-0.5 text-[10px] font-bold font-mono rounded bg-emerald-500/20 text-emerald-300">PASS</span>
+          </div>
+          <span class="text-[9px] text-slate-500 font-mono block">SLA Bound: &le; 1.50 ms</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
+          <span class="text-[10px] text-slate-400 font-mono block">TSN JITTER &amp; PDR</span>
+          <div class="flex items-baseline justify-between">
+            <span id="kpi-tsn-jit" class="text-xl font-bold font-mono text-cyan-400">0.04 ms</span>
+            <span id="kpi-tsn-pdr" class="text-[11px] font-bold font-mono text-emerald-400">100% PDR</span>
+          </div>
+          <span class="text-[9px] text-slate-500 font-mono block">Zero Packet Loss in Slice</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
+          <span class="text-[10px] text-slate-400 font-mono block">WIFI EDCA CONTENTION</span>
+          <div class="flex items-baseline justify-between">
+            <span id="kpi-wifi-vo" class="text-base font-bold font-mono text-cyan-300">68.4 &mu;s</span>
+            <span id="kpi-wifi-be" class="text-xs font-mono text-amber-400">BE: 412.5 &mu;s</span>
+          </div>
+          <span class="text-[9px] text-emerald-400 font-mono block">AC_VO CW[3-7] Priority</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
+          <span class="text-[10px] text-slate-400 font-mono block">CERAGON LINK 1 BUFFER</span>
+          <div class="flex items-baseline justify-between">
+            <span id="kpi-c0-q0" class="text-base font-bold font-mono text-emerald-400">Band 0: 1 pk</span>
+            <span id="kpi-c0-q1" class="text-xs font-mono text-amber-400">Band 1: 18 pk</span>
+          </div>
+          <span id="kpi-c0-drops" class="text-[9px] text-slate-500 font-mono block">0 Drops</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
+          <span class="text-[10px] text-slate-400 font-mono block">HOP 1 ACM CAPACITY</span>
+          <div class="flex items-baseline justify-between">
+            <span id="kpi-hop1-rate" class="text-lg font-bold font-mono text-cyan-300">1 Gbps</span>
+            <span id="kpi-hop1-mcs" class="text-xs font-mono text-purple-400">MCS 8</span>
+          </div>
+          <span class="text-[9px] text-slate-500 font-mono block">60 GHz Millimeter-Wave</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 2: ETSI TERAFLOWSDN (TFS) INNER WORKINGS & DATASTORE DIFF INSPECTOR -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-tfs-internals" class="space-y-5 hidden">
+      
+      <!-- TFS Microservices Architecture State -->
+      <div class="bg-slate-900 border border-purple-500/40 rounded-2xl p-5 shadow-lg space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-3 gap-2">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl">
+              ⚙️
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white font-mono">
+                ETSI TeraFlowSDN Microservices State Machine &amp; Internal Pipeline
+              </h2>
+              <p class="text-xs text-slate-400">
+                Live inspection of Context, Service (PCE), Device Driver layer, and Southbound Polling Daemon.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="tfs-mode-pill" class="px-2.5 py-1 rounded bg-purple-500/15 text-purple-300 font-mono text-xs border border-purple-500/30">
+              ETSI TeraFlowSDN Release 3
+            </span>
+          </div>
+        </div>
+
+        <!-- 4 Microservices Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          
+          <!-- 1. Context Service -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-purple-300 font-mono">1. CONTEXT SERVICE</span>
+              <span class="px-1.5 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-400 rounded">gRPC :10010</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Central state store backed by CockroachDB.</p>
+            <div class="space-y-1 text-[11px] font-mono">
+              <div class="flex justify-between"><span class="text-slate-500">Topology:</span> <span class="text-cyan-300">admin/admin</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Devices Loaded:</span> <span class="text-white font-bold">34 nodes</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Links Loaded:</span> <span class="text-white font-bold">34 links</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Read QPS:</span> <span class="text-emerald-400">42.8 ops/s</span></div>
+            </div>
+          </div>
+
+          <!-- 2. Service / PCE -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-cyan-300 font-mono">2. SERVICE / PCE</span>
+              <span class="px-1.5 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-400 rounded">gRPC :10030</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Constrained Shortest Path First (CSPF) calculation.</p>
+            <div class="space-y-1 text-[11px] font-mono">
+              <div class="flex justify-between"><span class="text-slate-500">Algorithm:</span> <span class="text-cyan-300">CSPF / TI-LFA</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Active Slices:</span> <span class="text-purple-300 font-bold">slice-uran-6g</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Bandwidth:</span> <span class="text-emerald-400 font-bold">2500 Mbps</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Compute Time:</span> <span class="text-yellow-400">4.12 ms</span></div>
+            </div>
+          </div>
+
+          <!-- 3. Device Service & Drivers -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-emerald-300 font-mono">3. DEVICE SERVICE</span>
+              <span class="px-1.5 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-400 rounded">gRPC :10020</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Southbound mediation &amp; 2PC transactions.</p>
+            <div class="space-y-1 text-[11px] font-mono">
+              <div class="flex justify-between"><span class="text-slate-500">Driver Layer:</span> <span class="text-emerald-300">IETF RESTCONF</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Target HW:</span> <span class="text-white font-bold">192.168.1.225</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Protocol:</span> <span class="text-cyan-300">RFC 8040 (HTTPS)</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">2PC State:</span> <span class="text-emerald-400 font-bold">COMMITTED</span></div>
+            </div>
+          </div>
+
+          <!-- 4. Monitoring & Telemetry -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-amber-300 font-mono">4. MONITORING SERVICE</span>
+              <span class="px-1.5 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-400 rounded">gRPC :10040</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Telemetry polling into QuestDB &amp; Prometheus.</p>
+            <div class="space-y-1 text-[11px] font-mono">
+              <div class="flex justify-between"><span class="text-slate-500">Polled RSSI:</span> <span class="text-emerald-400 font-bold">-58.4 dBm</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Polled SNR:</span> <span class="text-cyan-300 font-bold">24.1 dB</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Polled Temp:</span> <span class="text-amber-400">61.0 °C</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Polling Rate:</span> <span class="text-purple-300">10 Hz</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Candidate Datastore Diff Viewer (Before vs After Actuation) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-white font-mono">📝 Candidate Datastore Diff (Before vs. After Actuation)</span>
+            <span class="px-2 py-0.5 text-[10px] font-mono bg-cyan-500/20 text-cyan-300 rounded">
+              Device: Ceragon MH-T261 (f676623c-1a65-54bd-b1e8-279c8a6d8a1c)
+            </span>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">RFC 8040 / Candidate Datastore</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          
+          <!-- BEFORE ACTUATION -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-red-400 font-mono flex items-center gap-1.5">
+                <span>🔴</span> Running Datastore State (Before Actuation)
+              </span>
+              <span class="text-[10px] text-slate-500 font-mono">Unprotected State</span>
+            </div>
+            <pre class="bg-black/90 p-4 rounded-xl border border-red-500/30 text-[11px] text-red-300 overflow-x-auto h-64 font-mono leading-relaxed"><code id="code-datastore-before">{
+  "device_uuid": "f676623c-1a65-54bd-b1e8-279c8a6d8a1c",
+  "device_type": "microwave-radio-siklu-mh-t261",
+  "config_rules": [
+    {
+      "action": "SET",
+      "resource_key": "/radio/acm/profile",
+      "resource_value": "ACM_FLOOR_MCS_0 (QPSK 100Mbps - UNPROTECTED)"
+    },
+    {
+      "action": "SET",
+      "resource_key": "/interface[id=eth0]/qos/queue",
+      "resource_value": "FIFO_DEFAULT_NO_PRIORITY"
+    },
+    {
+      "action": "SET",
+      "resource_key": "/radio/carrier/frequency",
+      "resource_value": "60.48 GHz (High Atmospheric O2 Absorption)"
+    },
+    {
+      "action": "SET",
+      "resource_key": "/traffic-engineering/reserved-bw",
+      "resource_value": "1000 Mbps (Standard Best-Effort)"
+    }
+  ]
+}</code></pre>
+          </div>
+
+          <!-- AFTER ACTUATION -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-emerald-400 font-mono flex items-center gap-1.5">
+                <span>🟢</span> Candidate Datastore State (After TFS 2PC Commit)
+              </span>
+              <span class="text-[10px] text-emerald-400 font-mono font-bold">Mitigated &amp; Hardened</span>
+            </div>
+            <pre class="bg-black/90 p-4 rounded-xl border border-emerald-500/30 text-[11px] text-emerald-300 overflow-x-auto h-64 font-mono leading-relaxed"><code id="code-datastore-after">{
+  "device_uuid": "f676623c-1a65-54bd-b1e8-279c8a6d8a1c",
+  "device_type": "microwave-radio-siklu-mh-t261",
+  "config_rules": [
+    {
+      "action": "SET",
+      "resource_key": "/radio/acm/profile",
+      "resource_value": "ACM_FLOOR_MCS_4 (64QAM 500Mbps - HARDENED)"
+    },
+    {
+      "action": "SET",
+      "resource_key": "/interface[id=eth0]/qos/queue",
+      "resource_value": "IEEE_802.1Q_PCP_6_STRICT_PRIORITY"
+    },
+    {
+      "action": "SET",
+      "resource_key": "/radio/carrier/frequency",
+      "resource_value": "64.80 GHz (Low O2 Absorption Window)"
+    },
+    {
+      "action": "SET",
+      "resource_key": "/traffic-engineering/reserved-bw",
+      "resource_value": "2500 Mbps (URLLC Protected Slice)"
+    }
+  ]
+}</code></pre>
+          </div>
+
+        </div>
+
+        <!-- Diff Impact Explanations -->
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <span class="text-xs font-bold text-slate-300 font-mono block">💡 Physical Telecommunication Impact of Committed Rules</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div class="p-2 rounded bg-slate-900 border border-slate-800">
+              <strong class="text-emerald-400 font-mono block">ACM Floor Hardened (&ge; MCS 4):</strong>
+              <span class="text-slate-400 text-[11px]">Prevents modulation collapsing below 500 Mbps during heavy tropical rain cells (ITU-R P.838).</span>
+            </div>
+            <div class="p-2 rounded bg-slate-900 border border-slate-800">
+              <strong class="text-cyan-400 font-mono block">IEEE 802.1Q PCP Class 6 Activated:</strong>
+              <span class="text-slate-400 text-[11px]">Enables PfifoFast Band 0 strict priority, guaranteeing zero queuing delay for 1ms URLLC telemetry.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RFC 8040 RESTCONF Wire Protocol Inspector -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-white font-mono">📡 RFC 8040 RESTCONF Wire Protocol Log</span>
+            <span class="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/20 text-emerald-400 rounded">
+              Direct Physical Socket: 192.168.1.225:80
+            </span>
+          </div>
+          <button onclick="refreshTfsInternals()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs font-mono text-cyan-300">
+            🔄 Refresh Wire State
+          </button>
+        </div>
+
+        <div class="space-y-2.5" id="restconf-wire-container">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 3: 5-STAGE CLOSED-LOOP AUTOMATION PIPELINE -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-closed-loop" class="space-y-5 hidden">
+      
+      <!-- Stepper Controls Banner -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-bold text-white font-mono">
+            Autonomous Closed-Loop Stepper (Stages 1 through 5)
+          </h2>
+          <p class="text-xs text-slate-400">
+            Execute step-by-step to inspect intermediate handoffs or run the full autonomous loop.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="btn-step-next" onclick="stepNextStage()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+            <span>⏭</span> Step Stage (<span id="btn-next-num">1</span>/5)
+          </button>
+          <button id="btn-run-all-loop" onclick="runEntireClosedLoop()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-bold text-xs shadow-[0_0_12px_rgba(168,85,247,0.4)] hover:opacity-95 transition-all flex items-center gap-1.5 cursor-pointer">
+            <span>🚀</span> Auto-Run All 5 Stages
+          </button>
+        </div>
+      </div>
+
+      <!-- 5 Stages Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5" id="card-stage-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold font-mono text-purple-400">STAGE 1</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="badge-st-1">PENDING</span>
+          </div>
+          <strong class="text-xs text-white block">Intent Ingestion</strong>
+          <p class="text-[11px] text-slate-400">TMF921 URLLC contract: latency &le; 1.5ms.</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5" id="card-stage-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold font-mono text-cyan-400">STAGE 2</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="badge-st-2">PENDING</span>
+          </div>
+          <strong class="text-xs text-white block">TFS State Sync</strong>
+          <p class="text-[11px] text-slate-400">Pull live hardware telemetry (:8088).</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5" id="card-stage-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold font-mono text-yellow-400">STAGE 3</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="badge-st-3">PENDING</span>
+          </div>
+          <strong class="text-xs text-white block">NS-3 Discrete Sim</strong>
+          <p class="text-[11px] text-slate-400">What-if simulation on cersrv-029.</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5" id="card-stage-4">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold font-mono text-emerald-400">STAGE 4</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="badge-st-4">PENDING</span>
+          </div>
+          <strong class="text-xs text-white block">Decision Gatekeeper</strong>
+          <p class="text-[11px] text-slate-400">3GPP TS 28.561 pre-flight checks (4/4).</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5" id="card-stage-5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold font-mono text-purple-400">STAGE 5</span>
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="badge-st-5">PENDING</span>
+          </div>
+          <strong class="text-xs text-white block">2PC HW Actuation</strong>
+          <p class="text-[11px] text-slate-400">Candidate commit to Ceragon ctu-96.</p>
+        </div>
+      </div>
+
+      <!-- Closed Loop Terminal Console -->
+      <div class="bg-black/90 rounded-2xl p-5 border border-slate-800 font-mono text-xs space-y-2">
+        <div class="flex items-center justify-between text-slate-500 border-b border-slate-800 pb-2">
+          <span>CONSOLE LOG &mdash; CLOSED LOOP EXECUTION</span>
+          <span id="loop-time-tag">IDLE</span>
+        </div>
+        <div id="closed-loop-log" class="space-y-1 max-h-64 overflow-y-auto text-slate-300">
+          <div class="text-slate-500">// Ready to initiate closed loop. Click "Step Stage" or "Auto-Run All 5 Stages".</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ═════════════════════════════════════════════════════════════════════════
+    // GLOBAL STATE & DISCRETE SIMULATION ENGINE
+    // ═════════════════════════════════════════════════════════════════════════
+    let activeTab = 'simulation';
+    let currentStage = 1;
+    let isSimPlaying = false;
+    let simCurrentTime = 0.0;
+    let simMaxTime = 2.5;
+    let simSpeed = 1.0;
+    let animFrameId = null;
+    let lastAnimTime = null;
+    let discreteEvents = [];
+    let activeScenario = 'traffic_surge';
+    let isTsnQosEnabled = false;
+
+    // Node Coordinate Mapping for in-flight packets (SVG Canvas)
+    const NODE_COORDS = {
+      "STA0": { x: 55, y: 70 },
+      "AP0":  { x: 255, y: 70 },
+      "STA1": { x: 55, y: 240 },
+      "AP1":  { x: 255, y: 240 },
+      "C0":   { x: 420, y: 155 },
+      "C1":   { x: 630, y: 155 },
+      "C2":   { x: 790, y: 155 },
+      "C3":   { x: 960, y: 155 },
+      "SINK": { x: 1080, y: 155 }
+    };
+
+    function switchMainTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('view-simulation').classList.add('hidden');
+      document.getElementById('view-tfs-internals').classList.add('hidden');
+      document.getElementById('view-closed-loop').classList.add('hidden');
+
+      if (tab === 'simulation') {
+        document.getElementById('tab-btn-sim').classList.add('active');
+        document.getElementById('view-simulation').classList.remove('hidden');
+      } else if (tab === 'tfs-internals') {
+        document.getElementById('tab-btn-tfs').classList.add('active');
+        document.getElementById('view-tfs-internals').classList.remove('hidden');
+        refreshTfsInternals();
+      } else if (tab === 'closed-loop') {
+        document.getElementById('tab-btn-loop').classList.add('active');
+        document.getElementById('view-closed-loop').classList.remove('hidden');
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // DISCRETE SIMULATION PLAYBACK (NETANIM CANVAS ENGINE)
+    // ═════════════════════════════════════════════════════════════════════════
+    function toggleSimPlayback() {
+      if (isSimPlaying) {
+        pauseSimPlayback();
+      } else {
+        startSimPlayback();
+      }
+    }
+
+    function startSimPlayback() {
+      if (discreteEvents.length === 0) {
+        runRealDiscreteSim();
+        return;
+      }
+      isSimPlaying = true;
+      document.getElementById('vcr-play-icon').textContent = '⏸';
+      lastAnimTime = performance.now();
+      animFrameId = requestAnimationFrame(animTick);
+    }
+
+    function pauseSimPlayback() {
+      isSimPlaying = false;
+      document.getElementById('vcr-play-icon').textContent = '▶';
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+    }
+
+    function resetSimTime() {
+      pauseSimPlayback();
+      simCurrentTime = 0.0;
+      updateSimView(simCurrentTime);
+    }
+
+    function stepSimTime(deltaSec) {
+      pauseSimPlayback();
+      simCurrentTime = Math.max(0.0, Math.min(simMaxTime, simCurrentTime + deltaSec));
+      updateSimView(simCurrentTime);
+    }
+
+    function setSimSpeed(speed, btn) {
+      simSpeed = speed;
+      document.querySelectorAll('.speed-btn').forEach(b => {
+        b.className = "speed-btn px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300";
+      });
+      btn.className = "speed-btn px-2 py-0.5 rounded text-[10px] font-mono bg-purple-600 text-white font-bold";
+    }
+
+    function onScrubberInput(val) {
+      simCurrentTime = val;
+      updateSimView(simCurrentTime);
+    }
+
+    function animTick(now) {
+      if (!isSimPlaying) return;
+      const elapsedWallSec = (now - lastAnimTime) / 1000.0;
+      lastAnimTime = now;
+
+      simCurrentTime += elapsedWallSec * simSpeed;
+      if (simCurrentTime >= simMaxTime) {
+        simCurrentTime = simMaxTime;
+        updateSimView(simCurrentTime);
+        pauseSimPlayback();
+        return;
+      }
+
+      updateSimView(simCurrentTime);
+      animFrameId = requestAnimationFrame(animTick);
+    }
+
+    function updateSimView(t) {
+      // 1. Update Scrubber & Clock Readout
+      document.getElementById('sim-scrubber').value = t.toFixed(4);
+      document.getElementById('sim-clock-display').textContent = `${t.toFixed(6)} s`;
+
+      // 2. Compute Active Queue Depth & Drops at Ceragon Node 0
+      let activeQDepth = 0;
+      let activeBand0 = 0;
+      let activeBand1 = 0;
+      let recentDrop = false;
+
+      // Find events up to time t
+      let pastEvents = discreteEvents.filter(e => e.t <= t);
+      if (pastEvents.length > 0) {
+        const lastEv = pastEvents[pastEvents.length - 1];
+        activeQDepth = lastEv.q_depth || 0;
+        
+        // Count un-dequeued packets in window
+        pastEvents.forEach(e => {
+          if (e.node === "C0" && e.event === "DROP" && (t - e.t) < 0.25) {
+            recentDrop = true;
+          }
+        });
+      }
+
+      // Update 10 Queue Slots in SVG
+      const filledSlots = Math.min(10, Math.ceil((activeQDepth / 150) * 10));
+      for (let s = 0; s < 10; s++) {
+        const slotEl = document.getElementById(`qslot-${s}`);
+        if (!slotEl) continue;
+        if (s < filledSlots) {
+          slotEl.setAttribute('fill', recentDrop ? '#ef4444' : (s < 2 ? '#34d399' : '#f59e0b'));
+        } else {
+          slotEl.setAttribute('fill', '#1e293b');
+        }
+      }
+
+      const qTxt = document.getElementById('c0-qdepth-txt');
+      if (qTxt) qTxt.textContent = `Queue: ${activeQDepth} / 150 pkts`;
+
+      const dropTxt = document.getElementById('c0-drop-txt');
+      if (dropTxt) {
+        if (recentDrop) {
+          dropTxt.textContent = `🚨 TAIL-DROP DETECTED!`;
+          document.getElementById('c0-box').classList.add('drop-anim');
+        } else {
+          dropTxt.textContent = ``;
+          document.getElementById('c0-box').classList.remove('drop-anim');
+        }
+      }
+
+      // 3. Render In-Flight Dynamic Packets on Physical Links
+      renderInFlightPackets(t);
+
+      // 4. Update Event Table & Highlight Active Row
+      highlightTraceRow(pastEvents.length - 1);
+    }
+
+    function renderInFlightPackets(t) {
+      const layer = document.getElementById('dynamic-packets-layer');
+      if (!layer) return;
+      layer.innerHTML = '';
+
+      // A packet is in transit if its transmission began <= t and completes >= t
+      discreteEvents.forEach(ev => {
+        if (ev.event === "TX" || ev.event === "DEQUEUE") {
+          const tStart = ev.t;
+          // Approximate transit duration based on link
+          const duration = (ev.node === "STA0" || ev.node === "STA1") ? 0.000068 : 0.000150;
+          const tEnd = tStart + duration;
+
+          if (t >= tStart && t <= tEnd) {
+            const alpha = (t - tStart) / duration;
+            const from = NODE_COORDS[ev.node];
+            const to = NODE_COORDS[ev.peer] || NODE_COORDS["C1"];
+
+            if (from && to) {
+              const curX = from.x + alpha * (to.x - from.x);
+              const curY = from.y + alpha * (to.y - from.y);
+
+              const isTsn = (ev.flow === "TSN");
+              const fill = isTsn ? "#34d399" : "#fbbf24";
+              const r = isTsn ? 5 : 6;
+
+              const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+              const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+              circle.setAttribute("cx", curX);
+              circle.setAttribute("cy", curY);
+              circle.setAttribute("r", r);
+              circle.setAttribute("fill", fill);
+              circle.setAttribute("filter", "drop-shadow(0 0 6px " + fill + ")");
+
+              const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              text.setAttribute("x", curX + 8);
+              text.setAttribute("y", curY - 6);
+              text.setAttribute("fill", fill);
+              text.setAttribute("font-size", "7.5");
+              text.setAttribute("font-family", "monospace");
+              text.textContent = `#${ev.pkt_id} (${ev.size}B)`;
+
+              g.appendChild(circle);
+              g.appendChild(text);
+              layer.appendChild(g);
+            }
+          }
+        }
+      });
+    }
+
+    function highlightTraceRow(idx) {
+      document.querySelectorAll('#trace-table-body tr').forEach((tr, i) => {
+        if (i === idx) {
+          tr.className = "bg-purple-900/40 text-purple-200 font-bold border-l-4 border-purple-400";
+          tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          tr.className = "hover:bg-slate-800/40 transition-colors";
+        }
+      });
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // REAL NS-3 SIMULATION EXECUTION API CALL
+    // ═════════════════════════════════════════════════════════════════════════
+    async function runRealDiscreteSim() {
+      const btn = document.getElementById('btn-trigger-real-sim');
+      const btnText = document.getElementById('btn-sim-text');
+      const btnIcon = document.getElementById('btn-sim-icon');
+
+      btnText.textContent = "Executing NS-3 on cersrv-029...";
+      btnIcon.textContent = "⏳";
+      btn.disabled = true;
+
+      const perturb = document.getElementById('sim-scenario-select').value;
+      const enableQos = document.getElementById('sim-qos-select').value === "true";
+
+      try {
+        const res = await fetch('/api/v1/digital-twin/simulate-tsn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sim_time: 2.5,
+            perturbation: perturb,
+            enable_tsn_qos: enableQos,
+            surge_multiplier: 3.5,
+            rain_loss_db: 19.93
+          })
+        });
+        const data = await res.json();
+        
+        // Ingest discrete event trace
+        discreteEvents = data.discrete_packet_trace || [];
+        document.getElementById('trace-events-count-badge').textContent = `${discreteEvents.length} events loaded`;
+        
+        // Render events table
+        populateTraceTable(discreteEvents);
+
+        // Update Flow KPI Cards
+        updateKpiCards(data);
+
+        // Reset and auto-play
+        simCurrentTime = 0.0;
+        startSimPlayback();
+
+      } catch (err) {
+        console.error("Simulation dispatch failed:", err);
+      } finally {
+        btnText.textContent = "Run Real NS-3 Simulation";
+        btnIcon.textContent = "🚀";
+        btn.disabled = false;
+      }
+    }
+
+    function populateTraceTable(events) {
+      const tbody = document.getElementById('trace-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      events.forEach((ev, i) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition-colors cursor-pointer";
+        tr.onclick = () => {
+          simCurrentTime = ev.t;
+          updateSimView(simCurrentTime);
+        };
+
+        const isDrop = ev.event === "DROP";
+        const isTsn = ev.flow === "TSN";
+        const eventBadge = isDrop
+          ? `<span class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-bold">DROP</span>`
+          : `<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">${ev.event}</span>`;
+
+        const flowBadge = isTsn
+          ? `<span class="text-emerald-400 font-bold">TSN (URLLC)</span>`
+          : `<span class="text-amber-400">BEST_EFFORT</span>`;
+
+        tr.innerHTML = `
+          <td class="py-1.5 px-3 text-cyan-300">${ev.t.toFixed(6)}</td>
+          <td class="py-1.5 px-3 font-bold">${ev.node} &rarr; ${ev.peer}</td>
+          <td class="py-1.5 px-3">${eventBadge}</td>
+          <td class="py-1.5 px-3">${flowBadge}</td>
+          <td class="py-1.5 px-3 text-slate-400">#${ev.pkt_id}</td>
+          <td class="py-1.5 px-3">${ev.size} B</td>
+          <td class="py-1.5 px-3 text-purple-300 font-bold">${ev.q_depth}/150</td>
+          <td class="py-1.5 px-3 text-slate-300 text-[11px]">${ev.note}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateKpiCards(data) {
+      if (!data || !data.flows) return;
+      const tsn = data.flows.tsn_urllc;
+      const be = data.flows.best_effort_burst;
+
+      document.getElementById('kpi-tsn-lat').textContent = `${tsn.mean_delay_ms.toFixed(2)} ms`;
+      const pill = document.getElementById('kpi-tsn-sla-pill');
+      if (tsn.sla_breached) {
+        pill.textContent = "BREACH";
+        pill.className = "px-2 py-0.5 text-[10px] font-bold font-mono rounded bg-red-500/20 text-red-400";
+        document.getElementById('kpi-tsn-lat').className = "text-xl font-bold font-mono text-red-400 animate-pulse";
+      } else {
+        pill.textContent = "PASS";
+        pill.className = "px-2 py-0.5 text-[10px] font-bold font-mono rounded bg-emerald-500/20 text-emerald-300";
+        document.getElementById('kpi-tsn-lat').className = "text-xl font-bold font-mono text-emerald-400";
+      }
+
+      document.getElementById('kpi-tsn-jit').textContent = `${tsn.jitter_ms.toFixed(2)} ms`;
+      document.getElementById('kpi-tsn-pdr').textContent = `${(100 - tsn.packet_loss_pct).toFixed(2)}% PDR`;
+
+      if (data.ceragon_devices && data.ceragon_devices[0]) {
+        const c0 = data.ceragon_devices[0];
+        document.getElementById('kpi-c0-q0').textContent = `Band 0: ${c0.tsn_prio_queue_depth_pkts} pk`;
+        document.getElementById('kpi-c0-q1').textContent = `Band 1: ${c0.best_effort_queue_depth_pkts} pk`;
+        document.getElementById('kpi-c0-drops').textContent = `${c0.dropped_packets} Total Drops`;
+        document.getElementById('kpi-hop1-rate').textContent = c0.configured_rate;
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // TAB 2: TFS MICROSERVICES & DATASTORE DIFF REFRESH
+    // ═════════════════════════════════════════════════════════════════════════
+    async function refreshTfsInternals() {
+      try {
+        const [diffRes, wireRes] = await Promise.all([
+          fetch('/api/v1/digital-twin/datastore-diff'),
+          fetch('/api/v1/digital-twin/restconf-wire')
+        ]);
+        const diffData = await diffRes.json();
+        const wireData = await wireRes.json();
+
+        if (diffData.before_actuation) {
+          document.getElementById('code-datastore-before').textContent = JSON.stringify(diffData.before_actuation, null, 2);
+        }
+        if (diffData.after_actuation) {
+          document.getElementById('code-datastore-after').textContent = JSON.stringify(diffData.after_actuation, null, 2);
+        }
+
+        const wireWrap = document.getElementById('restconf-wire-container');
+        if (wireWrap && Array.isArray(wireData)) {
+          wireWrap.innerHTML = '';
+          wireData.forEach(tx => {
+            const item = document.createElement('div');
+            item.className = "p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs font-mono";
+            item.innerHTML = `
+              <div class="flex items-center justify-between">
+                <span class="text-cyan-400 font-bold">${tx.phase} &mdash; ${tx.method} ${tx.url}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${tx.status_code === 200 || tx.status_code === 204 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">HTTP ${tx.status_code}</span>
+              </div>
+              <pre class="bg-black/80 p-2.5 rounded-lg text-[10px] text-slate-300 overflow-x-auto">${JSON.stringify(tx.request_body || tx.response_body, null, 2)}</pre>
+            `;
+            wireWrap.appendChild(item);
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load TFS internals:", e);
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // TAB 3: 5-STAGE CLOSED LOOP STEPPER
+    // ═════════════════════════════════════════════════════════════════════════
+    async function stepNextStage() {
+      const st = currentStage;
+      appendLoopLog(`[Stage ${st}] Executing...`, 'text-cyan-300');
+
+      try {
+        const res = await fetch('/api/v1/digital-twin/step-stage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stage: st,
+            scenario_id: activeScenario
+          })
+        });
+        const data = await res.json();
+        appendLoopLog(`[Stage ${st}] ${data.summary} (${data.elapsed_ms}ms)`, data.status === 'COMPLETED' ? 'text-yellow-400 font-bold' : 'text-emerald-400');
+
+        // Update Stage Badge
+        const b = document.getElementById(`badge-st-${st}`);
+        if (b) {
+          b.textContent = data.status;
+          b.className = "text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold";
+        }
+
+        // If stage 3 finished, ingest simulation trace!
+        if (st === 3 && data.sim_results && data.sim_results.discrete_packet_trace) {
+          discreteEvents = data.sim_results.discrete_packet_trace;
+          populateTraceTable(discreteEvents);
+          updateKpiCards(data.sim_results);
+        }
+
+        currentStage = (currentStage % 5) + 1;
+        document.getElementById('btn-next-num').textContent = currentStage;
+
+      } catch (err) {
+        appendLoopLog(`[Stage ${st}] Error: ${err.message}`, 'text-red-400 font-bold');
+      }
+    }
+
+    async function runEntireClosedLoop() {
+      appendLoopLog("════════════════════════════════════════════════════════════════", 'text-slate-500');
+      appendLoopLog("🚀 INITIATING CROSS-REPO DIGITAL TWIN CLOSED LOOP", 'text-purple-400 font-bold');
+      currentStage = 1;
+      for (let s = 1; s <= 5; s++) {
+        await stepNextStage();
+      }
+      appendLoopLog("🏆 Closed Loop Success: Autonomous Actuation Committed via TFS 2PC!", 'text-emerald-400 font-bold');
+    }
+
+    function appendLoopLog(msg, colorClass) {
+      const box = document.getElementById('closed-loop-log');
+      if (!box) return;
+      const d = document.createElement('div');
+      d.className = colorClass || "text-slate-300";
+      d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // Initialize System Status on Page Load
+    async function initSystem() {
+      try {
+        const res = await fetch('/api/v1/digital-twin/status');
+        const data = await res.json();
+        if (data.deployment) {
+          const badge = document.getElementById('profile-indicator-badge');
+          badge.textContent = `● [${data.deployment.active_profile.toUpperCase()}] ${data.deployment.mode}`;
+          if (data.deployment.is_standalone) {
+            badge.className = "px-2.5 py-0.5 text-xs font-mono font-bold rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30";
+          } else {
+            badge.className = "px-2.5 py-0.5 text-xs font-mono font-bold rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30";
+          }
+        }
+      } catch (e) {
+        console.warn("Status fetch failed:", e);
+      }
+      // Trigger initial simulation load so the animator is ready immediately
+      runRealDiscreteSim();
+    }
+
+    window.addEventListener('DOMContentLoaded', initSystem);
+  </script>
+</body>
+</html>
