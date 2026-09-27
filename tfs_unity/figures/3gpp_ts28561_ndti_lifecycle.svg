@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="stateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/><stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="syncGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#065F46"/><stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#38BDF8"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34D399"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FB923C"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="600" fill="#0B0F19"/>
+
+  <text x="500" y="45" font-family="Segoe UI, sans-serif" font-size="22" font-weight="bold" fill="#F8FAFC" text-anchor="middle">
+    3GPP TS 28.561 (RELEASE 19 SA5) NDTI LIFECYCLE STATE MACHINE
+  </text>
+  <text x="500" y="70" font-family="Segoe UI, sans-serif" font-size="13" fill="#94A3B8" text-anchor="middle">
+    Standardized Lifecycle Management of Network Digital Twin Instances (NDTI) via NDTMF
+  </text>
+
+  <!-- STATE: NULL -->
+  <g transform="translate(410, 100)">
+    <rect width="180" height="50" rx="8" fill="url(#stateGrad)" stroke="#64748B" stroke-width="2"/>
+    <text x="90" y="32" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#94A3B8" text-anchor="middle">NULL</text>
+  </g>
+
+  <!-- TRANSITION: CreateNDTI -->
+  <line x1="500" y1="150" x2="500" y2="200" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="515" y="180" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#38BDF8">CreateNDTI</text>
+
+  <!-- STATE: INITIALIZING -->
+  <g transform="translate(400, 205)">
+    <rect width="200" height="55" rx="8" fill="url(#stateGrad)" stroke="#38BDF8" stroke-width="2"/>
+    <text x="100" y="34" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#38BDF8" text-anchor="middle">INITIALIZING</text>
+  </g>
+
+  <!-- TRANSITION: InitializeNDTI -->
+  <line x1="500" y1="260" x2="500" y2="310" stroke="#34D399" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <text x="515" y="290" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#34D399">InitializeNDTI</text>
+
+  <!-- STATE: SYNCHRONIZED (Core Operating State) -->
+  <g transform="translate(370, 315)">
+    <rect width="260" height="65" rx="10" fill="url(#syncGrad)" stroke="#34D399" stroke-width="2.5"/>
+    <text x="130" y="35" font-family="Segoe UI, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">SYNCHRONIZED</text>
+    <text x="130" y="52" font-family="Segoe UI, sans-serif" font-size="11" fill="#A7F3D0" text-anchor="middle">Shadow Reconciled with Physical Hardware</text>
+  </g>
+
+  <!-- LOOP: UPDATING (SyncNDTI) on the Left -->
+  <g transform="translate(100, 315)">
+    <rect width="180" height="65" rx="8" fill="url(#stateGrad)" stroke="#F59E0B" stroke-width="2"/>
+    <text x="90" y="35" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#F59E0B" text-anchor="middle">UPDATING</text>
+    <text x="90" y="52" font-family="Segoe UI, sans-serif" font-size="11" fill="#FCD34D" text-anchor="middle">Telemetry Sync</text>
+  </g>
+  <!-- SyncNDTI Arrow to UPDATING -->
+  <path d="M 370,335 L 280,335" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrowOrange)"/>
+  <text x="325" y="325" font-family="Segoe UI, sans-serif" font-size="10" font-weight="bold" fill="#F59E0B" text-anchor="middle">SyncNDTI</text>
+  <!-- Return Arrow from UPDATING -->
+  <path d="M 280,360 L 370,360" stroke="#34D399" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="325" y="375" font-family="Segoe UI, sans-serif" font-size="10" font-weight="bold" fill="#34D399" text-anchor="middle">Updated</text>
+
+  <!-- LOOP: EXECUTING_EXPERIMENT (What-If Scenarios) on the Right -->
+  <g transform="translate(720, 315)">
+    <rect width="210" height="65" rx="8" fill="url(#stateGrad)" stroke="#A855F7" stroke-width="2"/>
+    <text x="105" y="32" font-family="Segoe UI, sans-serif" font-size="13" font-weight="bold" fill="#C084FC" text-anchor="middle">EXECUTING_EXPERIMENT</text>
+    <text x="105" y="50" font-family="Segoe UI, sans-serif" font-size="11" fill="#E9D5FF" text-anchor="middle">NS-3 / ITU-R P.838 Sandbox</text>
+  </g>
+  <!-- ExecuteExperiment Arrow -->
+  <path d="M 630,335 L 720,335" stroke="#C084FC" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="675" y="325" font-family="Segoe UI, sans-serif" font-size="10" font-weight="bold" fill="#C084FC" text-anchor="middle">ExecuteExperiment</text>
+  <!-- RetrieveResults Return Arrow -->
+  <path d="M 720,360 L 630,360" stroke="#34D399" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="675" y="375" font-family="Segoe UI, sans-serif" font-size="10" font-weight="bold" fill="#34D399" text-anchor="middle">RetrieveResults</text>
+
+  <!-- TRANSITION: TerminateNDTI -->
+  <line x1="500" y1="380" x2="500" y2="470" stroke="#EF4444" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="515" y="430" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#EF4444">TerminateNDTI</text>
+
+  <!-- STATE: TERMINATED -->
+  <g transform="translate(400, 475)">
+    <rect width="200" height="55" rx="8" fill="url(#stateGrad)" stroke="#EF4444" stroke-width="2"/>
+    <text x="100" y="34" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#EF4444" text-anchor="middle">TERMINATED</text>
+  </g>
+</svg>

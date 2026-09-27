@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="100%" height="100%">
+  <defs>
+    <linearGradient id="l5grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4C1D95"/><stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="l4grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E3A8A"/><stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="l2grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#065F46"/><stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="l3grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#9A3412"/><stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="l1grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A"/><stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="760" fill="#0B0F19"/>
+
+  <text x="600" y="42" font-family="Segoe UI, sans-serif" font-size="24" font-weight="bold" fill="#F8FAFC" text-anchor="middle">
+    STANDARDIZED FIVE-LAYER TELECOM DIGITAL TWIN API ARCHITECTURE
+  </text>
+  <text x="600" y="68" font-family="Segoe UI, sans-serif" font-size="13" fill="#94A3B8" text-anchor="middle">
+    Decomposition into discrete functional boundaries: 3GPP TS 28.561 | ITU-T Y.3090 | IETF NMRG DTI | TM Forum ODA | ETSI OpenCAPIF
+  </text>
+
+  <!-- LAYER 5: GOVERNANCE & EXPOSURE -->
+  <g transform="translate(60, 95)">
+    <rect width="1080" height="95" rx="10" fill="#1E1B4B" stroke="#8B5CF6" stroke-width="2"/>
+    <rect width="260" height="95" rx="10" fill="url(#l5grad)"/>
+    <text x="130" y="38" font-family="Segoe UI, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">LAYER 5</text>
+    <text x="130" y="58" font-family="Segoe UI, sans-serif" font-size="13" font-weight="bold" fill="#DDD6FE" text-anchor="middle">API Governance &amp; Security</text>
+    <text x="130" y="78" font-family="Segoe UI, sans-serif" font-size="11" fill="#C4B5FD" text-anchor="middle">3GPP TS 29.222 / OpenCAPIF</text>
+
+    <!-- Sub-blocks -->
+    <rect x="280" y="15" width="240" height="65" rx="6" fill="#2E1065" stroke="#7C3AED" stroke-width="1"/>
+    <text x="400" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#EDE9FE" text-anchor="middle">CAPIF Core Function (CCF)</text>
+    <text x="400" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#C4B5FD" text-anchor="middle">API Publishing &amp; Universal Catalog</text>
+
+    <rect x="540" y="15" width="250" height="65" rx="6" fill="#2E1065" stroke="#7C3AED" stroke-width="1"/>
+    <text x="665" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#EDE9FE" text-anchor="middle">API Exposing Function (AEF)</text>
+    <text x="665" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#C4B5FD" text-anchor="middle">OAuth 2.0 / mTLS &amp; Rate Quotas</text>
+
+    <rect x="810" y="15" width="250" height="65" rx="6" fill="#2E1065" stroke="#7C3AED" stroke-width="1"/>
+    <text x="935" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#EDE9FE" text-anchor="middle">API Invoker Domain</text>
+    <text x="935" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#C4B5FD" text-anchor="middle">Authenticated AI Agents &amp; NS-3 Harness</text>
+  </g>
+
+  <!-- LAYER 4: NORTHBOUND INTENT & INVENTORY -->
+  <g transform="translate(60, 210)">
+    <rect width="1080" height="95" rx="10" fill="#172554" stroke="#3B82F6" stroke-width="2"/>
+    <rect width="260" height="95" rx="10" fill="url(#l4grad)"/>
+    <text x="130" y="38" font-family="Segoe UI, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">LAYER 4</text>
+    <text x="130" y="58" font-family="Segoe UI, sans-serif" font-size="13" font-weight="bold" fill="#BFDBFE" text-anchor="middle">Intent &amp; Resource Abstraction</text>
+    <text x="130" y="78" font-family="Segoe UI, sans-serif" font-size="11" fill="#93C5FD" text-anchor="middle">TM Forum Open APIs (ODA)</text>
+
+    <!-- Sub-blocks -->
+    <rect x="280" y="15" width="240" height="65" rx="6" fill="#1E3A8A" stroke="#2563EB" stroke-width="1"/>
+    <text x="400" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#EFF6FF" text-anchor="middle">TMF921 Intent Management</text>
+    <text x="400" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#BFDBFE" text-anchor="middle">Declarative SLA (Latency &lt; 1.5ms, 5Nines)</text>
+
+    <rect x="540" y="15" width="250" height="65" rx="6" fill="#1E3A8A" stroke="#2563EB" stroke-width="1"/>
+    <text x="665" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#EFF6FF" text-anchor="middle">TMF639 Resource Inventory</text>
+    <text x="665" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#BFDBFE" text-anchor="middle">Standardized Multi-Vendor Equipment Graph</text>
+
+    <rect x="810" y="15" width="250" height="65" rx="6" fill="#1E3A8A" stroke="#2563EB" stroke-width="1"/>
+    <text x="935" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#EFF6FF" text-anchor="middle">Applications &amp; Orchestrators</text>
+    <text x="935" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#BFDBFE" text-anchor="middle">RCA, Planning, Cognitive Energy Savers</text>
+  </g>
+
+  <!-- LAYER 2: DIGITAL TWIN INTERFACE (DTI) -->
+  <g transform="translate(60, 325)">
+    <rect width="1080" height="110" rx="10" fill="#064E3B" stroke="#10B981" stroke-width="2"/>
+    <rect width="260" height="110" rx="10" fill="url(#l2grad)"/>
+    <text x="130" y="42" font-family="Segoe UI, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">LAYER 2</text>
+    <text x="130" y="62" font-family="Segoe UI, sans-serif" font-size="13" font-weight="bold" fill="#A7F3D0" text-anchor="middle">Digital Twin Interface (DTI)</text>
+    <text x="130" y="82" font-family="Segoe UI, sans-serif" font-size="11" fill="#6EE7B7" text-anchor="middle">IETF NMRG &amp; 3GPP TS 28.561</text>
+
+    <!-- Sub-blocks -->
+    <rect x="280" y="18" width="240" height="74" rx="6" fill="#047857" stroke="#10B981" stroke-width="1"/>
+    <text x="400" y="42" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#ECFDF5" text-anchor="middle">3GPP TS 28.561 NDTI Lifecycle</text>
+    <text x="400" y="62" font-family="Segoe UI, sans-serif" font-size="10" fill="#A7F3D0" text-anchor="middle">Create, Init, Sync, Experiment, Terminate</text>
+    <text x="400" y="78" font-family="Segoe UI, sans-serif" font-size="10" fill="#D1FAE5" text-anchor="middle">State Machine &amp; Shadow Manager</text>
+
+    <rect x="540" y="18" width="250" height="74" rx="6" fill="#047857" stroke="#10B981" stroke-width="1"/>
+    <text x="665" y="42" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#ECFDF5" text-anchor="middle">IETF DTI What-If Scenarios</text>
+    <text x="665" y="62" font-family="Segoe UI, sans-serif" font-size="10" fill="#A7F3D0" text-anchor="middle">POST /digitalTwin/scenarios</text>
+    <text x="665" y="78" font-family="Segoe UI, sans-serif" font-size="10" fill="#D1FAE5" text-anchor="middle">Perturbation Vector &amp; SLA Predictor</text>
+
+    <rect x="810" y="18" width="250" height="74" rx="6" fill="#047857" stroke="#10B981" stroke-width="1"/>
+    <text x="935" y="42" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#ECFDF5" text-anchor="middle">NS-3 &amp; Analytical Models</text>
+    <text x="935" y="62" font-family="Segoe UI, sans-serif" font-size="10" fill="#A7F3D0" text-anchor="middle">C++ PointToPoint &amp; ErrorModels</text>
+    <text x="935" y="78" font-family="Segoe UI, sans-serif" font-size="10" fill="#D1FAE5" text-anchor="middle">ITU-R P.838 Rain &amp; Shannon Capacity</text>
+  </g>
+
+  <!-- LAYER 3: CLOSED-LOOP ACTUATION -->
+  <g transform="translate(60, 455)">
+    <rect width="1080" height="95" rx="10" fill="#431407" stroke="#F97316" stroke-width="2"/>
+    <rect width="260" height="95" rx="10" fill="url(#l3grad)"/>
+    <text x="130" y="38" font-family="Segoe UI, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">LAYER 3</text>
+    <text x="130" y="58" font-family="Segoe UI, sans-serif" font-size="13" font-weight="bold" fill="#FED7AA" text-anchor="middle">Closed-Loop Actuation</text>
+    <text x="130" y="78" font-family="Segoe UI, sans-serif" font-size="11" fill="#FDBA74" text-anchor="middle">Pre-Commit Safety &amp; TFS 2PC</text>
+
+    <!-- Sub-blocks -->
+    <rect x="280" y="15" width="240" height="65" rx="6" fill="#7C2D12" stroke="#EA580C" stroke-width="1"/>
+    <text x="400" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#FFF7ED" text-anchor="middle">Pre-Flight Safety Verifier</text>
+    <text x="400" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#FED7AA" text-anchor="middle">RF EIRP, 57-71GHz Bands, Thermal</text>
+
+    <rect x="540" y="15" width="250" height="65" rx="6" fill="#7C2D12" stroke="#EA580C" stroke-width="1"/>
+    <text x="665" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#FFF7ED" text-anchor="middle">TFS Device Service (2PC)</text>
+    <text x="665" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#FED7AA" text-anchor="middle">Candidate Datastore Atomic Commit</text>
+
+    <rect x="810" y="15" width="250" height="65" rx="6" fill="#7C2D12" stroke="#EA580C" stroke-width="1"/>
+    <text x="935" y="38" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#FFF7ED" text-anchor="middle">Transport Configuration Rules</text>
+    <text x="935" y="58" font-family="Segoe UI, sans-serif" font-size="10" fill="#FED7AA" text-anchor="middle">/radio/tuning, /modulation/acm_floor</text>
+  </g>
+
+  <!-- LAYER 1: SOUTHBOUND SYNCHRONIZATION -->
+  <g transform="translate(60, 570)">
+    <rect width="1080" height="110" rx="10" fill="#0F172A" stroke="#475569" stroke-width="2"/>
+    <rect width="260" height="110" rx="10" fill="url(#l1grad)"/>
+    <text x="130" y="42" font-family="Segoe UI, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF" text-anchor="middle">LAYER 1</text>
+    <text x="130" y="62" font-family="Segoe UI, sans-serif" font-size="13" font-weight="bold" fill="#94A3B8" text-anchor="middle">Southbound Sync &amp; Hardware</text>
+    <text x="130" y="82" font-family="Segoe UI, sans-serif" font-size="11" fill="#64748B" text-anchor="middle">RESTCONF, NETCONF, gNMI</text>
+
+    <!-- Sub-blocks -->
+    <rect x="280" y="18" width="240" height="74" rx="6" fill="#1E293B" stroke="#475569" stroke-width="1"/>
+    <text x="400" y="42" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#F8FAFC" text-anchor="middle">Physical Ceragon Elements</text>
+    <text x="400" y="62" font-family="Segoe UI, sans-serif" font-size="10" fill="#94A3B8" text-anchor="middle">MultiHaul TG MH-T261, N366, IP-50</text>
+    <text x="400" y="78" font-family="Segoe UI, sans-serif" font-size="10" fill="#CBD5E1" text-anchor="middle">Ethernet Ports, 60GHz Phased Arrays</text>
+
+    <rect x="540" y="18" width="250" height="74" rx="6" fill="#1E293B" stroke="#475569" stroke-width="1"/>
+    <text x="665" y="42" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#F8FAFC" text-anchor="middle">RFC 8040 RESTCONF 2PC</text>
+    <text x="665" y="62" font-family="Segoe UI, sans-serif" font-size="10" fill="#94A3B8" text-anchor="middle">/restconf/ds/ietf-datastores:candidate</text>
+    <text x="665" y="78" font-family="Segoe UI, sans-serif" font-size="10" fill="#CBD5E1" text-anchor="middle">51 YANG Models Extracted</text>
+
+    <rect x="810" y="18" width="250" height="74" rx="6" fill="#1E293B" stroke="#475569" stroke-width="1"/>
+    <text x="935" y="42" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#F8FAFC" text-anchor="middle">Real-Time Telemetry Feed</text>
+    <text x="935" y="62" font-family="Segoe UI, sans-serif" font-size="10" fill="#94A3B8" text-anchor="middle">RSL, SNR, MCS, ATPC Tx Power</text>
+    <text x="935" y="78" font-family="Segoe UI, sans-serif" font-size="10" fill="#CBD5E1" text-anchor="middle">Modem Temperature, Octet Counters</text>
+  </g>
+</svg>

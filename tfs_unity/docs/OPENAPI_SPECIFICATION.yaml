@@ -1,0 +1,160 @@
+openapi: 3.1.0
+info:
+  title: Telecom Network Digital Twin (NDT) & DTI REST API
+  description: >
+    Carrier-grade Digital Twin Interface (DTI) connecting ETSI TeraFlowSDN with NS-3 simulation,
+    cognitive AI agents, and intent orchestrators. Compliant with 3GPP TS 28.561, ITU-T Y.3090,
+    IETF NMRG DTI, TM Forum ODA, and ETSI OpenCAPIF.
+  version: 1.0.0
+  contact:
+    name: Efi Dvir
+    email: efid@ceragon.com
+servers:
+  - url: http://localhost:9100
+    description: Local Standalone Digital Twin API Server
+
+paths:
+  /health:
+    get:
+      summary: Service Health & Standards Status
+      responses:
+        '200':
+          description: Service is operational
+
+  /api/v1/capif/service-apis:
+    get:
+      summary: 3GPP TS 29.222 / OpenCAPIF Service API Discovery
+      description: Returns the standardized CAPIF service descriptor for catalog registration.
+      responses:
+        '200':
+          description: CAPIF Service API Descriptor
+
+  /api/v1/dti/instances:
+    get:
+      summary: 3GPP TS 28.561 Query Active NDTI Instances
+      responses:
+        '200':
+          description: List of active Network Digital Twin Instances
+    post:
+      summary: 3GPP TS 28.561 Create and Initialize NDTI Instance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                instance_id:
+                  type: string
+                  example: ndti-ceragon-01
+                name:
+                  type: string
+                  example: Ceragon-6G-Transport-Twin
+                scope:
+                  type: string
+                  example: transport-oran-backhaul
+      responses:
+        '201':
+          description: NDTI successfully created and initialized
+
+  /api/v1/dti/sync:
+    post:
+      summary: Layer 1 State Synchronization (ITU-T Y.3090)
+      description: Reconciles twin shadow state with physical Ceragon hardware via TFS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                instance_id:
+                  type: string
+                  example: ndti-ceragon-01
+      responses:
+        '200':
+          description: Synchronization complete
+
+  /api/v1/dti/scenarios:
+    post:
+      summary: Layer 2 IETF NMRG DTI What-If Scenario Evaluation
+      description: Ingests perturbations and executes co-simulation in NS-3 / analytical physics engine.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                instance_id:
+                  type: string
+                scenario_id:
+                  type: string
+                engine:
+                  type: string
+                  enum: [ns3-itur-p838, hybrid-ns3-analytical]
+                perturbations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      device_uuid:
+                        type: string
+                      type:
+                        type: string
+                        enum: [rain_fade, interference, traffic_surge]
+                      rain_rate_mm_hr:
+                        type: number
+                      link_distance_km:
+                        type: number
+      responses:
+        '200':
+          description: Scenario prediction results, SLA breach status, and recommended mitigation
+
+  /api/v1/dti/validate-and-commit:
+    post:
+      summary: Layer 3 Closed-Loop Safety Validation & TFS 2PC Actuation
+      description: Pre-flight checks mitigation against RF boundaries, then commits via TFS 2-phase commit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                instance_id:
+                  type: string
+                device_uuid:
+                  type: string
+                actions:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Validation and commit results
+
+  /api/v1/tmf/tmf921/intent:
+    post:
+      summary: Layer 4 TM Forum TMF921 Intent Management Ingestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                intentSpecification:
+                  type: object
+      responses:
+        '201':
+          description: Intent acknowledged and registered
+
+  /api/v1/tmf/tmf639/resource:
+    get:
+      summary: Layer 4 TM Forum TMF639 Resource Inventory Exposure
+      responses:
+        '200':
+          description: Standardized PhysicalResource array projection
