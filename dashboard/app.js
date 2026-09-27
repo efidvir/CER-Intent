@@ -1582,11 +1582,48 @@ function delay(ms) {
 }
 
 async function stepDtStage(stageNum) {
-  appendDtLog(`[Manual Step] Triggering Stage ${stageNum}...`, "info");
+  appendDtLog(`[Manual Step ${stageNum}] Dispatching to backend...`, "info");
   highlightStep(stageNum, "ACTIVE");
-  await delay(400);
-  highlightStep(stageNum, "OK", true);
-  appendDtLog(`Stage ${stageNum} step completed successfully.`, "ok");
+  inspectFlowStage(stageNum === 3 ? 3 : (stageNum === 4 ? 4 : (stageNum === 5 ? 6 : stageNum)));
+  
+  if (stageNum === 3) {
+    appendDtLog(`[Stage 3] Executing real discrete NS-3 simulation on efid@cersrv-029 via SSH...`, "highlight");
+  }
+
+  const startTime = performance.now();
+  try {
+    const res = await fetch("/api/v1/digital-twin/step-stage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stage: stageNum,
+        scenario_id: dtCurrentScenario,
+        intent_text: document.getElementById("dt-intent-text")?.value || "Ensure URLLC latency < 1.5ms and availability > 99.999%",
+        parameters: {
+          burst_factor: parseFloat(document.getElementById("param-burst-slider")?.value || "3.5"),
+          rain_rate_mm_hr: parseFloat(document.getElementById("param-rain-slider")?.value || "55")
+        }
+      })
+    });
+
+    const elapsed = Math.round(performance.now() - startTime);
+    if (!res.ok) throw new Error("HTTP error " + res.status);
+    const data = await res.json();
+
+    highlightStep(stageNum, "OK", true);
+    appendDtLog(`[Stage ${stageNum} Completed] ${data.summary} (Real Runtime: ${elapsed}ms)`, "ok");
+    
+    if (data.command_executed) {
+      appendDtLog(`[Command Executed] ${data.command_executed}`, "highlight");
+    }
+
+    if (data.outcome) {
+      updateDtUIFromResult(data);
+    }
+  } catch (err) {
+    appendDtLog(`Stage ${stageNum} execution failed: ${err.message}`, "warn");
+    highlightStep(stageNum, "ERROR");
+  }
 }
 
 // ── Illustrative Cyber-Physical Flow Inspector ──────────────────────────────────
