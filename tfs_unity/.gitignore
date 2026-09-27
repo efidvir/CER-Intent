@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+scratch/
+ns3_link_state.json
+.vscode/
+.idea/
