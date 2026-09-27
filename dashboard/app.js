@@ -1427,20 +1427,23 @@ async function triggerDigitalTwinLoop() {
   appendDtLog(`🚀 INITIATING CROSS-REPO DIGITAL TWIN CLOSED LOOP`, "highlight");
   appendDtLog(`Intent: "${intentText}"`, "info");
 
-  // Step 1: Intent
+  // Visual Stepper 1: Declarative Intent
   highlightStep(1, "RUNNING");
+  inspectFlowStage(1);
   appendDtLog(`[Stage 1] Ingesting TMF921 Intent SLA contract (Latency <= 1.5ms)...`, "info");
-  await delay(350);
+  await delay(1000);
   highlightStep(1, "INGESTED", true);
 
-  // Step 2: TFS Sync
+  // Visual Stepper 2: TFS State Sync
   highlightStep(2, "SYNCING");
+  inspectFlowStage(2);
   appendDtLog(`[Stage 2] Reconciling live topology & hardware telemetry from TFS (:8088)...`, "info");
-  await delay(450);
+  await delay(1000);
   highlightStep(2, "SYNCED", true);
 
-  // Step 3: NS-3 Simulation
+  // Visual Stepper 3: NS-3 Discrete Simulation
   highlightStep(3, "SIMULATING");
+  inspectFlowStage(3);
   appendDtLog(`[Stage 3] Dispatching perturbation [${dtCurrentScenario.toUpperCase()}] to NS-3 on efid@cersrv-029...`, "highlight");
 
   try {
@@ -1460,20 +1463,35 @@ async function triggerDigitalTwinLoop() {
     if (!res.ok) throw new Error("HTTP error " + res.status);
     const data = await res.json();
 
+    await delay(1200);
     highlightStep(3, "DONE", true);
     appendDtLog(`[Stage 3] NS-3 discrete simulation finished: Predicted Latency ${data.outcome.initial_predicted_latency_ms} ms (${data.outcome.sla_breach_averted ? "BREACH PREDICTED" : "OK"})`, data.outcome.sla_breach_averted ? "warn" : "ok");
 
-    // Step 4: Decision Engine
+    // Visual Stepper 4: Decision Engine & Pre-Flight
     highlightStep(4, "VERIFYING");
-    await delay(300);
+    inspectFlowStage(4);
+    await delay(1100);
     highlightStep(4, "APPROVED", true);
     appendDtLog(`[Stage 4] Decision Engine: Pre-flight safety verified (4/4 PASS). Selected: ${data.outcome.mitigation_action}`, "ok");
 
-    // Step 5: Actuation
+    // Visual Stepper 5: TFS 2PC Controller
+    inspectFlowStage(5);
+    await delay(900);
+
+    // Visual Stepper 6: Physical Ceragon Hardware Actuation
     highlightStep(5, "ACTUATING");
-    await delay(350);
+    inspectFlowStage(6);
+    await delay(900);
     highlightStep(5, "COMMITTED", true);
     appendDtLog(`[Stage 5] ETSI TeraFlowSDN 2PC transaction committed! Actuated Ceragon MH-T261 (ctu-96) via RESTCONF.`, "ok");
+
+    // Visual Stepper 7: O-RAN Transport Mesh Update
+    inspectFlowStage(7);
+    await delay(800);
+
+    // Visual Stepper 8: Southbound Telemetry Sync & Closed Loop Verified
+    inspectFlowStage(8);
+    await delay(800);
     appendDtLog(`🏆 Closed-Loop Success: Latency reduced to ${data.outcome.post_mitigation_latency_ms} ms (SLA Averted: ${data.outcome.sla_breach_averted}). Total time: ${data.total_duration_ms} ms`, "highlight");
 
     updateDtUIFromResult(data);
@@ -1555,82 +1573,155 @@ async function stepDtStage(stageNum) {
 }
 
 // ── Illustrative Cyber-Physical Flow Inspector ──────────────────────────────────
+const ciNodeCoords = {
+  1: { x: 130, y: 115 },
+  2: { x: 390, y: 115 },
+  3: { x: 660, y: 115 },
+  4: { x: 930, y: 115 },
+  5: { x: 930, y: 342 },
+  6: { x: 660, y: 342 },
+  7: { x: 390, y: 342 },
+  8: { x: 130, y: 342 }
+};
+
 const ciStageDetails = {
   1: {
     title: "STAGE 1: Declarative Intent Ingestion",
+    opType: "WRITE: REST POST",
     status: "INGESTED",
-    host: "CER-Intent Flask Server (http://localhost:5000/api/v1/intent)",
-    models: "NLP Intent Parser, Declarative Target Constraints, SLA Validation Matrix",
-    proto: "REST HTTP POST application/json (RFC 8259)"
+    host: "http://localhost:5000/api/v1/intent",
+    std: "TM Forum TMF921 Intent Management / RFC 8259",
+    models: "NLP Intent Parser, SLA Bounds Matrix",
+    txCode: '{\n  "intent_type": "URLLC_LATENCY_ASSURANCE",\n  "sla_profile": "MISSION_CRITICAL_5G",\n  "target": "Ceragon-MH-T261-ctu-96",\n  "bounds": { "max_latency_ms": 1.5, "min_availability_pct": 99.999 }\n}',
+    rxCode: '{\n  "status": "INGESTED",\n  "intent_id": "INT-DT-20260927-01",\n  "target_latency": "< 1.50 ms",\n  "assigned_slice": "slice-uran-6g"\n}',
+    digest: "The operator expressed high-level business goals via TMF921: maintain URLLC latency strictly under 1.50 ms and 99.999% availability during network stress. The Intent Engine synthesized this into formal constraints and initiated the digital twin co-simulation loop."
   },
   2: {
     title: "STAGE 2: DTI Scenario Core & Sandbox",
+    opType: "READ: RESTCONF GET",
     status: "SANDBOX READY",
-    host: "Digital Twin Server (http://localhost:9100/api/v1/dti/scenarios)",
-    models: "What-If Scenario Sandbox Router, Perturbation Injection Vector",
-    proto: "RESTCONF / DTI JSON Payload Evaluation"
+    host: "http://localhost:8088 & 192.168.1.225",
+    std: "IETF NMRG DTI (draft-paillisse-02) / RFC 8040",
+    models: "What-If Scenario Sandbox Router, Telemetry Ingestion Filter",
+    txCode: "GET /restconf/ds/ietf-datastores:operational HTTP/1.1\nHost: 192.168.1.225\nAuthorization: Basic YWRtaW46YWRtaW4=",
+    rxCode: '{\n  "total_nodes": 34,\n  "physical_device": {\n    "name": "ctu-96",\n    "frequency_ghz": 60.48,\n    "mcs": 8,\n    "rssi_dbm": -58.4,\n    "snr_db": 24.1,\n    "temp_c": 61.0\n  }\n}',
+    digest: "The digital twin queries the authoritative Source of Truth: ETSI TeraFlowSDN and the live Ceragon MH-T261 device over RESTCONF. It confirms 34 active topology nodes and verifies baseline radio parameters."
   },
   3: {
     title: "STAGE 3: NS-3 Discrete Simulation Core",
-    status: "SIMULATING",
+    opType: "SIMULATE: SSH BATCH",
+    status: "BREACH DETECTED",
     host: "efid@cersrv-029 (/home/efid/ns3-dev/ns3)",
-    models: "M/M/1/K Queueing, DropTail QueueDisc, Friis FSPL, ITU-R P.838 Rain Fade",
-    proto: "SSH BatchMode & Co-Simulation Bridge (:9099)"
+    std: "ns-3 Discrete-Event Engine v3.45 & ITU-R P.838",
+    models: "M/M/1/K Queueing, DropTail QueueDisc, ITU-R Rain Attenuation",
+    txCode: './ns3 run "scratch/telecom-digital-twin --scenario=channel_degradation --rainRate=55.0 --baselineMcs=8"',
+    rxCode: '{\n  "predicted_latency_ms": 6.77,\n  "forced_modulation": "MCS 1 (BPSK)",\n  "queue_depth_packets": 62,\n  "packet_loss_rate": 0.052,\n  "sla_breach": true,\n  "deficit_ms": -5.27\n}',
+    digest: "🚨 NS-3 calculated that channel degradation collapses the radio link from MCS 8 to MCS 1. Packet queue backlog spikes to 62 packets, inflating round-trip latency to 6.77 ms, causing an immediate +5.27 ms breach of the 1.5 ms URLLC SLA!"
   },
   4: {
     title: "STAGE 4: AI Decision Engine & Safety Gatekeeper",
-    status: "PRE-FLIGHT PASS",
+    opType: "AUDIT: MULTI-CONSTRAINT",
+    status: "APPROVED (4/4 PASS)",
     host: "Ceragon Autonomic Controller / Heuristic Solver",
-    models: "4/4 Boundary Envelopes (RF, Thermal, Modulation, Reserve Capacity)",
-    proto: "Pre-Commit Transaction Validator"
+    std: "3GPP TS 28.561 Closed-Loop Management & Safety Envelopes",
+    models: "4/4 Boundary Envelopes (RF, Thermal, Modulation, Reserve)",
+    txCode: '{\n  "predicted_breach": "CHANNEL_DEGRADATION (6.77 ms > 1.5 ms)",\n  "action": "EVAL_REMEDIATION"\n}',
+    rxCode: '{\n  "selected_action": "ACM_FLOOR_HARDENING & RETUNE",\n  "safety_checks": { "rf_band": "PASS", "acm_floor": "PASS", "thermal": "PASS", "reserve": "PASS" },\n  "predicted_latency_ms": 1.12\n}',
+    digest: "The AI Decision Engine evaluated remediation actions against 3GPP TS 28.561 safety envelopes. Hardening the ACM modulation floor to MCS >= 2 and retuning frequency to 64.8 GHz passes all 4 boundary checks and is predicted to reduce latency to 1.12 ms."
   },
   5: {
     title: "STAGE 5: ETSI TeraFlowSDN Controller",
-    status: "2PC COMMITTED",
-    host: "TeraFlowSDN Microservices (http://localhost:8088)",
+    opType: "WRITE: 2PC COMMIT",
+    status: "COMMITTED",
+    host: "http://localhost:8088",
+    std: "ETSI TeraFlowSDN Release 3 NBI / 2PC Candidate",
     models: "Context CockroachDB, Device Service, 2-Phase Commit Atomic Engine",
-    proto: "REST NBI / Candidate Datastore Write"
+    txCode: '{\n  "device_uuid": "f676623c-1a65-54bd-b1e8-279c8a6d8a1c",\n  "tx": "COMMIT",\n  "rules": [{ "active_mcs_floor": 2, "frequency_ghz": 64.8 }]\n}',
+    rxCode: '{\n  "status": "DEVICE_CONFIGURED",\n  "tx_id": "tx-2pc-991204",\n  "cockroachdb_commit": "OK",\n  "duration_ms": 28.4\n}',
+    digest: "TeraFlowSDN coordinates an atomic 2-Phase Commit transaction on its candidate datastore. It validates link parameters against the CockroachDB topology database before pushing hardware commands to eliminate configuration race conditions."
   },
   6: {
     title: "STAGE 6: Physical Ceragon Hardware Actuation",
+    opType: "WRITE: RESTCONF PATCH",
     status: "RESTCONF 200 OK",
     host: "https://192.168.1.225/restconf/ds/ietf-datastores:candidate",
-    models: "Terragraph V-Band Beamforming Phased Array (32 Elements), Hitless ACM",
-    proto: "HTTPS PATCH with Basic Authentication (admin:admin)"
+    std: "RFC 8040 RESTCONF / Ceragon YANG Schemas",
+    models: "Terragraph Phased Array Beamforming, Hitless ACM Modulation",
+    txCode: "PATCH /restconf/ds/ietf-datastores:candidate HTTP/1.1\nHost: 192.168.1.225\nContent-Type: application/yang-data+json\n\n{ \"active-mcs-floor\": 2, \"carrier-frequency-mhz\": 64800 }",
+    rxCode: '{\n  "status": "SUCCESS",\n  "commit-status": "APPLIED_TO_HARDWARE",\n  "message": "Phased array tuned to 64.8 GHz. ACM floor clamped >= MCS 2."\n}',
+    digest: "Physical actuation complete! TeraFlowSDN pushed a candidate RESTCONF PATCH to the physical Ceragon MH-T261 (ctu-96) on 192.168.1.225. The Terragraph V-band phased array retuned its carrier frequency to 64.8 GHz and clamped ACM floor >= MCS 2."
   },
   7: {
     title: "STAGE 7: 34-Node O-RAN Transport Mesh",
+    opType: "UPDATE: CSPF GRAPH",
     status: "ACTIVE MESH",
     host: "Context: admin / Topology: admin",
+    std: "O-RAN Transport WG9 / TI-LFA Fast Rerouting",
     models: "TI-LFA Fast Rerouting, CSPF Multi-Constrained Routing Graph",
-    proto: "CockroachDB Synchronized Topology State"
+    txCode: '{\n  "action": "REBALANCE_TOPOLOGY_GRAPH",\n  "node": "ctu-96",\n  "bandwidth_mbps": 2000,\n  "discipline": "STRICT_PRIORITY_URLLC"\n}',
+    rxCode: '{\n  "status": "TOPOLOGY_REBALANCED",\n  "affected_links": 34,\n  "alternate_paths": 3\n}',
+    digest: "The 34-node O-RAN transport mesh updates its forwarding tables, aligning traffic engineering paths with the updated link capacity and guaranteeing strict priority for the URLLC slice across optical and wireless links."
   },
   8: {
     title: "STAGE 8: Southbound Telemetry Synchronizer",
+    opType: "READ: TELEMETRY VERIFY",
     status: "SYNC: 100%",
     host: "Background Telemetry Daemon (1s Interval)",
+    std: "ITU-T Y.3090 Twin Data Plane / RFC 8040 Operational Polling",
     models: "EWMA Telemetry Filter, RSL/SNR Calibration, Thermal Tracking",
-    proto: "RFC 8040 RESTCONF Operational Datastore Polling"
+    txCode: "GET /restconf/ds/ietf-datastores:operational HTTP/1.1\nHost: 192.168.1.225",
+    rxCode: '{\n  "measured_latency_ms": 1.12,\n  "active_mcs": 4,\n  "rssi_dbm": -61.2,\n  "snr_db": 19.8,\n  "queue_depth": 8,\n  "sla_status": "HONORED"\n}',
+    digest: "🏆 The closed loop is successfully verified! Operational telemetry from physical Ceragon hardware shows measured round-trip latency has dropped to 1.12 ms (well under the 1.50 ms SLA limit). Queue backlog cleared to 8 packets, packet loss is 0.00%, and the twin is synchronized."
   }
 };
 
 function inspectFlowStage(id) {
   const d = ciStageDetails[id];
   if (!d) return;
+
   const elStage = document.getElementById("ci-insp-stage");
   const elStatus = document.getElementById("ci-insp-status");
+  const elOpType = document.getElementById("ci-insp-op-type");
   const elHost = document.getElementById("ci-insp-host");
+  const elStd = document.getElementById("ci-insp-std");
   const elModels = document.getElementById("ci-insp-models");
-  const elProto = document.getElementById("ci-insp-proto");
+  const elTx = document.getElementById("ci-insp-tx-code");
+  const elRx = document.getElementById("ci-insp-rx-code");
+  const elDigest = document.getElementById("ci-insp-digest");
 
   if (elStage) elStage.textContent = d.title;
   if (elStatus) elStatus.textContent = `STATUS: ${d.status}`;
+  if (elOpType) elOpType.textContent = d.opType;
   if (elHost) elHost.textContent = d.host;
+  if (elStd) elStd.textContent = d.std;
   if (elModels) elModels.textContent = d.models;
-  if (elProto) elProto.textContent = d.proto;
+  if (elTx) elTx.querySelector("code").textContent = d.txCode;
+  if (elRx) elRx.querySelector("code").textContent = d.rxCode;
+  if (elDigest) elDigest.textContent = d.digest;
 
-  if (typeof appendDtLog === "function") {
-    appendDtLog(`[Architecture Flow] Inspected ${d.title}`, "info");
+  // Move particle in SVG
+  const c = ciNodeCoords[id];
+  const p = document.getElementById("ci-flow-particle");
+  if (p && c) {
+    p.setAttribute("cx", c.x);
+    p.setAttribute("cy", c.y);
+    p.style.opacity = "1";
+  }
+
+  // Highlight SVG node
+  for (let i = 1; i <= 8; i++) {
+    const grp = document.getElementById(`ci-node-grp-${i}`);
+    if (!grp) continue;
+    grp.classList.remove("node-active", "node-completed", "node-warning");
+    if (i < id) {
+      grp.classList.add("node-completed");
+    } else if (i === id) {
+      if (d.status.includes("BREACH")) {
+        grp.classList.add("node-warning");
+      } else {
+        grp.classList.add("node-active");
+      }
+    }
   }
 }
 
