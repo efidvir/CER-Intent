@@ -934,6 +934,27 @@
               </div>
             </div>
 
+            <!-- Simulation Resolution Governor Selector -->
+            <div class="dt-param-row" style="margin-top: 0.85rem; padding: 0.75rem 1rem; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.2); border-radius: 8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <label style="color:var(--accent); font-weight:600; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+                  <span>🎯</span> Simulation Resolution &amp; Fidelity Tier:
+                </label>
+                <span id="ci-res-badge" class="dt-badge-sm" style="background:rgba(124,58,237,0.2); border-color:#c084fc; color:#e9d5ff">Auto-Governed</span>
+              </div>
+              <select id="ci-select-resolution" onchange="onCiResolutionChange(this.value)" style="width:100%; background:var(--bg-input); border:1px solid rgba(0,212,255,0.3); border-radius:6px; color:#fff; padding:0.4rem 0.6rem; font-size:0.8rem; font-family:monospace; outline:none">
+                <option value="auto">⚡ Auto-Governed (By Scenario Goal)</option>
+                <option value="macro_topology">Tier 1: Macro-Topology (Fast Reroute, 25% Fidelity, &lt;75ms)</option>
+                <option value="queue_dynamics">Tier 2: Queue Dynamics (Bufferbloat, 55% Fidelity, ~350ms)</option>
+                <option value="physical_rf">Tier 3: Physical RF Wireless (Rain / ACM, 75% Fidelity, ~650ms)</option>
+                <option value="urllc_micro">Tier 4: URLLC Micro-Packet (SLA PDB, 95% Fidelity, ~1150ms)</option>
+                <option value="energy_macro">Tier 5: Green Energy Macro (Carrier Sleep, 20% Fidelity, &lt;35ms)</option>
+              </select>
+              <div id="ci-res-digest" style="font-size:0.75rem; color:#94a3b8; margin-top:0.4rem; line-height:1.3">
+                🎯 Auto: Scopes graph and prunes non-essential metrics based on scenario goal.
+              </div>
+            </div>
+
             <!-- Execution Actions -->
             <div class="dt-action-row">
               <button class="btn btn-primary" id="btn-run-loop" onclick="triggerDigitalTwinLoop()" style="flex:1; justify-content:center; font-size:1rem; padding:0.75rem 1rem; background: linear-gradient(135deg, #7c3aed, #00d4ff); font-weight:600; box-shadow:0 0 15px rgba(0,212,255,0.3)">

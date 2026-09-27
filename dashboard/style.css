@@ -1645,4 +1645,23 @@ input:checked + .slider:before { transform: translateX(14px); background-color: 
   margin-top: 1rem;
 }
 
+.node-active rect.main-rect {
+  stroke: #00d4ff !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.7));
+}
+
+.node-warning rect.main-rect {
+  stroke: #ff4757 !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.8));
+}
+
+.node-completed rect.main-rect {
+  stroke: #00e676 !important;
+  stroke-width: 2px !important;
+  filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.4));
+}
+
+
 

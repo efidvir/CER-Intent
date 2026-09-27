@@ -1447,8 +1447,13 @@ async function triggerDigitalTwinLoop() {
   appendDtLog(`[Stage 3] Dispatching perturbation [${dtCurrentScenario.toUpperCase()}] to NS-3 on efid@cersrv-029...`, "highlight");
 
   try {
+    const resSelect = document.getElementById("ci-select-resolution");
+    const chosenRes = resSelect ? resSelect.value : "auto";
+    const resPayloadVal = (chosenRes && chosenRes !== "auto") ? chosenRes : undefined;
+
     const payload = {
       scenario_id: dtCurrentScenario,
+      resolution_tier: resPayloadVal,
       intent_text: intentText,
       parameters: { burst_factor: burstFactor, rain_rate_mm_hr: rainRate },
       auto_apply: true
@@ -1462,6 +1467,18 @@ async function triggerDigitalTwinLoop() {
 
     if (!res.ok) throw new Error("HTTP error " + res.status);
     const data = await res.json();
+
+    if (data.resolution_scoping) {
+      const rs = data.resolution_scoping;
+      appendDtLog(`[Governor] Scoped ${rs.tier_name} (${rs.fidelity_factor_pct}% fidelity, ${rs.scoped_nodes} nodes). Est compute: ${rs.estimated_sim_latency_ms}ms`, "highlight");
+      const elDigest = document.getElementById("ci-res-digest");
+      if (elDigest) elDigest.textContent = rs.governor_digest;
+      const elBadge = document.getElementById("ci-res-badge");
+      if (elBadge) {
+        elBadge.textContent = `${rs.fidelity_factor_pct}% Fidelity`;
+        elBadge.style.color = "#00d4ff";
+      }
+    }
 
     await delay(1200);
     highlightStep(3, "DONE", true);
@@ -1722,6 +1739,18 @@ function inspectFlowStage(id) {
         grp.classList.add("node-active");
       }
     }
+  }
+}
+
+function onCiResolutionChange(val) {
+  const elBadge = document.getElementById("ci-res-badge");
+  const elDigest = document.getElementById("ci-res-digest");
+  if (val === "auto") {
+    if (elBadge) { elBadge.textContent = "Auto-Governed"; elBadge.style.color = "#e9d5ff"; }
+    if (elDigest) elDigest.textContent = "🎯 Auto: Scopes graph and prunes non-essential metrics based on scenario goal.";
+  } else {
+    if (elBadge) { elBadge.textContent = "Manual Override"; elBadge.style.color = "#00d4ff"; }
+    if (elDigest) elDigest.textContent = `🎯 Forced resolution tier: [${val.toUpperCase()}]. Digital Twin will scope NS-3 discrete models accordingly.`;
   }
 }
 

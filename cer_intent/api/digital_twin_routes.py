@@ -14,7 +14,12 @@ import urllib3
 from typing import Dict, Any, List
 from flask import Blueprint, jsonify, request
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from cer_intent.simulation_resolution_governor import (
+    SimulationResolutionGovernor,
+    ResolutionTier,
+    TIER_SPECIFICATIONS,
+)
+
 logger = logging.getLogger("DigitalTwinRoutes")
 
 dt_bp = Blueprint("digital_twin", __name__, url_prefix="/api/v1/digital-twin")
@@ -198,6 +203,27 @@ def list_scenarios():
     return jsonify({"scenarios": scenarios})
 
 
+@dt_bp.route("/resolution-tiers", methods=["GET"])
+def get_resolution_tiers():
+    """Return all 5 simulation resolution tiers with their KPI specifications."""
+    tiers_data = []
+    for tier, spec in TIER_SPECIFICATIONS.items():
+        tiers_data.append({
+            "tier_key": tier.value,
+            "tier_number": spec.tier_number,
+            "name": spec.name,
+            "target_domains": spec.target_domains,
+            "retained_kpis": spec.retained_kpis,
+            "pruned_kpis": spec.pruned_kpis,
+            "ns3_modules": spec.ns3_modules,
+            "fidelity_factor_pct": spec.fidelity_factor_pct,
+            "graph_scope_factor_pct": spec.graph_scope_factor_pct,
+            "typical_sim_latency_ms": spec.typical_sim_latency_ms,
+            "description": spec.description,
+        })
+    return jsonify({"resolution_tiers": tiers_data})
+
+
 @dt_bp.route("/sync-tfs", methods=["POST"])
 def sync_tfs_state():
     """Stage 3: Pull live hardware state from TFS and physical Ceragon device."""
@@ -236,9 +262,18 @@ def run_end_to_end_loop():
     """
     body = request.get_json(silent=True) or {}
     scenario_id = body.get("scenario_id", "traffic_surge")
+    requested_tier = body.get("resolution_tier")
     intent_text = body.get("intent_text", "Ensure URLLC latency < 1.5ms and availability > 99.999%")
     custom_params = body.get("parameters", {})
     auto_apply = body.get("auto_apply", True)
+
+    # Resolution Governor Scoping
+    governor = SimulationResolutionGovernor()
+    scoped_profile = governor.scope_simulation(
+        tfs_topology=_latest_twin_state["topology"],
+        scenario_goal=scenario_id,
+        requested_tier=requested_tier
+    )
 
     execution_trace = []
     start_all = time.time()
@@ -368,6 +403,18 @@ def run_end_to_end_loop():
         "engine": f"NS-3 v3.45 ({ns3_remote_info['status']}) + Co-Simulation Engine",
         "host": NS3_HOST,
         "scenario_id": scenario_id,
+        "resolution_scoping": {
+            "tier": scoped_profile.tier.value,
+            "tier_name": scoped_profile.tier_name,
+            "tier_number": scoped_profile.tier_number,
+            "fidelity_factor_pct": scoped_profile.fidelity_factor_pct,
+            "scoped_nodes": scoped_profile.scoped_nodes_count,
+            "scoped_links": scoped_profile.scoped_links_count,
+            "retained_kpis": scoped_profile.retained_kpis,
+            "pruned_kpis": scoped_profile.pruned_kpis,
+            "activated_ns3_modules": scoped_profile.activated_ns3_modules,
+            "governor_digest": scoped_profile.governor_digest
+        },
         "predicted_metrics": {
             "latency_ms": pred_latency,
             "throughput_mbps": pred_throughput,
@@ -464,6 +511,19 @@ def run_end_to_end_loop():
         "status": "SUCCESS",
         "total_duration_ms": total_duration_ms,
         "scenario_id": scenario_id,
+        "resolution_scoping": {
+            "tier": scoped_profile.tier.value,
+            "tier_name": scoped_profile.tier_name,
+            "tier_number": scoped_profile.tier_number,
+            "fidelity_factor_pct": scoped_profile.fidelity_factor_pct,
+            "estimated_sim_latency_ms": scoped_profile.estimated_sim_latency_ms,
+            "scoped_nodes": scoped_profile.scoped_nodes_count,
+            "scoped_links": scoped_profile.scoped_links_count,
+            "retained_kpis": scoped_profile.retained_kpis,
+            "pruned_kpis": scoped_profile.pruned_kpis,
+            "activated_ns3_modules": scoped_profile.activated_ns3_modules,
+            "governor_digest": scoped_profile.governor_digest
+        },
         "stages": execution_trace,
         "outcome": {
             "initial_predicted_latency_ms": pred_latency,
