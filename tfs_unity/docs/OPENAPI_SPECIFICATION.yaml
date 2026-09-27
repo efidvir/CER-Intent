@@ -102,9 +102,23 @@ paths:
                         type: string
                       type:
                         type: string
-                        enum: [rain_fade, interference, traffic_surge]
+                        enum: [traffic_surge, link_failure, energy_saving_sleep, slice_admission, channel_degradation, rain_fade]
+                      # Domain-specific parameters
+                      burst_factor:
+                        type: number
+                        description: Multiplier for traffic surges (e.g. 3.5x)
+                      failed_link_id:
+                        type: string
+                        description: Link identifier for simulated fiber cut / link failure
+                      sleep_carrier_ghz:
+                        type: number
+                        description: Carrier frequency to put into off-peak energy sleep
+                      slice_profile:
+                        type: string
+                        enum: [URLLC_CRITICAL, EMBB_PREMIUM, MIOT_STANDARD]
                       rain_rate_mm_hr:
                         type: number
+                        description: Physical layer ITU-R P.838 rain rate in mm/hr
                       link_distance_km:
                         type: number
       responses:

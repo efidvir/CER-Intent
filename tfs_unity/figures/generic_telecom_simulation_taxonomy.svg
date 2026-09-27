@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="100%" height="100%">
+  <defs>
+    <linearGradient id="centerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/><stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="cardGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E3A8A"/><stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="cardGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7C2D12"/><stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="cardGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#065F46"/><stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="cardGrad4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4C1D95"/><stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="cardGrad5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#831843"/><stop offset="100%" stop-color="#DB2777"/>
+    </linearGradient>
+    <linearGradient id="cardGrad6" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#14532D"/><stop offset="100%" stop-color="#16A34A"/>
+    </linearGradient>
+    <filter id="glowCenter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="780" fill="#0B0F19"/>
+
+  <text x="600" y="42" font-family="Segoe UI, sans-serif" font-size="24" font-weight="bold" fill="#F8FAFC" text-anchor="middle" letter-spacing="1">
+    GENERIC TELECOM NETWORK DIGITAL TWIN SIMULATION TAXONOMY
+  </text>
+  <text x="600" y="68" font-family="Segoe UI, sans-serif" font-size="13" fill="#94A3B8" text-anchor="middle">
+    Universal Multi-Domain Evaluation Engine Powered by NS-3 Co-Simulation, IETF DTI, and ETSI TeraFlowSDN
+  </text>
+
+  <!-- CENTRAL HUB: THE UNIVERSAL DIGITAL TWIN CORE -->
+  <g transform="translate(450, 270)">
+    <rect width="300" height="210" rx="16" fill="url(#centerGrad)" stroke="#38BDF8" stroke-width="2.5" filter="url(#glowCenter)"/>
+    <circle cx="150" cy="55" r="28" fill="#0284C7" stroke="#38BDF8" stroke-width="2"/>
+    <path d="M140,55 L160,55 M150,45 L150,65" stroke="#FFFFFF" stroke-width="2.5"/>
+    <text x="150" y="110" font-family="Segoe UI, sans-serif" font-size="16" font-weight="bold" fill="#F8FAFC" text-anchor="middle">
+      UNIVERSAL NDT CORE
+    </text>
+    <text x="150" y="130" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#38BDF8" text-anchor="middle">
+      NS-3 C++ Discrete-Event Engine
+    </text>
+    <text x="150" y="152" font-family="Segoe UI, sans-serif" font-size="11" fill="#94A3B8" text-anchor="middle">
+      3GPP TS 28.561 NDTI Lifecycle
+    </text>
+    <text x="150" y="172" font-family="Segoe UI, sans-serif" font-size="11" fill="#94A3B8" text-anchor="middle">
+      IETF NMRG DTI Scenario Dispatcher
+    </text>
+    <text x="150" y="192" font-family="Segoe UI, sans-serif" font-size="11" fill="#34D399" text-anchor="middle">
+      ETSI TeraFlowSDN 2PC Closed Loop
+    </text>
+  </g>
+
+  <!-- DOMAIN 1: TRAFFIC & CONGESTION DYNAMICS (Top Left) -->
+  <g transform="translate(50, 100)">
+    <rect width="350" height="175" rx="12" fill="#0F172A" stroke="#2563EB" stroke-width="2"/>
+    <rect width="350" height="38" rx="12" fill="url(#cardGrad1)"/>
+    <text x="175" y="24" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+      1. Traffic &amp; Congestion Engineering
+    </text>
+    <text x="20" y="65" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Flash-Crowd Surges &amp; Stadium Bursts (3-5x traffic)</text>
+    <text x="20" y="87" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Bufferbloat, Queue Overflow &amp; Active Queue Mgmt</text>
+    <text x="20" y="109" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• CoDel / RED / PIE AQM Discipline Optimization</text>
+    <text x="20" y="131" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• TCP BBR vs Cubic vs Paced UDP Video Workloads</text>
+    <text x="20" y="153" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#60A5FA">→ Predicts: Latency spikes, Jitter, Packet Drop %</text>
+  </g>
+
+  <!-- DOMAIN 2: TOPOLOGY RESILIENCE & FAILOVERS (Top Right) -->
+  <g transform="translate(800, 100)">
+    <rect width="350" height="175" rx="12" fill="#0F172A" stroke="#EA580C" stroke-width="2"/>
+    <rect width="350" height="38" rx="12" fill="url(#cardGrad2)"/>
+    <text x="175" y="24" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+      2. Topology Resilience &amp; Failover
+    </text>
+    <text x="20" y="65" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Fiber Cuts &amp; Core Transport Disconnections</text>
+    <text x="20" y="87" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Carrier-Grade Sub-50ms Protection Switching</text>
+    <text x="20" y="109" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Topology-Independent LFA (TI-LFA) Fast Reroute</text>
+    <text x="20" y="131" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Routing Storms &amp; IGP/BGP Convergence Delay</text>
+    <text x="20" y="153" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#F97316">→ Predicts: Switchover time, Backup capacity surge</text>
+  </g>
+
+  <!-- DOMAIN 3: QOS SLICING & MULTI-TENANCY (Middle Left) -->
+  <g transform="translate(50, 310)">
+    <rect width="350" height="175" rx="12" fill="#0F172A" stroke="#059669" stroke-width="2"/>
+    <rect width="350" height="38" rx="12" fill="url(#cardGrad3)"/>
+    <text x="175" y="24" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+      3. 5G/6G QoS &amp; Multi-Tenant Slicing
+    </text>
+    <text x="20" y="65" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Multi-Slice Admission Control (Pre-flight test)</text>
+    <text x="20" y="87" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• URLLC vs eMBB vs mMTC Slice Isolation</text>
+    <text x="20" y="109" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Packet Delay Budget (PDB) &amp; PER Verification</text>
+    <text x="20" y="131" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Token-Bucket CBS/EBS Dynamic Policing</text>
+    <text x="20" y="153" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#34D399">→ Predicts: Slice starvation, SLA compliance</text>
+  </g>
+
+  <!-- DOMAIN 4: GREEN TELCO & ENERGY OPTIMIZATION (Middle Right) -->
+  <g transform="translate(800, 310)">
+    <rect width="350" height="175" rx="12" fill="#0F172A" stroke="#16A34A" stroke-width="2"/>
+    <rect width="350" height="38" rx="12" fill="url(#cardGrad6)"/>
+    <text x="175" y="24" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+      4. Green Telco &amp; Energy Optimization
+    </text>
+    <text x="20" y="65" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Dynamic Carrier Sleep Modes (Off-peak windows)</text>
+    <text x="20" y="87" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Redundant Radio Sector Power-Down (Watts saved)</text>
+    <text x="20" y="109" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Traffic Steering to Low-Power Concentrators</text>
+    <text x="20" y="131" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Verification that Sleep Modes Do Not Breach SLAs</text>
+    <text x="20" y="153" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#4ADE80">→ Predicts: kWh savings, Residual headroom</text>
+  </g>
+
+  <!-- DOMAIN 5: PHYSICAL PROPAGATION & OBSTACLES (Bottom Left) -->
+  <g transform="translate(50, 520)">
+    <rect width="350" height="175" rx="12" fill="#0F172A" stroke="#7C3AED" stroke-width="2"/>
+    <rect width="350" height="38" rx="12" fill="url(#cardGrad4)"/>
+    <text x="175" y="24" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+      5. Physical Propagation &amp; Obstacles
+    </text>
+    <text x="20" y="65" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Urban Line-of-Sight Blockage (Cranes, Buildings)</text>
+    <text x="20" y="87" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Atmospheric Rain Fade (ITU-R P.838 mmWave)</text>
+    <text x="20" y="109" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Oxygen Peak Absorption (~15 dB/km @ 60 GHz)</text>
+    <text x="20" y="131" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Hitless ACM Adaptive Coding &amp; Modulation Steps</text>
+    <text x="20" y="153" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#A78BFA">→ Predicts: SNR degradation, MCS stepdown, Capacity</text>
+  </g>
+
+  <!-- DOMAIN 6: MOBILITY & HANDOVER DYNAMICS (Bottom Right) -->
+  <g transform="translate(800, 520)">
+    <rect width="350" height="175" rx="12" fill="#0F172A" stroke="#DB2777" stroke-width="2"/>
+    <rect width="350" height="38" rx="12" fill="url(#cardGrad5)"/>
+    <text x="175" y="24" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">
+      6. Mobility &amp; Radio Handover Dynamics
+    </text>
+    <text x="20" y="65" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• High-Speed Train &amp; Vehicular V2X Trajectories</text>
+    <text x="20" y="87" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Inter-gNB Xn / X2 Handover Interruption Time</text>
+    <text x="20" y="109" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Phased Array Beam Tracking &amp; Mispointing Drift</text>
+    <text x="20" y="131" font-family="Segoe UI, sans-serif" font-size="11" fill="#E2E8F0">• Multi-Connectivity &amp; Dual-Carrier Aggregation</text>
+    <text x="20" y="153" font-family="Segoe UI, sans-serif" font-size="11" font-weight="bold" fill="#F472B6">→ Predicts: Handover success rate, Packet drops</text>
+  </g>
+
+  <!-- Connecting Lines from Hub to Domains -->
+  <line x1="450" y1="330" x2="400" y2="240" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+  <line x1="750" y1="330" x2="800" y2="240" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+  <line x1="450" y1="390" x2="400" y2="390" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+  <line x1="750" y1="390" x2="800" y2="390" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+  <line x1="450" y1="440" x2="400" y2="540" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+  <line x1="750" y1="440" x2="800" y2="540" stroke="#38BDF8" stroke-width="2" stroke-dasharray="4 4"/>
+</svg>

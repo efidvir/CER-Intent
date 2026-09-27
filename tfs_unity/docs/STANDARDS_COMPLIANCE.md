@@ -14,10 +14,13 @@ This framework anchors on official telecommunications specifications to provide 
 - **Experimental Execution**: Sandboxed what-if scenario invocation mapped to 3GPP experiment execution procedures.
 
 ### 3GPP TR 28.915: Study on management aspects of Network Digital Twin
-- Maps use cases:
-  - *Use Case 1: What-If Scenario Evaluation for Transport Reconfiguration*
-  - *Use Case 2: Predictive SLA Outage Prevention under Weather Stress*
-  - *Use Case 3: Closed-Loop Optimization with Pre-Commit Verification*
+- Maps standardized telecommunications use cases:
+  - *Use Case 1: Dynamic Traffic Surges, Buffer Congestion & QoS Bandwidth Resizing*
+  - *Use Case 2: Topology Perturbations, Fiber Cuts & TI-LFA Fast Rerouting*
+  - *Use Case 3: Green Telco Off-Peak Energy Optimization & Carrier Sleep Modes*
+  - *Use Case 4: 5G/6G Multi-Tenant Network Slice Admission & PDB/PER Verification*
+  - *Use Case 5: Channel Degradation & Predictive SLA Outage Prevention (e.g., Rain Fade)*
+  - *Use Case 6: Closed-Loop Optimization with Automated Pre-Commit Safety Verification*
 
 ### 3GPP TS 29.222: Common API Framework for 3GPP Northbound APIs (CAPIF)
 - **CAPIF Core Function (CCF)**: Registered service API `TelecomDigitalTwin_DTI_API` via endpoint `GET /api/v1/capif/service-apis`.
@@ -30,7 +33,7 @@ This framework anchors on official telecommunications specifications to provide 
 ### ITU-T Recommendation Y.3090: Digital Twin Network - Requirements and Architecture
 - **Physical Network Layer**: Physical Ceragon MultiHaul TG (60 GHz) and CeraOS Microwave nodes.
 - **Twin Data Layer**: Telemetry ingestion via RFC 8040 RESTCONF, NETCONF RFC 6241, and TFS Context Service CockroachDB datastore.
-- **Network Twin Model Layer**: NS-3 C++ Discrete-Event engine + ITU-R P.838 rain attenuation physics model.
+- **Network Twin Model Layer**: NS-3 C++ Discrete-Event engine (QueueDisc, PointToPoint, CSMA) + analytical physics propagation models (ITU-R P.838 mmWave rain attenuation, free space path loss, oxygen absorption).
 - **Network Application Layer**: TM Forum TMF921 Intent engine, AI optimization agents, and visual network dashboards.
 - **SBI & NBI Compliance**: Open, standardized northbound and southbound interface decoupling.
 

@@ -79,24 +79,16 @@
       <text x="40" y="222" font-family="Segoe UI, sans-serif" font-size="11" fill="#94A3B8" text-anchor="middle">(dn-01) 4-Sector DN</text>
     </g>
 
-    <!-- Physical Radio Beam with Rain Disturbance -->
-    <path d="M115,260 L405,260" stroke="#38BDF8" stroke-width="4" stroke-dasharray="6 4"/>
-    
-    <!-- Weather Disturbance (Rain Cloud) -->
-    <g transform="translate(210, 140)">
-      <path d="M30,50 Q45,20 75,30 Q105,10 135,35 Q165,25 170,55 Q185,85 150,95 Q140,105 110,100 Q80,105 50,95 Q20,85 30,50 Z" 
-            fill="#475569" fill-opacity="0.85" stroke="#94A3B8" stroke-width="2"/>
-      <text x="100" y="65" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#F1F5F9" text-anchor="middle">
-        ITU-R P.838 Rain Event
+    <!-- Multi-Domain Network Stressors & Perturbations -->
+    <g transform="translate(140, 115)">
+      <rect width="250" height="95" rx="8" fill="#1E293B" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="125" y="24" font-family="Segoe UI, sans-serif" font-size="12" font-weight="bold" fill="#FBBF24" text-anchor="middle">
+        MULTI-DOMAIN STRESSORS
       </text>
-      <text x="100" y="82" font-family="Segoe UI, sans-serif" font-size="11" fill="#CBD5E1" text-anchor="middle">
-        55 mm/hr (19.9 dB fade)
-      </text>
-      <!-- Rain drops -->
-      <line x1="60" y1="105" x2="55" y2="125" stroke="#38BDF8" stroke-width="2"/>
-      <line x1="90" y1="105" x2="85" y2="130" stroke="#38BDF8" stroke-width="2"/>
-      <line x1="120" y1="105" x2="115" y2="125" stroke="#38BDF8" stroke-width="2"/>
-      <line x1="150" y1="105" x2="145" y2="130" stroke="#38BDF8" stroke-width="2"/>
+      <text x="15" y="44" font-family="Segoe UI, sans-serif" font-size="10" fill="#E2E8F0">• Traffic Surges &amp; Bufferbloat (3.5x load)</text>
+      <text x="15" y="60" font-family="Segoe UI, sans-serif" font-size="10" fill="#E2E8F0">• Link Outages &amp; Fiber Cuts (Fast Reroute)</text>
+      <text x="15" y="76" font-family="Segoe UI, sans-serif" font-size="10" fill="#E2E8F0">• Green Telco Sleep Mode Scheduling</text>
+      <text x="15" y="92" font-family="Segoe UI, sans-serif" font-size="10" fill="#E2E8F0">• Atmospheric / mmWave Channel Fading</text>
     </g>
 
     <!-- Operational State Badges -->
