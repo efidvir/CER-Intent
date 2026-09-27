@@ -3153,3 +3153,260 @@ Content-Type: application/json
   }
 }
 ```
+
+
+---
+
+# CHAPTER 13: TELECOM NETWORK DIGITAL TWIN (NDT) ARCHITECTURE & MULTI-LAYER API FRAMEWORK
+
+## 13.1 Executive Overview & Strategic Standardization Context
+
+The evolution of modern disaggregated transport networks (O-RAN fronthaul, midhaul, and backhaul) towards 6G necessitates autonomous, predictive, and zero-touch operations. Traditional reactive network management systems (NMS) and static SDN controllers cannot predict the operational consequences of severe meteorological events (such as mmWave rain fade under ITU-R P.838-3), rapid traffic surges, or dynamic beam mispointing prior to physical execution.
+
+A **Telecom Network Digital Twin (NDT)** bridges this paradigm by maintaining a synchronized, high-fidelity digital representation of physical network elements, topologies, radio frequency propagation environments, and operational states. It provides an isolated, risk-free execution sandbox for:
+1. **What-If Scenario Evaluation**: Pre-evaluating topology changes, traffic rerouting, and parameter adjustments under simulated stress.
+2. **Predictive Failure Detection**: Simulating channel degradation curves and forecasting bit error rate (BER) and throughput collapse before SLA breaches occur.
+3. **Autonomous Closed-Loop Optimization**: Synthesizing corrective intent remediations, validating them within the simulation model, and safely committing configurations to physical hardware.
+
+To prevent fragmented, proprietary implementations, this architecture anchors directly on international standard bodies:
+- **3GPP TS 28.561 (Release 19 SA5)**: *Management and orchestration; Management aspects of Network Digital Twins*. Formalizes the Network Digital Twin Instance (NDTI) lifecycle, data synchronization, and experiment execution.
+- **3GPP TR 28.915**: *Study on management aspects of Network Digital Twin*. Establishes the foundational use cases, architectural requirements, and integration with 3GPP Management Services (MnS).
+- **ITU-T Y.3090**: *Digital Twin Network: Requirements and Architecture*. Defines the four-layer DTN reference model (Physical Network Layer, Twin Data Layer, Network Twin Model Layer, Network Application Layer) with standardized northbound and southbound interfaces.
+- **IETF/IRTF NMRG (`draft-irtf-nmrg-network-digital-twin-arch`)**: *Network Digital Twin: Concepts and Reference Architecture*. Outlines the Internet and transport network reference architecture.
+- **IETF/IRTF NMRG (`draft-paillisse-nmrg-performance-digital-twin-02`)**: *Performance Evaluation of Network Digital Twin*. Formally defines the **Digital Twin Interface (DTI)** for data ingestion and what-if simulation requests.
+- **IETF/IRTF NMRG (`draft-zcz-nmrg-digitaltwin-data-collection`)**: *Data Collection Requirements and Technologies for NDT*. Details protocol bindings (NETCONF, RESTCONF, gNMI, YANG Push, IPFIX, In-band Telemetry).
+- **ETSI TS 104 296**: *Network Digital Twin for Deterministic Testing; Architecture, models and interfaces*.
+- **TM Forum ODA (Open Digital Architecture)**: Standardized Open APIs including TMF921 (Intent Management), TMF639 (Resource Inventory), TMF640 (Service Activation), TMF642 (Alarm Management), and TMF645 (Service Qualification).
+- **3GPP TS 29.222 / ETSI OpenCAPIF**: *Common API Framework (CAPIF)*. Provides standardized API discovery, publishing, security (OAuth 2.0, mTLS), and lifecycle governance.
+
+---
+
+## 13.2 The Five-Layer Telecom Digital Twin API Taxonomy
+
+A production-grade telecom digital twin operates across five distinct API boundaries. Treating the digital twin API as identical to the device management API is an architectural anti-pattern. The following taxonomy delineates the operational boundaries:
+
+```
++-----------------------------------------------------------------------------------+
+|  Layer 5: API Exposure, Governance & Security (3GPP CAPIF / ETSI OpenCAPIF)       |
+|  - CCF (CAPIF Core Function): API Publishing, Discovery, Authentication, Logging  |
+|  - AEF (API Exposing Function): Fine-grained RBAC, Rate Limiting, Auditing        |
++-----------------------------------------------------------------------------------+
+                                         |
+                                         v
++-----------------------------------------------------------------------------------+
+|  Layer 4: Northbound Intent & Inventory Abstraction (TM Forum ODA)               |
+|  - TMF921: Declarative Intent Ingestion & SLA Reconciler                          |
+|  - TMF639: Standardized Resource Inventory Management & Projections               |
+|  - Applications: RCA, Planning, Energy Optimization, AI/RL Cognitive Agents      |
++-----------------------------------------------------------------------------------+
+                                         |
+                                         v
++-----------------------------------------------------------------------------------+
+|  Layer 2: Digital Twin Interface (DTI - IETF NMRG & 3GPP TS 28.561)              |
+|  - NDTI Lifecycle Engine: Create, Initialize, Sync, Update, Experiment, Terminate |
+|  - What-If Simulation Engine: Perturbation Injection, ITU-R P.838 Rain Models     |
+|  - Simulation Adapters: NS-3 Discrete-Event C++ Engine + Analytical Physics Models|
++-----------------------------------------------------------------------------------+
+                  |                                                  ^
+   Layer 3: Pre-commit Safety Validation             Layer 1: Real-Time Sync
+                  v                                                  |
++-----------------------------------------------------------------------------------+
+|  ETSI TeraFlowSDN (TFS) Controller Mesh                                           |
+|  - Context Service (CockroachDB Authoritative Topology & Inventory Store)         |
+|  - Device Service (2-Phase Commit Candidate Datastore Transaction Engine)         |
++-----------------------------------------------------------------------------------+
+                  |                                                  ^
+   Southbound 2PC Candidate Commit                   RESTCONF / NETCONF / Telemetry
+                  v                                                  |
++-----------------------------------------------------------------------------------+
+|  Layer 1: Physical Network Transport (Ceragon Networks)                          |
+|  - MultiHaul TG MH-T261 TU / MH-N366 DN (60 GHz V-Band Beamforming Phased Array)  |
+|  - EtherHaul EH-8010FX / EH-2500FX (70/80 GHz E-Band up to 10 Gbps)               |
+|  - CeraOS IP-50 / IP-20 Microwave (XPIC, 4096-QAM, Hitless Adaptive Modulation)  |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+### Layer 1: Southbound Synchronization (Physical Network -> Digital Twin)
+Supplies continuous, high-fidelity real-time telemetry and state from physical Ceragon hardware and SDN controller datastores into the digital twin shadow:
+- **Transport Protocols**: RFC 8040 RESTCONF (`/restconf/ds/ietf-datastores:candidate` and operational datastore), RFC 6241 NETCONF, RFC 6022 NETCONF Monitoring, gNMI (gRPC Network Management Interface), and YANG Push (RFC 8641 / RFC 8639).
+- **Transport Telemetry Payload Dictionary**:
+  - `carrier_frequency_ghz`: Active RF carrier center frequency (e.g., 64.80 GHz / Channel 4).
+  - `bandwidth_mhz`: Operational channel spacing (e.g., 2160 MHz mmWave, 112 MHz microwave).
+  - `acm_modulation_mcs`: Current Adaptive Coding & Modulation MCS index (MCS 0 to MCS 12).
+  - `rssi_dbm`: Received Signal Strength Indication (dBm).
+  - `snr_db`: Signal-to-Noise Ratio (dB) / SINR.
+  - `tx_power_dbm`: Transmit RF output power with ATPC (Adaptive Transmit Power Control) state.
+  - `modem_temperature_c` & `rf_temperature_c`: Thermal health tracking.
+  - `interface_counters`: Ingress/egress Octets, discarded packets, CRC frame errors.
+
+---
+
+### Layer 2: The Digital Twin Interface (DTI - Model & Simulation Interaction)
+Standardized by IETF NMRG (`draft-paillisse-nmrg-performance-digital-twin-02`) and 3GPP TS 28.561. This interface enables applications, AI agents, and engineers to submit hypothetical network conditions and receive predicted performance metrics without altering physical infrastructure:
+- **Input Payload**: Base state snapshot reference, perturbation vector (rain rate in mm/hr, path length in km, link outages, traffic surges), and target simulation engine (e.g. `ns3-itur-p838` or analytical).
+- **Output Predictions**: Expected RSSI, SNR, ACM modulation MCS drop, throughput reduction (Mbps), packet latency (ms), jitter (ms), frame loss probability, and binary SLA breach warnings.
+- **Recommended Remediation**: Computed reconfiguration vector to counteract the perturbation.
+
+---
+
+### Layer 3: Closed-Loop Network Actuation (Digital Twin -> Physical Network Control)
+A digital twin must not directly write unchecked mutations to physical hardware. Layer 3 implements a strict **two-step closed-loop gatekeeper**:
+1. **Pre-Commit Safety Verification**: The proposed mitigation is evaluated against RF safety boundaries (operational frequency limits 57.0–71.0 GHz, minimum ACM floor constraints, hardware thermal envelopes, and regulatory EIRP limits).
+2. **Transactional Dispatch via ETSI TeraFlowSDN**: Once verified, configuration rules are pushed through TFS's Device Service using RFC 8040 candidate datastore 2-Phase Commit (2PC):
+   - `/radio/tuning`: Frequency and channel bandwidth reassignment.
+   - `/modulation/acm_floor`: Minimum modulation floor hardening against link fade.
+   - `/slice/{slice_name}`: Dynamic IEEE 802.1Q VLAN QoS bandwidth policing.
+
+---
+
+### Layer 4: Northbound Intent & Inventory Abstraction (TM Forum ODA)
+Enables higher-layer business support systems (BSS), orchestrators, and AI agents to interact with the digital twin via standardized telecom domain abstractions:
+- **TMF921 (Intent Management API)**: Expresses declarative business and operational goals (e.g., *“Maintain latency <= 1.5ms and availability >= 99.999% during adverse weather events”*). The digital twin acts as the autonomic reconciler.
+- **TMF639 (Resource Inventory Management API)**: Projects the synchronized multi-vendor transport elements (Ceragon nodes, microwave hops, interfaces) as standardized `PhysicalResource` entities.
+- **TMF640 (Service Activation and Configuration)**: Automates end-to-end transport service lifecycle.
+- **TMF642 (Alarm Management)**: Propagates predictive degradation events and proactive warning thresholds.
+
+---
+
+### Layer 5: API Exposure, Governance & Security (3GPP CAPIF / ETSI OpenCAPIF)
+3GPP TS 29.222 specifies the **Common API Framework (CAPIF)** to securely expose telecom network functions:
+- **CAPIF Core Function (CCF)**: Central registry where Digital Twin APIs are published (`TelecomDigitalTwin_DTI_API`).
+- **API Exposing Function (AEF)**: Provides mutual TLS (mTLS), OAuth 2.0 JWT bearer token authentication, fine-grained access control, rate limiting, and audit logging.
+- **API Invoker**: External AI agents, NS-3 co-simulation controllers, and third-party applications discover and consume Digital Twin services in compliance with 3GPP security profiles.
+
+---
+
+## 13.3 3GPP TS 28.561 Release 19 SA5 Network Digital Twin Lifecycle
+
+3GPP TS 28.561 defines the management architecture for Network Digital Twin Instances (NDTI) managed by the Network Digital Twin Management Function (NDTMF). An NDTI transitions through a rigorous state machine:
+
+```
+    +--------------------------------------------------------------+
+    |                             NULL                             |
+    +--------------------------------------------------------------+
+                                   |
+                         CreateNDTI (Request)
+                                   v
+    +--------------------------------------------------------------+
+    |                         INITIALIZING                         |
+    +--------------------------------------------------------------+
+                                   |
+                        InitializeNDTI (Complete)
+                                   v
+    +--------------------------------------------------------------+
+    |                         SYNCHRONIZED                         |<---+
+    +--------------------------------------------------------------+    |
+         |                         |                        ^           |
+ ExecuteExperiment           SyncNDTI / UpdateNDTI          |           |
+         v                         v                        |           |
++-------------------+     +-------------------+             |           |
+|     EXECUTING     |     |     UPDATING      |-------------+           |
+|    EXPERIMENT     |     +-------------------+                         |
++-------------------+                                                   |
+         |                                                              |
+ RetrieveResults                                                        |
+         +--------------------------------------------------------------+
+                                   |
+                         TerminateNDTI (Request)
+                                   v
+    +--------------------------------------------------------------+
+    |                          TERMINATED                          |
+    +--------------------------------------------------------------+
+```
+
+### Lifecycle Operations & Semantics:
+1. **CreateNDTI**: Allocates memory, initializes twin shadow structures, and registers the NDTI ID with the NDTMF.
+2. **InitializeNDTI**: Establishes initial network topology, node inventory, and baseline RF parameters from ETSI TeraFlowSDN and Ceragon hardware.
+3. **SyncNDTI / UpdateNDTI**: Reconciles the twin state with live physical measurements (poll or event-driven).
+4. **ExecuteExperiment**: Evaluates what-if scenarios (perturbations, channel fading, traffic spikes) within the twin sandbox.
+5. **RetrieveResults**: Returns detailed prediction vectors, SLA breach probabilities, and mitigation options.
+6. **TerminateNDTI**: Gracefully deallocates twin resources and archives experiment logs.
+
+---
+
+## 13.4 NS-3 Co-Simulation Engine & Runtime Bridge
+
+The digital twin leverages **Network Simulator 3 (NS-3)** to perform packet-level discrete-event co-simulation alongside analytical physical-layer models:
+
+1. **Dynamic C++ Scenario Generation (`tfs_topology_to_ns3.py`)**:
+   - Ingests active TFS topology dynamically.
+   - Instantiates `ns3::NodeContainer` with exact physical and emulated device IDs.
+   - Configures Point-to-Point wired Ethernet and Ceragon mmWave links with `ns3::ConstantSpeedPropagationDelayModel` and data rates mapped from active ACM modulations.
+   - Injects synthetic 5G user-plane traffic using `ns3::OnOffHelper` and `ns3::PacketSinkHelper`.
+   - Exports NetAnim XML tracking files (`AnimationInterface`).
+
+2. **Runtime Co-Simulation Daemon (`ns3_tfs_runtime_bridge.py`)**:
+   - Maintains an asynchronous 1-second telemetry polling loop syncing live TFS link states into an IPC shared buffer (`ns3_link_state.json`).
+   - Hosts a lightweight REST Control Server on port `:9099` allowing NS-3 simulation hooks or external controllers to trigger runtime degradation events (`POST /events/ns3_degrade`) or physical control adjustments.
+
+---
+
+## 13.5 End-to-End Operational Verification Trace
+
+The multi-layer architecture was validated end-to-end using the test harness `demo_telecom_digital_twin.py`:
+
+```
+========================================================================
+  TELECOM NETWORK DIGITAL TWIN (NDT) END-TO-END DEMONSTRATION
+  Standards: 3GPP TS 28.561 | ITU-T Y.3090 | IETF NMRG | TM Forum | CAPIF
+========================================================================
+
+--- [STEP 1] 3GPP CAPIF Service API Discovery (TS 29.222 / OpenCAPIF) ---
+[+] Discovered Service API: TelecomDigitalTwin_DTI_API (ID: capif-service-dti-v1)
+    Description: Standardized Digital Twin Interface for simulation, what-if modeling, and closed-loop control of Ceragon 6G transport networks via ETSI TeraFlowSDN.
+    AEF Profile Status: PUBLISHED | Security: ['OAUTH2', 'MTLS']
+
+--- [STEP 2] 3GPP TS 28.561 Network Digital Twin Instance (NDTI) Lifecycle ---
+[+] Created NDTI Instance: ndti-oran-transport-demo
+    Lifecycle State:      SYNCHRONIZED
+    Synchronized Nodes:   34
+
+--- [STEP 3] Layer 1 Physical Network Synchronization (ITU-T Y.3090) ---
+[+] Reconciled Shadow State with Physical Ceragon Hardware & TFS:
+    Nodes in Shadow:      34
+    Links in Shadow:      34
+    Active State:         SYNCHRONIZED
+
+--- [STEP 4] Layer 4 TM Forum TMF921 Intent Management Ingestion ---
+[+] Ingested TMF921 Intent: INTENT-95e73b (URLLC_CarrierGrade_ZeroOutage_Intent)
+    State:                  acknowledged
+    Target SLA:             {'max_latency_ms': 1.5, 'min_availability_pct': 99.999, 'min_throughput_mbps': 500.0}
+
+--- [STEP 5] Layer 2 DTI What-If Scenario Simulation (IETF NMRG DTI) ---
+[*] Submitting perturbation to Digital Twin: 55.0 mm/hr Heavy Rain Fade on Ceragon Link...
+[!] Simulation Results (Engine: ns3-itur-p838):
+    ITU-R Attenuation:    19.93 dB loss
+    Predicted RSSI:       -77.93 dBm
+    Predicted SNR:        4.07 dB
+    Predicted Modulation: MCS 0 (Down from MCS 8)
+    Predicted Throughput: 50.0 Mbps
+    Predicted Latency:    6.77 ms
+    SLA Breach Predicted: True (BREACH OF TMF921 INTENT!)
+    Proposed Mitigation:  [{'type': 'ACM_FLOOR_HARDENING', 'min_mcs': 2}, {'type': 'CARRIER_FREQUENCY_RETUNE', 'target_ghz': 64.8, 'target_bw_mhz': 2000}, {'type': 'URLLC_SLICE_RESERVATION', 'vlan_id': 200, 'rate_mbps': 1000}]
+
+--- [STEP 6] Layer 3 Closed-Loop Actuation via TFS 2-Phase Commit ---
+[*] Validating safety rules in Digital Twin before physical commit...
+[+] Safety Validation:       True (APPLIED_AND_VERIFIED)
+    - Validated ACM Floor >= MCS 2 (Rain resilience verified)
+    - Validated Carrier Frequency 64.8 GHz (Channel clear of co-channel interference)
+[+] Physical 2PC Committed:  True
+    TFS Actions Dispatched:  3
+
+--- [STEP 7] Layer 4 TM Forum TMF639 Resource Inventory Projection ---
+[+] Total Resources Projected into TMF639: 34
+    Sample Resource: 6G Core DC & UPF [Type: PhysicalResource]
+    Category:        WirelessTransportEquipment | Operational: enable
+
+========================================================================
+  DEMONSTRATION SUCCESSFUL: Closed-loop Telecom Digital Twin verified
+  across all 5 API layers in strict compliance with 3GPP & ITU-T.
+========================================================================
+```
+
+---
+
+## 13.6 Summary of Architectural Grounding
+
+By unifying **3GPP TS 28.561** for instance lifecycle management, **ITU-T Y.3090** for data/model layering, **IETF NMRG DTI** for simulation interaction, **TM Forum ODA** for northbound intent/resource abstraction, **ETSI TeraFlowSDN** for 2-phase commit transport actuation, and **3GPP CAPIF** for secure exposure, this framework establishes a comprehensive, standard-compliant blueprint for carrier-grade 6G transport digital twins.
