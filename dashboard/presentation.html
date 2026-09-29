@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telecom Digital Twin: Adapters &amp; Standards Presentation</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Presentation Slide Transitions */
+    .slide {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px) scale(0.99);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Print / PDF Styling */
+    @media print {
+      body {
+        background: #020617 !important;
+        color: #f8fafc !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .slide {
+        display: flex !important;
+        opacity: 1 !important;
+        transform: none !important;
+        page-break-after: always;
+        height: 100vh;
+        width: 100vw;
+        border: none !important;
+      }
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+  <!-- TOP NAVIGATION & PRESENTATION TOOLBAR -->
+  <header class="no-print border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 border border-purple-500/40 flex items-center justify-center text-lg shadow-sm">
+        🔮
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-white tracking-wide">Telecom Digital Twin</span>
+          <span class="px-2 py-0.5 text-[11px] font-mono rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-semibold">
+            EXECUTIVE DECK
+          </span>
+        </div>
+        <span class="text-xs text-slate-400 block">Adapters Functionality &amp; Governing Digital Twin API Standards</span>
+      </div>
+    </div>
+
+    <!-- Slide Navigation & Controls -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-2 py-1 gap-1">
+        <button onclick="prevSlide()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs font-mono flex items-center gap-1 cursor-pointer" title="Previous Slide (Left Arrow)">
+          <span>◀</span> Prev
+        </button>
+        <span class="text-xs font-mono px-3 text-cyan-400 font-bold border-x border-slate-800" id="slide-indicator">
+          1 / 6
+        </span>
+        <button onclick="nextSlide()" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs font-mono flex items-center gap-1 cursor-pointer" title="Next Slide (Right Arrow or Space)">
+          Next <span>▶</span>
+        </button>
+      </div>
+
+      <!-- Quick Jump Menu -->
+      <select id="slide-jump" onchange="goToSlide(parseInt(this.value))" class="bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-300 font-mono outline-none cursor-pointer">
+        <option value="0">1. Executive Scope &amp; Title</option>
+        <option value="1">2. The Core Problem: Why Adapters?</option>
+        <option value="2">3. Standards for Digital Twin APIs</option>
+        <option value="3">4. TFS-to-NS-3 Simulation Adapter</option>
+        <option value="4">5. TFS Southbound &amp; Hardware Driver</option>
+        <option value="5">6. Summary &amp; Operational Value</option>
+      </select>
+
+      <button onclick="toggleFullscreen()" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white transition-all text-xs font-mono border border-slate-700/60 cursor-pointer" title="Toggle Fullscreen">
+        ⛶
+      </button>
+
+      <button onclick="window.print()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer" title="Export or Save as PDF">
+        <span>🖨️</span> PDF / Print
+      </button>
+    </div>
+  </header>
+
+  <!-- SLIDES CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 flex flex-col justify-center relative">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SLIDE 1: TITLE SLIDE -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="slide active flex-col justify-center min-h-[620px] bg-slate-900/80 border border-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden backdrop-blur-md" id="slide-0">
+      <div class="absolute -right-20 -top-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative z-10 space-y-6 max-w-4xl">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 text-xs font-mono text-cyan-300">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          6G TRANSPORT &amp; AUTONOMOUS NETWORKING
+        </div>
+
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+          <span class="bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+            Telecom Digital Twin:
+          </span>
+          <br>
+          <span class="bg-gradient-to-r from-purple-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+            Adapters Architecture &amp; Governing Standards
+          </span>
+        </h1>
+
+        <p class="text-base md:text-lg text-slate-300 font-light leading-relaxed">
+          How Declarative Intent (TMF921), ETSI TeraFlowSDN, NS-3 Discrete Co-Simulation, and Physical Ceragon Microwave Hardware Interconnect to Enable Zero-Risk Closed-Loop Automation.
+        </p>
+
+        <!-- 3 Core Pillars -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+          <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 space-y-2">
+            <span class="text-xs font-mono font-bold text-cyan-400 block">⚡ ADAPTERS ROLE</span>
+            <strong class="text-sm text-white block">Real-Time Translators</strong>
+            <p class="text-xs text-slate-400 leading-normal">
+              Software bridges translating declarative business contracts into controller graphs, discrete C++ packets, and physical radio registers.
+            </p>
+          </div>
+
+          <div class="bg-slate-950/80 border border-purple-500/30 rounded-2xl p-4 space-y-2">
+            <span class="text-xs font-mono font-bold text-purple-400 block">🌐 STANDARDS ANCHORED</span>
+            <strong class="text-sm text-white block">Zero Vendor Lock-In</strong>
+            <p class="text-xs text-slate-400 leading-normal">
+              Fully aligned with TM Forum TMF921, 3GPP TS 28.561, ITU-T Y.3090, IETF NMRG DTI, and RFC 8040 RESTCONF.
+            </p>
+          </div>
+
+          <div class="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 space-y-2">
+            <span class="text-xs font-mono font-bold text-emerald-400 block">🛡️ ZERO-RISK CLOSED LOOP</span>
+            <strong class="text-sm text-white block">Pre-Flight Discrete Verification</strong>
+            <p class="text-xs text-slate-400 leading-normal">
+              What-If perturbations (traffic surge, rain fade) simulated in NS-3 before any candidate actuation touches live hardware.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs font-mono text-slate-400 pt-2 border-t border-slate-800">
+          <span>Ceragon Networks &amp; ETSI TeraFlowSDN</span>
+          <span>•</span>
+          <span>Physical Lab &amp; Standalone Evaluator</span>
+          <span>•</span>
+          <span class="text-cyan-400">Use &rarr; or Spacebar to advance</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SLIDE 2: THE CORE PROBLEM: WHY ADAPTERS? -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="slide flex-col justify-between min-h-[620px] bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative backdrop-blur-md" id="slide-1">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-cyan-400 font-bold tracking-wider">SECTION 1: THE ARCHITECTURAL CHALLENGE</span>
+          <span class="text-xs font-mono text-slate-400">Slide 2 of 6</span>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white">
+          The Core Problem: Why Do We Need Adapters?
+        </h2>
+        <p class="text-sm text-slate-300 max-w-4xl">
+          In a Telecom Digital Twin, each system speaks a totally different language and operates on radically disparate timescales. Without adapters, co-simulation and automated closed-loop control are impossible.
+        </p>
+      </div>
+
+      <!-- The 4-Tier Semantic & Temporal Chasm -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 my-6">
+        
+        <!-- Tier 1: Operator Intent -->
+        <div class="bg-slate-950 border border-purple-500/40 rounded-2xl p-4 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-purple-400">1. DECLARATIVE INTENT</span>
+              <span class="text-[10px] font-mono bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">TMF921</span>
+            </div>
+            <strong class="text-sm text-white block">Operator / SLA Goal</strong>
+            <p class="text-xs text-slate-400">
+              High-level expectations expressed in Natural Language or structured JSON contracts.
+            </p>
+          </div>
+          <div class="space-y-1.5 text-xs font-mono border-t border-slate-800 pt-3">
+            <div class="text-slate-400">Speaks: <span class="text-white">Business SLA</span></div>
+            <div class="text-slate-400">Timescale: <span class="text-purple-300">Minutes &rarr; Days</span></div>
+            <div class="p-2 rounded bg-slate-900 border border-slate-800 text-[11px] text-purple-300 font-mono">
+              "Keep URLLC &lt; 1.5ms during rain storms"
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier 2: SDN Controller -->
+        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-4 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-cyan-400">2. SDN CONTROLLER</span>
+              <span class="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">ETSI TFS</span>
+            </div>
+            <strong class="text-sm text-white block">Network Orchestration</strong>
+            <p class="text-xs text-slate-400">
+              Topology graphs, device inventories, endpoint UUIDs, and constrained path calculation (CSPF).
+            </p>
+          </div>
+          <div class="space-y-1.5 text-xs font-mono border-t border-slate-800 pt-3">
+            <div class="text-slate-400">Speaks: <span class="text-white">Graphs &amp; gRPC</span></div>
+            <div class="text-slate-400">Timescale: <span class="text-cyan-300">Seconds</span></div>
+            <div class="p-2 rounded bg-slate-900 border border-slate-800 text-[11px] text-cyan-300 font-mono">
+              34 nodes, 34 links, TI-LFA backup paths
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier 3: Discrete Simulator -->
+        <div class="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-amber-400">3. DISCRETE SIMULATOR</span>
+              <span class="text-[10px] font-mono bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">NS-3.45</span>
+            </div>
+            <strong class="text-sm text-white block">Packet Dynamics &amp; Queues</strong>
+            <p class="text-xs text-slate-400">
+              Discrete-event scheduling: bufferbloat, EDCA contention, packet drops, and jitter.
+            </p>
+          </div>
+          <div class="space-y-1.5 text-xs font-mono border-t border-slate-800 pt-3">
+            <div class="text-slate-400">Speaks: <span class="text-white">C++ Events &amp; Trace</span></div>
+            <div class="text-slate-400">Timescale: <span class="text-amber-300">Microseconds (&mu;s)</span></div>
+            <div class="p-2 rounded bg-slate-900 border border-slate-800 text-[11px] text-amber-300 font-mono">
+              t = 0.042180s, Queue 150/150 TAIL-DROP
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier 4: Physical Hardware -->
+        <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-4 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-emerald-400">4. PHYSICAL HARDWARE</span>
+              <span class="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">Ceragon HW</span>
+            </div>
+            <strong class="text-sm text-white block">Microwave Transceiver</strong>
+            <p class="text-xs text-slate-400">
+              Siklu MultiHaul MH-T261 (192.168.1.225): V-band 60 GHz, ACM modems, PHY registers.
+            </p>
+          </div>
+          <div class="space-y-1.5 text-xs font-mono border-t border-slate-800 pt-3">
+            <div class="text-slate-400">Speaks: <span class="text-white">RESTCONF &amp; PHY</span></div>
+            <div class="text-slate-400">Timescale: <span class="text-emerald-300">Hardware Realtime</span></div>
+            <div class="p-2 rounded bg-slate-900 border border-slate-800 text-[11px] text-emerald-300 font-mono">
+              60.48 GHz, MCS 8 (64-QAM), -58.4 dBm
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Core Takeaway Banner -->
+      <div class="bg-gradient-to-r from-purple-900/30 via-slate-900 to-cyan-900/30 border border-cyan-500/30 rounded-2xl p-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">💡</span>
+          <div>
+            <strong class="text-sm text-white block">Adapters are the Semantic Bridges</strong>
+            <p class="text-xs text-slate-300">
+              They translate SLA bounds into NS-3 C++ scenario configs, extract discrete packet traces into TFS telemetry, and stage validated mitigations into candidate RESTCONF 2PC commits.
+            </p>
+          </div>
+        </div>
+        <button onclick="goToSlide(2)" class="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 transition-all flex items-center gap-1 shrink-0 cursor-pointer">
+          See Standards &rarr;
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SLIDE 3: DIGITAL TWIN API STANDARDS (KEY SLIDE REQUESTED BY USER) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="slide flex-col justify-between min-h-[620px] bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative backdrop-blur-md" id="slide-2">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-cyan-400 font-bold tracking-wider">SECTION 2: INTERNATIONAL STANDARDS ALIGNMENT</span>
+          <span class="text-xs font-mono text-slate-400">Slide 3 of 6</span>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <span>Standards for Digital Twin APIs We Use &amp; What They Are</span>
+          <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
+            MANDATORY COMPLIANCE
+          </span>
+        </h2>
+        <p class="text-sm text-slate-300 max-w-4xl">
+          The digital twin does not use proprietary protocols. Every single interface is mapped directly to international telecom standards across TM Forum, 3GPP, ITU-T, IETF, and ETSI.
+        </p>
+      </div>
+
+      <!-- 6 Standards Interactive Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 my-4">
+        
+        <!-- Standard 1: TM Forum TMF921 -->
+        <div class="bg-slate-950 border border-purple-500/40 rounded-2xl p-4 space-y-2 hover:border-purple-400 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-purple-300">TM FORUM TMF921</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-200">INTENT NBI</span>
+          </div>
+          <strong class="text-sm text-white block">Intent Management REST API</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> Global telecom specification defining declarative SLA contracts, lifecycle states, and compliance tracking.
+          </p>
+          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Ingests <code class="text-purple-300">latency &le; 1.5ms</code>, tracks state (<code class="text-emerald-400">INGESTED</code> &rarr; <code class="text-cyan-400">EVALUATING</code> &rarr; <code class="text-emerald-400">COMPLIANT</code>).
+          </div>
+        </div>
+
+        <!-- Standard 2: 3GPP TS 28.561 -->
+        <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-4 space-y-2 hover:border-emerald-400 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-emerald-400">3GPP TS 28.561</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200">5G/6G NDT</span>
+          </div>
+          <strong class="text-sm text-white block">Network Digital Twin Lifecycle</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> 3GPP Release 18/19 architecture defining closed-loop validation, safety envelopes, and autonomous assurance.
+          </p>
+          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Governs the <strong>4-Phase Pre-Flight Safety Gate</strong> (Latency, Queue Stability, Hardware, Spectral Mask) before actuation.
+          </div>
+        </div>
+
+        <!-- Standard 3: ITU-T Y.3090 -->
+        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-4 space-y-2 hover:border-cyan-400 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-cyan-400">ITU-T Y.3090</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-200">DTN ARCHITECTURE</span>
+          </div>
+          <strong class="text-sm text-white block">Digital Twin Network Reference Model</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> ITU-T 3-layer reference model (Physical Network &harr; Digital Twin Layer &harr; Network Application Layer).
+          </p>
+          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Dictates the <strong>Shadow Datastore Synchronization</strong> protocol keeping cyber representations in sync with live microwave hardware.
+          </div>
+        </div>
+
+        <!-- Standard 4: IETF NMRG DTI -->
+        <div class="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 space-y-2 hover:border-amber-400 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-amber-400">IETF NMRG DTI</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-200">SIMULATION SBI</span>
+          </div>
+          <strong class="text-sm text-white block">Digital Twin Interface (RFC Draft)</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> IETF research standard for Twin-to-Simulator East-West communication and model fidelity negotiation.
+          </p>
+          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Standardizes perturbation dispatch (traffic surge, rain fade) and discrete packet trace streaming from NS-3.
+          </div>
+        </div>
+
+        <!-- Standard 5: IETF RFC 8040 / 7950 -->
+        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-4 space-y-2 hover:border-cyan-400 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-cyan-300">IETF RFC 8040 &amp; 7950</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-200">HARDWARE SBI</span>
+          </div>
+          <strong class="text-sm text-white block">RESTCONF Protocol &amp; YANG 1.1</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> HTTP-based interface to YANG datastores offering Candidate staging and atomic 2-Phase Commit (2PC).
+          </p>
+          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Drives Ceragon MH-T261 (<code class="text-emerald-300">192.168.1.225:80</code>) via <code class="text-yellow-300">PATCH candidate</code> &rarr; <code class="text-emerald-400">POST commit</code>.
+          </div>
+        </div>
+
+        <!-- Standard 6: ETSI TeraFlowSDN -->
+        <div class="bg-slate-950 border border-purple-500/40 rounded-2xl p-4 space-y-2 hover:border-purple-400 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-purple-400">ETSI TERAFLOWSDN</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-200">SDN CONTROL</span>
+          </div>
+          <strong class="text-sm text-white block">Cloud-Native Microservices Pipeline</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> ETSI open-source controller architecture for autonomous optical and microwave transport networks.
+          </p>
+          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Context (<code class="text-white">:10010</code>), Service/PCE (<code class="text-white">:10030</code>), Device Driver (<code class="text-white">:10020</code>), Monitoring (<code class="text-white">:10040</code>).
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Summary Footnote -->
+      <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-400">
+        <span class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          All 6 standards are actively exercised in both the Standalone Evaluator and Physical Lab deployments.
+        </span>
+        <button onclick="goToSlide(3)" class="text-cyan-400 hover:text-cyan-300 font-mono flex items-center gap-1 cursor-pointer">
+          Next: TFS-to-NS-3 Adapter &rarr;
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SLIDE 4: ADAPTER 1 — TFS-TO-NS-3 SIMULATION ADAPTER -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="slide flex-col justify-between min-h-[620px] bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative backdrop-blur-md" id="slide-3">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-cyan-400 font-bold tracking-wider">SECTION 3: HOW ADAPTER 1 FUNCTIONS</span>
+          <span class="text-xs font-mono text-slate-400">Slide 4 of 6</span>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+          <span>Adapter 1: TFS-to-NS-3 Simulation Adapter</span>
+          <span class="text-xs font-mono text-cyan-400 bg-cyan-500/15 px-2.5 py-0.5 rounded border border-cyan-500/30">
+            THE CYBER MIRROR
+          </span>
+        </h2>
+        <p class="text-sm text-slate-300 max-w-4xl">
+          This adapter bridges ETSI TeraFlowSDN's live macroscopic network topology with the microsecond-accurate C++ discrete event simulation core on <code class="text-cyan-300">efid@cersrv-029</code>.
+        </p>
+      </div>
+
+      <!-- Functional Flow Stepper (Simplified) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 my-6">
+        
+        <!-- Step 1 -->
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2 relative">
+          <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 font-mono font-bold flex items-center justify-center text-sm border border-purple-500/40">
+            01
+          </div>
+          <strong class="text-sm text-white block">Topology &amp; Telemetry Sync</strong>
+          <p class="text-xs text-slate-400 leading-normal">
+            Queries TFS Context (<code class="text-slate-300">:8088</code>) to fetch the 34-node carrier graph, link capacities, and Ceragon RF metrics (RSSI <code class="text-emerald-400">-58 dBm</code>, <code class="text-cyan-400">MCS 8</code>).
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-4 space-y-2 relative">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 font-mono font-bold flex items-center justify-center text-sm border border-cyan-500/40">
+            02
+          </div>
+          <strong class="text-sm text-white block">Simulation Governor (Scoping)</strong>
+          <p class="text-xs text-slate-400 leading-normal">
+            Rather than simulating all 34 nodes (which takes minutes), scopes to <strong>Tier 4: URLLC Slice (23 nodes, 95% fidelity)</strong> executing in <strong>~1,150ms</strong>.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 space-y-2 relative">
+          <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 font-mono font-bold flex items-center justify-center text-sm border border-amber-500/40">
+            03
+          </div>
+          <strong class="text-sm text-white block">What-If Perturbation Dispatch</strong>
+          <p class="text-xs text-slate-400 leading-normal">
+            Injects stress: a <strong>3.5x bulk traffic burst</strong> on STA 1 (bufferbloat) or <strong>ITU-R P.838 rain fade</strong> (dropping modulation from 1Gbps to 100Mbps).
+          </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-4 space-y-2 relative">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 font-mono font-bold flex items-center justify-center text-sm border border-emerald-500/40">
+            04
+          </div>
+          <strong class="text-sm text-white block">Discrete Trace &amp; NetAnim XML</strong>
+          <p class="text-xs text-slate-400 leading-normal">
+            Generates <code class="text-emerald-300">/tmp/tsn_wifi_ceragon_anim.xml</code> and streams microsecond queue depths, tail-drops, and packet transit times back to the twin.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Technical Architecture Highlights -->
+      <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <span class="text-xs font-mono font-bold text-cyan-400 block mb-1">🎮 NETANIM VISUALIZATION</span>
+          <p class="text-xs text-slate-300">
+            Instruments 10 visual buffer slots at Ceragon Node 0 with flashing RED tail-drop alerts when queues hit 150/150 under surge.
+          </p>
+        </div>
+        <div>
+          <span class="text-xs font-mono font-bold text-purple-400 block mb-1">🛡️ DETERMINISTIC TSN MAPPING</span>
+          <p class="text-xs text-slate-300">
+            Maps IEEE 802.1Q PCP Class 6 &amp; WiFi EDCA <code class="text-purple-300">AC_VO</code> directly into PfifoFast Band 0 strict priority queues.
+          </p>
+        </div>
+        <div>
+          <span class="text-xs font-mono font-bold text-emerald-400 block mb-1">🚀 HYBRID LOCAL / REMOTE</span>
+          <p class="text-xs text-slate-300">
+            Dispatches to remote Ninja build on <code class="text-slate-400">efid@cersrv-029</code>, with instant fallback to local analytical engine for GitHub clones.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SLIDE 5: ADAPTER 2 — TFS SOUTHBOUND & HARDWARE DRIVER ADAPTER -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="slide flex-col justify-between min-h-[620px] bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative backdrop-blur-md" id="slide-4">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-cyan-400 font-bold tracking-wider">SECTION 4: HOW ADAPTER 2 FUNCTIONS</span>
+          <span class="text-xs font-mono text-slate-400">Slide 5 of 6</span>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+          <span>Adapter 2: TFS Southbound &amp; Hardware Driver Adapter</span>
+          <span class="text-xs font-mono text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded border border-emerald-500/30">
+            THE PHYSICAL ACTUATOR
+          </span>
+        </h2>
+        <p class="text-sm text-slate-300 max-w-4xl">
+          How decisions are safely translated from the cyber twin into physical Ceragon microwave transceivers without ever endangering production customer traffic.
+        </p>
+      </div>
+
+      <!-- 3-Stage Safety Architecture Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 my-6">
+        
+        <!-- Stage 1 -->
+        <div class="bg-slate-950 border border-purple-500/40 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-purple-400">PHASE 1: STAGING</span>
+            <span class="text-[10px] font-mono bg-purple-500/20 text-purple-200 px-2 py-0.5 rounded">RFC 8040 CANDIDATE</span>
+          </div>
+          <strong class="text-sm text-white block">Candidate Datastore Staging</strong>
+          <p class="text-xs text-slate-400 leading-normal">
+            The decision engine proposes mitigation rules. The adapter stages them in ETSI TeraFlowSDN's Candidate Datastore (isolated from running traffic):
+          </p>
+          <ul class="text-xs font-mono space-y-1.5 text-slate-300 border-t border-slate-800 pt-3">
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400">✓</span> <span>ACM Floor Hardened: <strong class="text-emerald-300">&ge; MCS 4</strong> (&ge; 500 Mbps)</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-cyan-400">✓</span> <span>QoS Queue: <strong class="text-cyan-300">PCP Class 6</strong> (Band 0 Strict)</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-purple-400">✓</span> <span>Frequency: <strong class="text-purple-300">64.80 GHz</strong> (Interference avoidance)</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Stage 2 -->
+        <div class="bg-slate-950 border border-amber-500/40 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-amber-400">PHASE 2: VERIFICATION</span>
+            <span class="text-[10px] font-mono bg-amber-500/20 text-amber-200 px-2 py-0.5 rounded">3GPP TS 28.561</span>
+          </div>
+          <strong class="text-sm text-white block">Pre-Flight Safety Envelope</strong>
+          <p class="text-xs text-slate-400 leading-normal">
+            Before touching physical hardware, the adapter validates candidate changes against 4 strict envelope gates:
+          </p>
+          <ul class="text-xs font-mono space-y-1.5 text-slate-300 border-t border-slate-800 pt-3">
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400">✓</span> <span>Gate 1: Latency Bound Pass (1.12ms &le; 1.5ms)</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400">✓</span> <span>Gate 2: Queue Stability Pass (Buffer &lt; 40%)</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400">✓</span> <span>Gate 3: HW Capability Pass (MH-T261 supports MCS 4)</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400">✓</span> <span>Gate 4: Spectral Mask Pass (Approved V-Band channel)</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Stage 3 -->
+        <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-emerald-400">PHASE 3: 2PC ACTUATION</span>
+            <span class="text-[10px] font-mono bg-emerald-500/20 text-emerald-200 px-2 py-0.5 rounded">RESTCONF COMMIT</span>
+          </div>
+          <strong class="text-sm text-white block">Atomic 2-Phase Commit (2PC)</strong>
+          <p class="text-xs text-slate-400 leading-normal">
+            The adapter issues an atomic two-phase commit over HTTP/RESTCONF to physical socket <code class="text-emerald-300">192.168.1.225:80</code>:
+          </p>
+          <ul class="text-xs font-mono space-y-1.5 text-slate-300 border-t border-slate-800 pt-3">
+            <li class="flex items-start gap-1.5">
+              <span class="text-yellow-400">&rarr;</span> <span>Step 1: <strong class="text-white">PATCH candidate</strong> datastore</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-emerald-400">&rarr;</span> <span>Step 2: <strong class="text-emerald-300">POST ietf-netconf:commit</strong></span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-cyan-400">&rarr;</span> <span>Step 3: Continuous RFC 8040 telemetry sync</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-purple-400">&rarr;</span> <span>Failover: Instant rollback if telemetry breaches</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Bottom Zero Outage Guarantee -->
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+        <span class="text-xs text-slate-300 flex items-center gap-2">
+          <span class="text-base">🔒</span>
+          <strong>Zero-Outage Guarantee:</strong> Staged datastores + discrete verification guarantee that destructive configurations are rejected in software before hitting production transceivers.
+        </span>
+        <button onclick="goToSlide(5)" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono cursor-pointer">
+          Next: Summary &rarr;
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SLIDE 6: SUMMARY & OPERATIONAL VALUE -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section class="slide flex-col justify-between min-h-[620px] bg-slate-900/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative backdrop-blur-md" id="slide-5">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-cyan-400 font-bold tracking-wider">SECTION 5: OPERATIONAL IMPACT &amp; SUMMARY</span>
+          <span class="text-xs font-mono text-slate-400">Slide 6 of 6</span>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white">
+          Summary: End-to-End Closed-Loop Operational Value
+        </h2>
+        <p class="text-sm text-slate-300 max-w-4xl">
+          By unifying TM Forum intent, ETSI TeraFlowSDN, NS-3 co-simulation, and Ceragon hardware through standards-based adapters, the platform turns reactive manual troubleshooting into autonomous self-healing transport.
+        </p>
+      </div>
+
+      <!-- 3 Large Value Pillars -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 my-6">
+        
+        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-5 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl">
+            🛡️
+          </div>
+          <strong class="text-base text-white block">Zero-Risk What-If Validation</strong>
+          <span class="text-xs font-mono text-cyan-300 block">Predictive Discrete Simulation</span>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Operators can safely perturb the network (3.5x bulk surges, category-5 rain fade, fiber link cuts) inside a microsecond-accurate digital twin without endangering production customer traffic.
+          </p>
+        </div>
+
+        <div class="bg-slate-950 border border-purple-500/40 rounded-2xl p-5 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl">
+            🌐
+          </div>
+          <strong class="text-base text-white block">Multi-Vendor Interoperability</strong>
+          <span class="text-xs font-mono text-purple-300 block">Anchored in 3GPP, ITU-T &amp; IETF</span>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Zero vendor lock-in. Built entirely on open industry standards: TM Forum TMF921 Intent API, 3GPP TS 28.561 NDT lifecycle, ITU-T Y.3090, IETF DTI, and RFC 8040 RESTCONF.
+          </p>
+        </div>
+
+        <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-5 space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+            ⚡
+          </div>
+          <strong class="text-base text-white block">Sub-Second Closed Loop</strong>
+          <span class="text-xs font-mono text-emerald-300 block">Autonomous Self-Healing</span>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Replaces hours of manual CLI analysis with an autonomous, closed-loop assurance cycle: SLA intent is ingested, simulated in NS-3, safety-verified, and actuated via TFS in <strong>~1.9 to 2.2 seconds</strong>.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Quick Adapter Matrix Bar -->
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <span class="text-xs font-mono font-bold text-slate-300">COMPONENTS IN ACTION:</span>
+          <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+            <span class="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">TMF921 Intent</span>
+            <span class="text-slate-600">&rarr;</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">ETSI TFS (:8088)</span>
+            <span class="text-slate-600">&rarr;</span>
+            <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">NS-3 cersrv-029</span>
+            <span class="text-slate-600">&rarr;</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Ceragon MH-T261</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="goToSlide(0)" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono text-white transition-all cursor-pointer">
+            ↺ Restart Presentation
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM STATUS & PROGRESS BAR -->
+  <footer class="no-print border-t border-slate-800/80 bg-slate-900/90 backdrop-blur-md px-6 py-2.5 flex items-center justify-between text-xs text-slate-400">
+    <div class="flex items-center gap-4">
+      <span class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span>Keyboard: Use <strong>&larr; / &rarr;</strong> or <strong>Spacebar</strong> to navigate</span>
+      </span>
+      <span>•</span>
+      <span>Press <strong>F</strong> for Fullscreen</span>
+    </div>
+
+    <!-- Interactive Slide Dots Indicator -->
+    <div class="flex items-center gap-2" id="slide-dots">
+      <button onclick="goToSlide(0)" class="w-2.5 h-2.5 rounded-full bg-cyan-400 transition-all cursor-pointer" title="Slide 1"></button>
+      <button onclick="goToSlide(1)" class="w-2.5 h-2.5 rounded-full bg-slate-700 transition-all cursor-pointer" title="Slide 2"></button>
+      <button onclick="goToSlide(2)" class="w-2.5 h-2.5 rounded-full bg-slate-700 transition-all cursor-pointer" title="Slide 3"></button>
+      <button onclick="goToSlide(3)" class="w-2.5 h-2.5 rounded-full bg-slate-700 transition-all cursor-pointer" title="Slide 4"></button>
+      <button onclick="goToSlide(4)" class="w-2.5 h-2.5 rounded-full bg-slate-700 transition-all cursor-pointer" title="Slide 5"></button>
+      <button onclick="goToSlide(5)" class="w-2.5 h-2.5 rounded-full bg-slate-700 transition-all cursor-pointer" title="Slide 6"></button>
+    </div>
+
+    <div class="font-mono text-[11px] text-slate-500">
+      CER-INTENT &amp; ETSI TERAFLOWSDN
+    </div>
+  </footer>
+
+  <!-- PRESENTATION ENGINE JAVASCRIPT -->
+  <script>
+    let currentSlide = 0;
+    const totalSlides = 6;
+
+    function updateSlideDisplay() {
+      // Toggle active classes
+      for (let i = 0; i < totalSlides; i++) {
+        const el = document.getElementById(`slide-${i}`);
+        if (el) {
+          el.classList.toggle('active', i === currentSlide);
+        }
+      }
+
+      // Update indicator & dropdown
+      const ind = document.getElementById('slide-indicator');
+      if (ind) ind.textContent = `${currentSlide + 1} / ${totalSlides}`;
+
+      const jump = document.getElementById('slide-jump');
+      if (jump) jump.value = currentSlide;
+
+      // Update dots
+      const dots = document.querySelectorAll('#slide-dots button');
+      dots.forEach((dot, idx) => {
+        if (idx === currentSlide) {
+          dot.className = "w-6 h-2.5 rounded-full bg-cyan-400 transition-all cursor-pointer shadow-[0_0_8px_#00d4ff]";
+        } else {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-slate-700 hover:bg-slate-500 transition-all cursor-pointer";
+        }
+      });
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlideDisplay();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlideDisplay();
+      }
+    }
+
+    function goToSlide(n) {
+      if (n >= 0 && n < totalSlides) {
+        currentSlide = n;
+        updateSlideDisplay();
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+
+    // Keyboard Event Listener
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'Backspace' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+      } else if (e.key >= '1' && e.key <= '6') {
+        goToSlide(parseInt(e.key) - 1);
+      }
+    });
+
+    // Initialize
+    updateSlideDisplay();
+  </script>
+</body>
+</html>
