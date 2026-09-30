@@ -323,19 +323,64 @@
         </div>
         <h2 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
           <span>Standards for Digital Twin APIs We Use &amp; What They Are</span>
-          <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
-            MANDATORY COMPLIANCE
+          <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            3GPP TS 28.561 ANCHOR
           </span>
         </h2>
         <p class="text-sm text-slate-300 max-w-4xl">
-          The digital twin does not use proprietary protocols. Every single interface is mapped directly to international telecom standards across TM Forum, 3GPP, ITU-T, IETF, and ETSI.
+          Primary Anchor: <strong>3GPP TS 28.561</strong> defines the approved NDT Management Service, NdtJob model, and simulation result semantics. <strong>ITU-T Q.5040</strong> provides the emerging signaling standard, backed by <strong>ITU-T Y.3090/Y.3092</strong> for architecture and fidelity governance.
         </p>
       </div>
 
       <!-- 6 Standards Interactive Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 my-4">
         
-        <!-- Standard 1: TM Forum TMF921 -->
+        <!-- Standard 1: 3GPP TS 28.561 (PRIMARY ANCHOR) -->
+        <div class="bg-slate-950 border-2 border-emerald-500/60 rounded-2xl p-4 space-y-2 hover:border-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-emerald-400">3GPP TS 28.561</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/25 text-emerald-200 font-bold">PRIMARY APPROVED ANCHOR</span>
+          </div>
+          <strong class="text-sm text-white block">NDT Management Service &amp; NdtJob Model</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> Approved 3GPP specification standardizing the <strong>NDT Management Service (NDT_MnS)</strong>, the <strong>NdtJob Model (`NdtSimulationJob`)</strong>, and <strong>Simulation Result Semantics</strong>.
+          </p>
+          <div class="text-[11px] font-mono text-emerald-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Drives the TeraFlow-to-NS-3 call pattern: TFS instantiates an <code class="text-white">NdtJob</code>, dispatches perturbation, and ingests standardized <code class="text-emerald-300">SimulationResult</code> (PDB, PER, breach prediction).
+          </div>
+        </div>
+
+        <!-- Standard 2: ITU-T Q.5040 -->
+        <div class="bg-slate-950 border-2 border-cyan-500/60 rounded-2xl p-4 space-y-2 hover:border-cyan-400 transition-all shadow-[0_0_15px_rgba(0,212,255,0.15)]">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-cyan-300">ITU-T Q.5040</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/25 text-cyan-200 font-bold">FUTURE SIGNALING PROTOCOL</span>
+          </div>
+          <strong class="text-sm text-white block">Signaling Architecture &amp; Control for DTN</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> ITU-T Study Group 11 standard defining signaling procedures for simulation task invocation (<code class="text-cyan-200">Sim-Task-Req</code>), execution control (<code class="text-cyan-200">Sim-Ctrl</code>), and KPI streaming.
+          </p>
+          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> The likely future signaling wire protocol for our REST/JSON and SSH RPC bridge connecting ETSI TeraFlowSDN with the discrete NS-3 cluster on <code class="text-white">cersrv-029</code>.
+          </div>
+        </div>
+
+        <!-- Standard 3: ITU-T Y.3090 / Y.3092 -->
+        <div class="bg-slate-950 border border-purple-500/40 rounded-2xl p-4 space-y-2 hover:border-purple-400 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-purple-300">ITU-T Y.3090 / Y.3092</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-200">DTN ARCH &amp; MMEF</span>
+          </div>
+          <strong class="text-sm text-white block">Architecture &amp; Model Fidelity Governance</strong>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            <strong class="text-slate-100">What it is:</strong> ITU-T SG13 3-layer reference model (Y.3090) and Model Management &amp; Execution Framework (Y.3092) for model fidelity selection.
+          </p>
+          <div class="text-[11px] font-mono text-purple-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+            <strong>In Our System:</strong> Dictates our 5-Tier <strong>Simulation Resolution Governor</strong> (scoping fidelity vs compute time) and shadow datastore synchronization.
+          </div>
+        </div>
+
+        <!-- Standard 4: TM Forum TMF921 -->
         <div class="bg-slate-950 border border-purple-500/40 rounded-2xl p-4 space-y-2 hover:border-purple-400 transition-all">
           <div class="flex items-center justify-between">
             <span class="text-xs font-mono font-bold text-purple-300">TM FORUM TMF921</span>
@@ -347,51 +392,6 @@
           </p>
           <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
             <strong>In Our System:</strong> Ingests <code class="text-purple-300">latency &le; 1.5ms</code>, tracks state (<code class="text-emerald-400">INGESTED</code> &rarr; <code class="text-cyan-400">EVALUATING</code> &rarr; <code class="text-emerald-400">COMPLIANT</code>).
-          </div>
-        </div>
-
-        <!-- Standard 2: 3GPP TS 28.561 -->
-        <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-4 space-y-2 hover:border-emerald-400 transition-all">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-emerald-400">3GPP TS 28.561</span>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-200">5G/6G NDT</span>
-          </div>
-          <strong class="text-sm text-white block">Network Digital Twin Lifecycle</strong>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            <strong class="text-slate-100">What it is:</strong> 3GPP Release 18/19 architecture defining closed-loop validation, safety envelopes, and autonomous assurance.
-          </p>
-          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-            <strong>In Our System:</strong> Governs the <strong>4-Phase Pre-Flight Safety Gate</strong> (Latency, Queue Stability, Hardware, Spectral Mask) before actuation.
-          </div>
-        </div>
-
-        <!-- Standard 3: ITU-T Y.3090 -->
-        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-4 space-y-2 hover:border-cyan-400 transition-all">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-cyan-400">ITU-T Y.3090</span>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-200">DTN ARCHITECTURE</span>
-          </div>
-          <strong class="text-sm text-white block">Digital Twin Network Reference Model</strong>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            <strong class="text-slate-100">What it is:</strong> ITU-T 3-layer reference model (Physical Network &harr; Digital Twin Layer &harr; Network Application Layer).
-          </p>
-          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-            <strong>In Our System:</strong> Dictates the <strong>Shadow Datastore Synchronization</strong> protocol keeping cyber representations in sync with live microwave hardware.
-          </div>
-        </div>
-
-        <!-- Standard 4: IETF NMRG DTI -->
-        <div class="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 space-y-2 hover:border-amber-400 transition-all">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-amber-400">IETF NMRG DTI</span>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-200">SIMULATION SBI</span>
-          </div>
-          <strong class="text-sm text-white block">Digital Twin Interface (RFC Draft)</strong>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            <strong class="text-slate-100">What it is:</strong> IETF research standard for Twin-to-Simulator East-West communication and model fidelity negotiation.
-          </p>
-          <div class="text-[11px] font-mono text-cyan-300 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-            <strong>In Our System:</strong> Standardizes perturbation dispatch (traffic surge, rain fade) and discrete packet trace streaming from NS-3.
           </div>
         </div>
 
@@ -449,13 +449,13 @@
           <span class="text-xs font-mono text-slate-400">Slide 4 of 6</span>
         </div>
         <h2 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-          <span>Adapter 1: TFS-to-NS-3 Simulation Adapter</span>
-          <span class="text-xs font-mono text-cyan-400 bg-cyan-500/15 px-2.5 py-0.5 rounded border border-cyan-500/30">
-            THE CYBER MIRROR
+          <span>Adapter 1: TeraFlow-to-NS-3 Simulation Adapter</span>
+          <span class="text-xs font-mono text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded border border-emerald-500/30">
+            3GPP TS 28.561 NdtJob &amp; Q.5040 SIGNALING
           </span>
         </h2>
         <p class="text-sm text-slate-300 max-w-4xl">
-          This adapter bridges ETSI TeraFlowSDN's live macroscopic network topology with the microsecond-accurate C++ discrete event simulation core on <code class="text-cyan-300">efid@cersrv-029</code>.
+          Anchored in the approved <strong>3GPP TS 28.561 NDT Management Service</strong>: ETSI TeraFlowSDN instantiates an <code>NdtSimulationJob</code>, executes discrete NS-3 co-simulation using the <strong>ITU-T Q.5040 signaling pattern</strong>, and ingests standardized <code>SimulationResult</code> semantics.
         </p>
       </div>
 
@@ -467,31 +467,31 @@
           <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 font-mono font-bold flex items-center justify-center text-sm border border-purple-500/40">
             01
           </div>
-          <strong class="text-sm text-white block">Topology &amp; Telemetry Sync</strong>
+          <strong class="text-sm text-white block">TFS Context &rarr; 3GPP NDTI</strong>
           <p class="text-xs text-slate-400 leading-normal">
-            Queries TFS Context (<code class="text-slate-300">:8088</code>) to fetch the 34-node carrier graph, link capacities, and Ceragon RF metrics (RSSI <code class="text-emerald-400">-58 dBm</code>, <code class="text-cyan-400">MCS 8</code>).
+            Queries TFS Context (<code class="text-slate-300">:8088</code>) to populate the active 3GPP TS 28.561 <strong>Network Digital Twin Instance (NDTI)</strong> with live 34-node topology and Ceragon RF metrics (RSSI <code class="text-emerald-400">-58 dBm</code>, <code class="text-cyan-400">MCS 8</code>).
           </p>
         </div>
 
         <!-- Step 2 -->
-        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-4 space-y-2 relative">
-          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 font-mono font-bold flex items-center justify-center text-sm border border-cyan-500/40">
+        <div class="bg-slate-950 border border-emerald-500/40 rounded-2xl p-4 space-y-2 relative">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 font-mono font-bold flex items-center justify-center text-sm border border-emerald-500/40">
             02
           </div>
-          <strong class="text-sm text-white block">Simulation Governor (Scoping)</strong>
+          <strong class="text-sm text-white block">3GPP NdtJob &amp; Y.3092 Scoping</strong>
           <p class="text-xs text-slate-400 leading-normal">
-            Rather than simulating all 34 nodes (which takes minutes), scopes to <strong>Tier 4: URLLC Slice (23 nodes, 95% fidelity)</strong> executing in <strong>~1,150ms</strong>.
+            Instantiates a standardized 3GPP <code class="text-emerald-300">NdtSimulationJob</code>. The Y.3092 Governor scopes the graph to <strong>Tier 4: URLLC Slice (23 nodes, 95% fidelity)</strong> executing in <strong>~1,150ms</strong>.
           </p>
         </div>
 
         <!-- Step 3 -->
-        <div class="bg-slate-950 border border-amber-500/40 rounded-2xl p-4 space-y-2 relative">
-          <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 font-mono font-bold flex items-center justify-center text-sm border border-amber-500/40">
+        <div class="bg-slate-950 border border-cyan-500/40 rounded-2xl p-4 space-y-2 relative">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 font-mono font-bold flex items-center justify-center text-sm border border-cyan-500/40">
             03
           </div>
-          <strong class="text-sm text-white block">What-If Perturbation Dispatch</strong>
+          <strong class="text-sm text-white block">Q.5040 Simulation Signaling</strong>
           <p class="text-xs text-slate-400 leading-normal">
-            Injects stress: a <strong>3.5x bulk traffic burst</strong> on STA 1 (bufferbloat) or <strong>ITU-R P.838 rain fade</strong> (dropping modulation from 1Gbps to 100Mbps).
+            Dispatches task to discrete core on <code class="text-cyan-300">efid@cersrv-029</code> following the <strong>ITU-T Q.5040 signaling pattern</strong> (<code class="text-cyan-200">Sim-Task-Req</code>), injecting 3.5x bulk burst or ITU-R P.838 rain fade.
           </p>
         </div>
 
@@ -500,9 +500,9 @@
           <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 font-mono font-bold flex items-center justify-center text-sm border border-emerald-500/40">
             04
           </div>
-          <strong class="text-sm text-white block">Discrete Trace &amp; NetAnim XML</strong>
+          <strong class="text-sm text-white block">SimulationResult Semantics</strong>
           <p class="text-xs text-slate-400 leading-normal">
-            Generates <code class="text-emerald-300">/tmp/tsn_wifi_ceragon_anim.xml</code> and streams microsecond queue depths, tail-drops, and packet transit times back to the twin.
+            Ingests standardized 3GPP <code class="text-emerald-300">SimulationResult</code> (predicted PDB latency, PER loss, buffer queue depth, <code class="text-yellow-300">slaBreachPredicted</code>) and discrete NetAnim trace to gate physical actuation.
           </p>
         </div>
 
@@ -511,21 +511,21 @@
       <!-- Technical Architecture Highlights -->
       <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <span class="text-xs font-mono font-bold text-cyan-400 block mb-1">🎮 NETANIM VISUALIZATION</span>
+          <span class="text-xs font-mono font-bold text-emerald-400 block mb-1">📋 3GPP TS 28.561 NDT_MnS</span>
           <p class="text-xs text-slate-300">
-            Instruments 10 visual buffer slots at Ceragon Node 0 with flashing RED tail-drop alerts when queues hit 150/150 under surge.
+            Implements approved 3GPP NDT management service operations: job parameterization, target subnetwork scoping, and simulation result semantics.
           </p>
         </div>
         <div>
-          <span class="text-xs font-mono font-bold text-purple-400 block mb-1">🛡️ DETERMINISTIC TSN MAPPING</span>
+          <span class="text-xs font-mono font-bold text-cyan-400 block mb-1">📡 ITU-T Q.5040 SIGNALING</span>
           <p class="text-xs text-slate-300">
-            Maps IEEE 802.1Q PCP Class 6 &amp; WiFi EDCA <code class="text-purple-300">AC_VO</code> directly into PfifoFast Band 0 strict priority queues.
+            Adopts the emerging Q.5040 task invocation and report signaling pattern between ETSI TeraFlowSDN and the remote NS-3 simulation engine.
           </p>
         </div>
         <div>
-          <span class="text-xs font-mono font-bold text-emerald-400 block mb-1">🚀 HYBRID LOCAL / REMOTE</span>
+          <span class="text-xs font-mono font-bold text-purple-400 block mb-1">🎮 NETANIM DISCRETE REPLAY</span>
           <p class="text-xs text-slate-300">
-            Dispatches to remote Ninja build on <code class="text-slate-400">efid@cersrv-029</code>, with instant fallback to local analytical engine for GitHub clones.
+            Renders true discrete packet queues (0.000s &rarr; 2.500s), 10 visual buffer slots at Ceragon Node 0, and red tail-drop flashes.
           </p>
         </div>
       </div>
