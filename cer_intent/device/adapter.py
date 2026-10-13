@@ -131,12 +131,17 @@ class TeraFlowAdapter(AdapterBase):
         self._tfs_client = TFSClient()
         self._make_uuid = make_uuid
         self._base_url = self._tfs_client.base_url
+        self._uuid_cache = {}
 
     def _resolve_device_uuid(self, device_id: str) -> str:
         """Resolve a shorthand device ID or name to its authoritative TFS UUID."""
+        if device_id in self._uuid_cache:
+            return self._uuid_cache[device_id]
+
         if self._registry:
             tfs_uuid = self._registry.get_tfs_uuid(device_id)
             if tfs_uuid:
+                self._uuid_cache[device_id] = tfs_uuid
                 return tfs_uuid
 
         # Check if it's a known Ceragon physical device registered in TFS
@@ -144,7 +149,9 @@ class TeraFlowAdapter(AdapterBase):
             try:
                 for dev in self._tfs_client.get_devices():
                     if "ceragon" in dev.get("name", "").lower():
-                        return dev["device_id"]["device_uuid"]["uuid"]
+                        u = dev["device_id"]["device_uuid"]["uuid"]
+                        self._uuid_cache[device_id] = u
+                        return u
             except Exception:
                 pass
 
@@ -152,9 +159,12 @@ class TeraFlowAdapter(AdapterBase):
         try:
             import uuid
             uuid.UUID(device_id)
+            self._uuid_cache[device_id] = device_id
             return device_id
         except ValueError:
-            return self._make_uuid(device_id)
+            u = self._make_uuid(device_id)
+            self._uuid_cache[device_id] = u
+            return u
 
     def _build_tfs_config_rules(self, config: DeviceConfig) -> List[Dict[str, Any]]:
         """
@@ -193,6 +203,12 @@ class TeraFlowAdapter(AdapterBase):
             op_updates["protection_mode"] = config.parameters.get("protection_mode", "1+1_HSB")
         elif config.config_type == "slice":
             op_updates["active_slice"] = config.parameters.get("slice_id") or config.intent_id
+        elif config.config_type == "energy":
+            op_updates["energy_mode"] = config.parameters.get("energy_mode", "saving")
+            if "sleep_sectors" in config.parameters:
+                op_updates["sleep_sectors"] = config.parameters["sleep_sectors"]
+            if "target_power_w" in config.parameters and config.parameters["target_power_w"]:
+                op_updates["target_power_w"] = config.parameters["target_power_w"]
 
         if op_updates:
             config_rules.append({

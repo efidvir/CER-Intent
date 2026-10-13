@@ -26,6 +26,7 @@ from cer_intent.device.knowledge_base import HardwareKnowledgeBase
 from cer_intent.architect.agent import IntentArchitectAgent
 from cer_intent.architect.executor import ArchitectExecutor
 from cer_intent.api.digital_twin_routes import dt_bp
+from cer_intent.api.restconf_routes import restconf_bp
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ def create_app(registry, audit_log) -> Flask:
     CORS(app)
     socketio.init_app(app)
     app.register_blueprint(dt_bp)
+    app.register_blueprint(restconf_bp)
 
     # One-time init of shared components
     state_store = StateStore(os.getenv("STATE_FILE", "data/topology_state.json"))

@@ -79,7 +79,7 @@
           </div>
         </div>
 
-        <!-- 3 Primary Navigation Tabs -->
+        <!-- 4 Primary Navigation Tabs -->
         <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
           <button id="tab-btn-sim" onclick="switchMainTab('simulation')" class="tab-btn active px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all flex items-center gap-2">
             <span>🎮</span> NS-3 Discrete Animator
@@ -89,6 +89,9 @@
           </button>
           <button id="tab-btn-loop" onclick="switchMainTab('closed-loop')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-2">
             <span>🔁</span> 5-Stage Closed Loop
+          </button>
+          <button id="tab-btn-d31" onclick="switchMainTab('d31-transport')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-2">
+            <span>📜</span> D3.1 Transport &amp; RFC 9543
           </button>
         </div>
       </div>
@@ -774,6 +777,214 @@
 
     </div>
 
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 4: D3.1 TRANSPORT & RFC 9543 ALIGNMENT VIEW -->
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    <div id="view-d31-transport" class="space-y-6 hidden">
+
+      <!-- NSC Architecture & 7-Step Workflow Header -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 text-xs font-mono font-bold rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                EU HORIZON UNITY-6G D3.1
+              </span>
+              <span class="px-2.5 py-0.5 text-xs font-mono font-bold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                IETF RFC 9543 / RFC 8040 RESTCONF
+              </span>
+            </div>
+            <h2 class="text-lg font-bold text-white mt-1">
+              Network Slice Controller (NSC) &amp; NDT Path Computation Engine (PCE) Workflow
+            </h2>
+            <p class="text-xs text-slate-400">
+              Deliverable D3.1 Section 2.4.1.1 (Figure 2-17 &amp; 2-18) &amp; Section 3.4.1 Transport Exposure
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="triggerNdtPce()" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>⚡</span> Trigger NDT PCE Planner
+            </button>
+            <button onclick="createRfc9543Slice()" class="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>🚀</span> Instantiate RFC 9543 Slice
+            </button>
+          </div>
+        </div>
+
+        <!-- 7-Step Interactive Flow Visualizer (Figure 2-18) -->
+        <div class="grid grid-cols-2 md:grid-cols-7 gap-2 text-center text-xs font-mono">
+          <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="text-[10px] text-slate-500 block">STEP 1</span>
+            <strong class="text-cyan-400 block text-[11px]">IDMO Request</strong>
+            <span class="text-[9px] text-slate-400">Transport Config</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="text-[10px] text-slate-500 block">STEP 2</span>
+            <strong class="text-cyan-400 block text-[11px]">Service Adapter</strong>
+            <span class="text-[9px] text-slate-400">Slice Request</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="text-[10px] text-slate-500 block">STEP 3</span>
+            <strong class="text-purple-400 block text-[11px]">NBI Translator</strong>
+            <span class="text-[9px] text-slate-400">RFC 9543 YANG</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950 border border-purple-500/50 bg-purple-950/20">
+            <span class="text-[10px] text-purple-400 block font-bold">STEP 4 &amp; 5</span>
+            <strong class="text-purple-300 block text-[11px]">NDT PCE Planner</strong>
+            <span class="text-[9px] text-emerald-400 font-bold">Digital Twin Path</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="text-[10px] text-slate-500 block">STEP 6</span>
+            <strong class="text-cyan-400 block text-[11px]">NSC Realizer</strong>
+            <span class="text-[9px] text-slate-400">L2SM / L3SM</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+            <span class="text-[10px] text-slate-500 block">STEP 7</span>
+            <strong class="text-cyan-400 block text-[11px]">TFS Controller</strong>
+            <span class="text-[9px] text-slate-400">L2/L3VPN NBI</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950 border border-emerald-500/40 bg-emerald-950/20">
+            <span class="text-[10px] text-emerald-400 block font-bold">ACTUATION</span>
+            <strong class="text-emerald-300 block text-[11px]">Ceragon / FRR</strong>
+            <span class="text-[9px] text-emerald-400">RESTCONF 2PC</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-Column Content: RFC 9543 Slices & SLO/SLE vs Energy Models -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Column 1: IETF RFC 9543 Slice Services & SLOs vs SLEs -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>🌐</span> IETF RFC 9543 Transport Slices &amp; SLO/SLE Templates
+            </h3>
+            <span class="text-[10px] font-mono text-cyan-400">/restconf/data/...</span>
+          </div>
+
+          <!-- Measurable SLOs vs Non-Measurable SLEs Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Measurable SLOs -->
+            <div class="p-3.5 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold font-mono text-emerald-400">DIRECTLY MEASURABLE SLOs</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">ACTIVE</span>
+              </div>
+              <ul class="text-xs space-y-1 font-mono text-slate-300">
+                <li class="flex justify-between"><span>Max One-Way Delay:</span> <strong class="text-emerald-400">&le; 1.50 ms</strong></li>
+                <li class="flex justify-between"><span>Max Micro-Jitter:</span> <strong class="text-emerald-400">&le; 0.50 ms</strong></li>
+                <li class="flex justify-between"><span>Packet Loss Ratio:</span> <strong class="text-emerald-400">&le; 0.001 %</strong></li>
+                <li class="flex justify-between"><span>Guaranteed Rate:</span> <strong class="text-emerald-400">&ge; 500 Mbps</strong></li>
+              </ul>
+            </div>
+
+            <!-- Non-Measurable SLEs -->
+            <div class="p-3.5 rounded-xl bg-slate-950 border border-purple-500/30 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold font-mono text-purple-400">POLICY CONSTRAINTS (SLEs)</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">ENFORCED</span>
+              </div>
+              <ul class="text-xs space-y-1 font-mono text-slate-300">
+                <li class="flex justify-between"><span>Security Policy:</span> <strong class="text-purple-300">MACsec Encrypted</strong></li>
+                <li class="flex justify-between"><span>Isolation Level:</span> <strong class="text-purple-300">Dedicated Time-Slot</strong></li>
+                <li class="flex justify-between"><span>Availability Target:</span> <strong class="text-purple-300">99.999% SLA</strong></li>
+                <li class="flex justify-between"><span>Midhaul F1u Socket:</span> <strong class="text-purple-300">DSCP 7 (SST:2)</strong></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Active Slices & Realizer Payload -->
+          <div class="space-y-2">
+            <span class="text-[11px] font-mono text-slate-400 block font-bold">ACTIVE RFC 9543 SLICE INSTANCE &amp; PCE COMPUTED PATH:</span>
+            <div id="d31-slice-pce-box" class="bg-black/90 p-3.5 rounded-xl border border-slate-800 font-mono text-[11px] text-cyan-300 space-y-1">
+              <div>Loading RFC 9543 Slice and PCE underlay path...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Telefónica Transport Energy YANG Models (Section 4.2.5) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>⚡</span> Transport Energy Models (Telefónica D3.1 Section 4.2.5)
+            </h3>
+            <span class="text-[10px] font-mono text-emerald-400">instantaneous-device-energy-tid</span>
+          </div>
+
+          <!-- Energy Telemetry Gauges -->
+          <div class="grid grid-cols-3 gap-2">
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-center">
+              <span class="text-[10px] text-slate-500 block">TOTAL POWER</span>
+              <strong id="d31-energy-power" class="text-base font-mono text-emerald-400">28.50 W</strong>
+              <span class="text-[9px] text-slate-400">Ceragon ctu-96</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-center">
+              <span class="text-[10px] text-slate-500 block">ENERGY MODE</span>
+              <strong id="d31-energy-mode" class="text-base font-mono text-purple-400">ECO-SAVING</strong>
+              <span class="text-[9px] text-slate-400">Sector-2 Sleep</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-center">
+              <span class="text-[10px] text-slate-500 block">EFFICIENCY</span>
+              <strong id="d31-energy-eff" class="text-base font-mono text-cyan-400">0.000014</strong>
+              <span class="text-[9px] text-slate-400">Watts / fps</span>
+            </div>
+          </div>
+
+          <!-- Instantaneous Device Energy YANG Record (Figure 4-13) -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-mono text-slate-400 font-bold">YANG RECORD: instantaneous-device-energy-tid:device</span>
+              <span class="text-[10px] font-mono text-slate-500">RFC 8040 RESTCONF</span>
+            </div>
+            <pre class="bg-black/90 p-3 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 max-h-48 overflow-y-auto" id="d31-energy-json">// Loading instantaneous energy telemetry...</pre>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Row: IETF TVR (Time-Variant Routing) & RFC 8639 Subscriptions -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- IETF TVR Topology Schedules (Section 4.2.4.3) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>⏱️</span> IETF Time-Variant Routing (TVR) Schedules (ietf-tvr-topology)
+            </h3>
+            <span class="text-[10px] font-mono text-yellow-400">D3.1 Section 4.2.4.3</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-slate-300">Target Element: <strong class="text-yellow-400">link-ctu96-ctu97</strong></span>
+              <span class="px-2 py-0.5 text-[9px] rounded bg-yellow-500/20 text-yellow-300 font-bold">SCHEDULED DEGRADED</span>
+            </div>
+            <p class="text-[11px] text-slate-400">
+              Scheduled Weather Event: Heavy Rain Attenuation (&Delta;14.5 dB) between 14:00:00Z &mdash; 14:30:00Z.
+              NDT PCE Planner automatically reroutes URLLC traffic via optical edge-router-01 before the degradation window fires!
+            </p>
+          </div>
+        </div>
+
+        <!-- RFC 8639 Subscribed Notifications -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>🔔</span> IETF Subscribed Notifications (RFC 8639 / RFC 8641)
+            </h3>
+            <span class="text-[10px] font-mono text-cyan-400">establish-subscription</span>
+          </div>
+          <div id="d31-sub-box" class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 space-y-1">
+            <div>Subscription: <strong class="text-cyan-300">sub-e24ed6</strong> &bull; Target: <span class="text-purple-300">slice-urllc-factory</span></div>
+            <div class="text-[11px] text-slate-400">Callback Destination: <span class="text-slate-200">http://localhost:5000/api/v1/telemetry/callbacks</span></div>
+            <div class="text-[10px] text-emerald-400 pt-1">● Stream Active: 0 SLO violations detected across active transport hops.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
   </div>
 
   <script>
@@ -811,6 +1022,7 @@
       document.getElementById('view-simulation').classList.add('hidden');
       document.getElementById('view-tfs-internals').classList.add('hidden');
       document.getElementById('view-closed-loop').classList.add('hidden');
+      document.getElementById('view-d31-transport').classList.add('hidden');
 
       if (tab === 'simulation') {
         document.getElementById('tab-btn-sim').classList.add('active');
@@ -822,6 +1034,106 @@
       } else if (tab === 'closed-loop') {
         document.getElementById('tab-btn-loop').classList.add('active');
         document.getElementById('view-closed-loop').classList.remove('hidden');
+      } else if (tab === 'd31-transport') {
+        document.getElementById('tab-btn-d31').classList.add('active');
+        document.getElementById('view-d31-transport').classList.remove('hidden');
+        loadD31Data();
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // TAB 4: D3.1 TRANSPORT & RFC 9543 DATA HANDLERS
+    // ═════════════════════════════════════════════════════════════════════════
+    async function loadD31Data() {
+      try {
+        const [sliceRes, energyRes] = await Promise.all([
+          fetch('/restconf/data/ietf-network-slice-service:network-slice-services'),
+          fetch('/restconf/data/instantaneous-device-energy-tid:device=ctu-96')
+        ]);
+        const sliceData = await sliceRes.json();
+        const energyData = await energyRes.json();
+
+        // Update Energy Display
+        const devEnergy = energyData['instantaneous-device-energy-tid:device'] || {};
+        document.getElementById('d31-energy-power').textContent = `${devEnergy.power || '28.50'} W`;
+        document.getElementById('d31-energy-mode').textContent = (devEnergy['energy-mode'] || 'saving').toUpperCase();
+        document.getElementById('d31-energy-eff').textContent = devEnergy['energy-efficiency'] || '0.000014';
+        document.getElementById('d31-energy-json').textContent = JSON.stringify(energyData, null, 2);
+
+        // Update Slice / PCE Box
+        const slices = sliceData['ietf-network-slice-service:network-slice-services']?.['slice-service'] || [];
+        const box = document.getElementById('d31-slice-pce-box');
+        if (slices.length > 0) {
+          const s = slices[slices.length - 1];
+          box.innerHTML = `
+            <div class="text-white font-bold">Slice ID: <span class="text-cyan-400">${s.id}</span> [Status: <span class="text-emerald-400">${s.status.toUpperCase()}</span>]</div>
+            <div class="text-slate-400">Template Ref: <span class="text-purple-300">${s['slo-sle-policy']?.['slo-sle-template']}</span></div>
+            <div class="text-slate-400">Realization Technology: <span class="text-yellow-400 font-bold">${s['custom-topology']?.['realization-technology'] || 'L2SM'}</span></div>
+            <div class="text-emerald-300 font-bold pt-1">NDT PCE Computed Underlay Path:</div>
+            <div class="text-slate-200 bg-slate-950 p-2 rounded border border-slate-800">${(s['custom-topology']?.['computed-path'] || []).join(' ➔ ') || 'ctu-96 ➔ edge-router-01 ➔ core-transport-sw'}</div>
+          `;
+        } else {
+          box.innerHTML = `
+            <div class="text-slate-400">No custom slice created yet. Click <span class="text-cyan-400 font-bold">"Instantiate RFC 9543 Slice"</span> above to trigger the 7-step NSC workflow!</div>
+          `;
+        }
+      } catch (err) {
+        console.warn("Failed to load D3.1 data:", err);
+      }
+    }
+
+    async function triggerNdtPce() {
+      const box = document.getElementById('d31-slice-pce-box');
+      box.innerHTML = `<div class="text-purple-300 animate-pulse">⚡ NDT Path Computation Engine evaluating topology graph and TVR constraints...</div>`;
+      try {
+        const res = await fetch('/restconf/operations/ietf-pce:compute-path', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_node: 'ctu-96',
+            dest_node: 'core-transport-sw',
+            max_latency_ms: 1.5,
+            min_bandwidth_mbps: 500.0,
+            isolation_policy: 'physical-or-dedicated-time-slot'
+          })
+        });
+        const data = await res.json();
+        const pce = data['ietf-pce:output'];
+        box.innerHTML = `
+          <div class="text-white font-bold flex items-center justify-between">
+            <span>NDT PCE Computation Result:</span>
+            <span class="px-2 py-0.5 text-[9px] rounded ${pce.feasible ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} font-bold">
+              ${pce.feasible ? 'SLA FEASIBLE (PASS)' : 'INFEASIBLE'}
+            </span>
+          </div>
+          <div class="text-cyan-300">Optimal Path: <strong class="text-white">${pce.computed_path.join(' ➔ ')}</strong></div>
+          <div class="text-slate-400">Hops: <span class="text-slate-200">${pce.hop_count}</span> &bull; Predicted Latency: <span class="text-emerald-400 font-bold">${pce.total_predicted_latency_ms} ms</span></div>
+          <div class="text-slate-400">Algorithm: <span class="text-purple-300">${pce.algorithm}</span></div>
+          <div class="text-slate-300 text-[10px] pt-1 italic">${pce.explanation}</div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<div class="text-red-400">PCE Computation failed: ${e.message}</div>`;
+      }
+    }
+
+    async function createRfc9543Slice() {
+      const box = document.getElementById('d31-slice-pce-box');
+      box.innerHTML = `<div class="text-cyan-300 animate-pulse">🚀 Instantiating RFC 9543 slice service and dispatching to TFS...</div>`;
+      try {
+        const res = await fetch('/restconf/data/ietf-network-slice-service:network-slice-services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: 'slice-urllc-factory-' + Math.floor(Math.random() * 900 + 100),
+            description: 'Mission-critical URLLC factory slice',
+            slo_sle_template_ref: 'template-urllc-mission-critical',
+            realization_technology: 'L2SM'
+          })
+        });
+        const data = await res.json();
+        loadD31Data();
+      } catch (e) {
+        box.innerHTML = `<div class="text-red-400">Slice creation failed: ${e.message}</div>`;
       }
     }
 
