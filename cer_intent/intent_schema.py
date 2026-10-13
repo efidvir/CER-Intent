@@ -144,6 +144,44 @@ class SecurityParameters(BaseModel):
     encryption_algorithm: Optional[str] = Field(None, description="e.g. 'AES-256'")
 
 # ──────────────────────────────────────────────────────────────────────────────
+# D5.1 / 3GPP TS 28.312 & TM Forum ODA Lifecycle & Service Models
+# ──────────────────────────────────────────────────────────────────────────────
+
+class IntentLifecycle3GPP(str, Enum):
+    """3GPP TS 28.312 Release 19 Intent Operational States (D5.1 Section 3.3.2.2)"""
+    PREPARATION     = "preparation"     # Intent ingested, validated, decomposed
+    COMMISSIONING   = "commissioning"   # SAGA transaction, domains allocating resources
+    OPERATION       = "operation"       # Active, monitored by closed-loop assurance
+    DECOMMISSIONING = "decommissioning" # Terminating, resource clean-up
+
+
+class ServiceDLCState(str, Enum):
+    """UNITY-6G Service Development LifeCycle (ServiceDLC) States (D5.1 Figure 2-10)"""
+    ACTIVATION  = "activation"
+    RUNNING     = "running"
+    PAUSED      = "paused"      # Low-demand freeze for green energy / resource conservation
+    SUSPENDED   = "suspended"   # Preempted / frozen for high-priority emergency services
+    CLOSED      = "closed"
+
+
+class CustomerFacingService(BaseModel):
+    """TM Forum TMF641 / IG1253 Customer Facing Service (CFS) (D5.1 Section 3.3.2.1)"""
+    cfs_id: str = Field(default_factory=lambda: f"cfs-{str(uuid.uuid4())[:8]}")
+    name: str
+    service_category: str
+    customer_sla: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ResourceFacingService(BaseModel):
+    """TM Forum TMF652 Resource Facing Service (RFS) (D5.1 Section 3.3.2.1)"""
+    rfs_id: str = Field(default_factory=lambda: f"rfs-{str(uuid.uuid4())[:8]}")
+    target_domain: str
+    resource_type: str
+    allocated_parameters: Dict[str, Any] = Field(default_factory=dict)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Canonical Intent Model
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -166,6 +204,44 @@ class Intent(BaseModel):
     architect_plan: Optional[Dict[str, Any]] = None  # Reasoning strategy from the Architect Agent
     context_intents: Optional[List[Dict[str, Any]]] = None # For conflict check
     tags: List[str] = Field(default_factory=list)
+
+    # ── 3GPP TS 28.312 & D5.1 Lifecycle & TM Forum CFS/RFS ────────────────────
+    state_3gpp: IntentLifecycle3GPP = IntentLifecycle3GPP.PREPARATION
+    service_dlc_state: ServiceDLCState = ServiceDLCState.ACTIVATION
+    cfs: Optional[CustomerFacingService] = None
+    rfs_list: List[ResourceFacingService] = Field(default_factory=list)
+
+    def decompose_to_cfs_rfs(self) -> None:
+        """Decompose incoming intent into TM Forum CFS and RFS per D5.1 Section 3.3.2.1."""
+        cfs_name = f"CFS-{self.intent_type.value.upper()}-{self.target.identifier}"
+        self.cfs = CustomerFacingService(
+            name=cfs_name,
+            service_category=f"{self.intent_type.value}_service",
+            customer_sla=self.parameters
+        )
+
+        rfs_transport = ResourceFacingService(
+            target_domain="transport-xhaul",
+            resource_type="wireless-xhaul-carrier",
+            allocated_parameters={
+                "target": self.target.identifier,
+                "type": self.intent_type.value,
+                "params": self.parameters,
+                "priority": self.priority
+            }
+        )
+        self.rfs_list = [rfs_transport]
+        if self.intent_type == IntentType.SLICE or "slice" in str(self.parameters).lower():
+            rfs_oran = ResourceFacingService(
+                target_domain="oran",
+                resource_type="f1u-socket-midhaul",
+                allocated_parameters={"sst": self.parameters.get("sst", 1), "dscp": self.parameters.get("dscp", 6)}
+            )
+            self.rfs_list.append(rfs_oran)
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.cfs is None:
+            self.decompose_to_cfs_rfs()
 
     # ── Computed helpers ──────────────────────────────────────────────────────
     def typed_parameters(self):

@@ -16,7 +16,10 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
-from cer_intent.intent_schema import Intent, IntentStatus, IntentTarget, IntentType
+from cer_intent.intent_schema import (
+    Intent, IntentStatus, IntentTarget, IntentType,
+    IntentLifecycle3GPP, ServiceDLCState, CustomerFacingService, ResourceFacingService
+)
 from cer_intent.intent_parser import IntentParser
 from cer_intent.intent_validator import IntentValidator
 from cer_intent.translators import get_translator
@@ -169,6 +172,7 @@ def create_app(registry, audit_log) -> Flask:
 
             # 4. Translate / Architect Execution
             intent.status = IntentStatus.TRANSLATING
+            intent.state_3gpp = IntentLifecycle3GPP.COMMISSIONING
             _emit_intent_update(intent)
             
             target_devices = registry.get_devices_for_target(
@@ -219,6 +223,12 @@ def create_app(registry, audit_log) -> Flask:
             all_ok = all(r.success for r in apply_results)
 
             intent.status = IntentStatus.APPLIED if all_ok else IntentStatus.FAILED
+            intent.state_3gpp = IntentLifecycle3GPP.OPERATION if all_ok else IntentLifecycle3GPP.COMMISSIONING
+            if all_ok:
+                if intent.intent_type == IntentType.ENERGY or intent.parameters.get("power_mode") in ["eco", "sleep"]:
+                    intent.service_dlc_state = ServiceDLCState.PAUSED
+                else:
+                    intent.service_dlc_state = ServiceDLCState.RUNNING
             intent.applied_at = datetime.now(timezone.utc)
             intent.applied_config = {
                 "configs": [c.to_dict() for c in translation.device_configs],
@@ -279,9 +289,91 @@ def create_app(registry, audit_log) -> Flask:
     @app.route("/api/v1/intents/<intent_id>", methods=["DELETE"])
     def delete_intent(intent_id: str):
         if intent_id in _intent_store:
+            intent = _intent_store[intent_id]
+            intent.state_3gpp = IntentLifecycle3GPP.DECOMMISSIONING
+            intent.service_dlc_state = ServiceDLCState.CLOSED
+            _emit_intent_update(intent)
+            audit_log.system_event(f"Intent {intent_id[:8]} decommissioned and removed.")
             del _intent_store[intent_id]
-            return jsonify({"status": "deleted"})
+            return jsonify({
+                "status": "deleted",
+                "state_3gpp": "decommissioning",
+                "service_dlc_state": "closed"
+            })
         return jsonify({"error": "Not found"}), 404
+
+    # ── TM Forum ODA & D5.1 Lifecycle API ─────────────────────────────────────
+
+    @app.route("/api/v1/tmf/cfs", methods=["GET"])
+    def list_cfs():
+        """List all TM Forum TMF641 / IG1253 Customer Facing Services (CFS)."""
+        cfs_list = [i.cfs.model_dump(mode="json") for i in _intent_store.values() if i.cfs]
+        return jsonify(cfs_list)
+
+    @app.route("/api/v1/tmf/rfs", methods=["GET"])
+    def list_rfs():
+        """List all TM Forum TMF652 Resource Facing Services (RFS)."""
+        rfs_list = [
+            {**rfs.model_dump(mode="json"), "intent_id": i.intent_id}
+            for i in _intent_store.values()
+            for rfs in i.rfs_list
+        ]
+        return jsonify(rfs_list)
+
+    @app.route("/api/v1/tmf/isr", methods=["GET"])
+    def get_intent_state_registry():
+        """D5.1 Intent State Registry (ISR) & Service State Registry (SSR) tracking."""
+        isr_records = []
+        for i in _intent_store.values():
+            isr_records.append({
+                "intent_id": i.intent_id,
+                "intent_type": i.intent_type.value,
+                "target": i.target.identifier,
+                "state_3gpp": i.state_3gpp.value if hasattr(i.state_3gpp, "value") else str(i.state_3gpp),
+                "service_dlc_state": i.service_dlc_state.value if hasattr(i.service_dlc_state, "value") else str(i.service_dlc_state),
+                "cfs_id": i.cfs.cfs_id if i.cfs else None,
+                "cfs_name": i.cfs.name if i.cfs else None,
+                "rfs_count": len(i.rfs_list),
+                "rfs_domains": list(set(r.target_domain for r in i.rfs_list)),
+                "status": i.status.value if hasattr(i.status, "value") else str(i.status),
+                "submitted_at": i.submitted_at.isoformat() if i.submitted_at else None,
+                "applied_at": i.applied_at.isoformat() if i.applied_at else None,
+            })
+        return jsonify(isr_records)
+
+    @app.route("/api/v1/tmf/service-dlc/<intent_id>/pause", methods=["POST"])
+    def pause_service_dlc(intent_id: str):
+        """D5.1 ServiceDLC Pausing (Green energy freeze / eco sleep)."""
+        intent = _intent_store.get(intent_id)
+        if not intent:
+            return jsonify({"error": "Intent not found"}), 404
+        intent.service_dlc_state = ServiceDLCState.PAUSED
+        audit_log.system_event(f"ServiceDLC for intent {intent_id[:8]} paused (Green-6G sleep).")
+        _emit_intent_update(intent)
+        return jsonify({"intent_id": intent_id, "service_dlc_state": intent.service_dlc_state.value})
+
+    @app.route("/api/v1/tmf/service-dlc/<intent_id>/resume", methods=["POST"])
+    def resume_service_dlc(intent_id: str):
+        """D5.1 ServiceDLC Resume back to Running state."""
+        intent = _intent_store.get(intent_id)
+        if not intent:
+            return jsonify({"error": "Intent not found"}), 404
+        intent.service_dlc_state = ServiceDLCState.RUNNING
+        audit_log.system_event(f"ServiceDLC for intent {intent_id[:8]} resumed to running.")
+        _emit_intent_update(intent)
+        return jsonify({"intent_id": intent_id, "service_dlc_state": intent.service_dlc_state.value})
+
+    @app.route("/api/v1/tmf/service-dlc/<intent_id>/suspend", methods=["POST"])
+    def suspend_service_dlc(intent_id: str):
+        """D5.1 ServiceDLC Suspension (Emergency preemption for critical URLLC)."""
+        intent = _intent_store.get(intent_id)
+        if not intent:
+            return jsonify({"error": "Intent not found"}), 404
+        intent.service_dlc_state = ServiceDLCState.SUSPENDED
+        audit_log.system_event(f"ServiceDLC for intent {intent_id[:8]} suspended for emergency preemption.")
+        _emit_intent_update(intent)
+        return jsonify({"intent_id": intent_id, "service_dlc_state": intent.service_dlc_state.value})
+
 
     # ── Topology API ──────────────────────────────────────────────────────────
 
@@ -427,6 +519,7 @@ def create_app(registry, audit_log) -> Flask:
 
         try:
             intent.status = IntentStatus.TRANSLATING
+            intent.state_3gpp = IntentLifecycle3GPP.COMMISSIONING
             _emit_intent_update(intent)
             
             audit_log.system_event(f"User approved plan: {selected_strategy.name}")
@@ -458,6 +551,11 @@ def create_app(registry, audit_log) -> Flask:
                 )
 
             intent.status = IntentStatus.APPLIED
+            intent.state_3gpp = IntentLifecycle3GPP.OPERATION
+            if intent.intent_type == IntentType.ENERGY or intent.parameters.get("power_mode") in ["eco", "sleep"]:
+                intent.service_dlc_state = ServiceDLCState.PAUSED
+            else:
+                intent.service_dlc_state = ServiceDLCState.RUNNING
             intent.applied_at = datetime.now(timezone.utc)
             intent.applied_config = translation.model_dump(mode="json")
             _emit_intent_update(intent)
