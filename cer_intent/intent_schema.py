@@ -322,7 +322,7 @@ class Intent(BaseModel):
 class DeviceConfig(BaseModel):
     device_id: str
     config_type: str                        # e.g. "radio", "qos", "protection"
-    yang_module: str                        # e.g. "ceragon-radio-link"
+    yang_module: str = "ceragon-radio-link" # e.g. "ceragon-radio-link", "radio-bridge-tg-radio-dn"
     parameters: Dict[str, Any]             # Flat config parameters
     yang_xml: Optional[str] = None         # Full NETCONF edit-config XML
     intent_id: str

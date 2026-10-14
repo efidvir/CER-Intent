@@ -174,6 +174,41 @@ class ConflictFabricClient:
         logger.info(f"[ConflictFabric] Verdict for {intent.intent_id[:8]}: ALLOW. Token issued: {token}")
         return verdict
 
+    def submit_raw(
+        self,
+        requester_id: str,
+        target_urn: str,
+        action: str,
+        proposed_state: Optional[Dict[str, Any]] = None,
+        ttl_seconds: int = 60
+    ) -> ConflictVerdict:
+        """
+        Submit a raw agent actuation request for mediation (e.g., MARL decentralized recovery).
+        """
+        token = f"cftok-{uuid.uuid4().hex[:16]}"
+        now = datetime.now(timezone.utc)
+        verdict = ConflictVerdict(
+            verdict=VerdictType.ALLOW,
+            reason_code="mediation.no_contention",
+            token=token,
+            validity_window=f"{ttl_seconds}s",
+            resolving_authority="urn:unity6g:conflict-fabric:stub-provider",
+            timestamp=now,
+            audit_reference=f"audit-cf-{str(uuid.uuid4())[:8]}"
+        )
+        self._active_tokens[token] = {
+            "intent_id": f"raw-{token}",
+            "requester_id": requester_id,
+            "target": target_urn,
+            "action": action,
+            "proposed_state": proposed_state,
+            "issued_at": now,
+            "expires_at": now + timedelta(seconds=ttl_seconds)
+        }
+        self._record_verdict(f"raw-{token}", verdict)
+        logger.info(f"[ConflictFabric] Raw submit from {requester_id} for {action}: ALLOW (Token: {token})")
+        return verdict
+
     # ── Interaction 3: Verdict (Req-T23-CG-03) ────────────────────────────────
     def verdict(self, intent_id: str) -> Optional[ConflictVerdict]:
         """Query the latest verdict for an intent."""

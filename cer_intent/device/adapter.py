@@ -604,6 +604,40 @@ class DirectRESTAdapter(AdapterBase):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Backend 4: Option A Composite (IP-50 MW + Siklu TG)
+# ──────────────────────────────────────────────────────────────────────────────
+
+class CompositeOptionAAdapter(AdapterBase):
+    """
+    Composite Adapter for Option A (8 IP-50 + 8 TG Conducted Testbed).
+    Routes Microwave actions (IP-50) to primary adapter (TeraFlow or Simulated)
+    and 60 GHz mmWave actions (beam steer, link ignite, spider attenuation) to SikluTGAdapter.
+    """
+    def __init__(self, mw_adapter: AdapterBase, tg_adapter: AdapterBase, state_store: StateStore):
+        self.mw_adapter = mw_adapter
+        self.tg_adapter = tg_adapter
+        self._store = state_store
+
+    def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None) -> ApplyResult:
+        is_tg = (
+            config.config_type.startswith("tg_")
+            or "action.transport." in config.config_type
+            or config.device_id in ("HUB", "N", "S")
+            or (config.parameters and "steer_angle_deg" in config.parameters)
+            or (config.parameters and "attenuation_db" in config.parameters)
+            or (config.parameters and "bridge_id" in config.parameters)
+        )
+        if is_tg:
+            return self.tg_adapter.apply(config, conflict_token=conflict_token)
+        return self.mw_adapter.apply(config, conflict_token=conflict_token)
+
+    def get_state(self, device_id: str) -> Dict[str, Any]:
+        if device_id in ("HUB", "N", "S") or "tg" in device_id.lower():
+            return self.tg_adapter.get_state(device_id)
+        return self.mw_adapter.get_state(device_id)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Factory
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -616,6 +650,8 @@ def create_adapter(state_store: StateStore, registry: Any = None) -> AdapterBase
       "simulated"   — In-memory state simulation (fallback)
       "direct_rest" — Ceragon RESTCONF directly
       "xml_ip50c"   — Ceragon IP-50C XML configuration
+      "siklu_tg"    — Ceragon Siklu Terragraph mmWave adapter
+      "option_a"    — Composite Option A (Microwave IP-50 + Siklu TG)
     """
     backend = os.getenv("ADAPTER_BACKEND", "teraflow").lower()
 
@@ -629,6 +665,17 @@ def create_adapter(state_store: StateStore, registry: Any = None) -> AdapterBase
         logger.info("Device adapter: Ceragon IP-50C XML configuration")
         from cer_intent.device.xml_adapter import IP50CXMLAdapter
         return IP50CXMLAdapter(state_store)
+    elif backend in ("siklu_tg", "tg"):
+        from cer_intent.device.tg_adapter import SikluTGAdapter
+        logger.info("Device adapter: Siklu Terragraph (60GHz mmWave)")
+        return SikluTGAdapter(state_store)
+    elif backend in ("option_a", "hybrid", "option_a_testbed"):
+        from cer_intent.device.tg_adapter import SikluTGAdapter
+        logger.info("Device adapter: Composite Option A (Microwave IP-50 + Siklu TG)")
+        mw = TeraFlowAdapter(state_store, registry=registry) if os.getenv("TFS_URL") else SimulatedAdapter(state_store)
+        tg = SikluTGAdapter(state_store)
+        return CompositeOptionAAdapter(mw, tg, state_store)
     else:
         logger.info("Device adapter: Simulated (no live device required)")
         return SimulatedAdapter(state_store)
+

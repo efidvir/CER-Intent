@@ -1,0 +1,314 @@
+{
+  "testbed_profile": "OPTION_A_8_IP50_8_TG",
+  "name": "Option A — 8 IP-50 + 8 TG Conducted Bench",
+  "description": "8 sites, 4 microwave links (8 IP-50 units), 6 TG links (8 TG units: 6 DN nodes, 2 CN terminals). DPIR routing before event, 4-island partition upon CORE+HUB failure, MARL 3-bridge reconnection.",
+  "nodes": [
+    {
+      "id": "CORE",
+      "name": "CORE (Core + MW Hub + TG)",
+      "site": "CORE",
+      "model": "Ceragon IP-50 + Siklu TG DN",
+      "role": "core_hub",
+      "x": 500,
+      "y": 140,
+      "radios": [
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 1, "target": "W1"},
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 2, "target": "E1"},
+        {"type": "tg_60ghz", "model": "Siklu TG DN", "sectors": 4, "role": "distribution_node"}
+      ],
+      "status": "active",
+      "pdu_controlled": true,
+      "pdu_id": "PDU-CORE"
+    },
+    {
+      "id": "HUB",
+      "name": "HUB (TG PtMP Hub)",
+      "site": "HUB",
+      "model": "Siklu TG DN",
+      "role": "tg_ptmp_hub",
+      "x": 500,
+      "y": 360,
+      "radios": [
+        {"type": "tg_60ghz", "model": "Siklu TG DN", "sectors": 4, "role": "hub_distribution_node"}
+      ],
+      "status": "active",
+      "pdu_controlled": true,
+      "pdu_id": "PDU-HUB"
+    },
+    {
+      "id": "W1",
+      "name": "W1 (West Site 1)",
+      "site": "W1",
+      "model": "2x Ceragon IP-50 + Siklu TG DN",
+      "role": "west_site",
+      "x": 260,
+      "y": 220,
+      "radios": [
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 1, "target": "CORE"},
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 2, "target": "W2"},
+        {"type": "tg_60ghz", "model": "Siklu TG DN", "sectors": 4, "role": "distribution_node"}
+      ],
+      "status": "active",
+      "edge_agent_pc": "Edge-PC-W1 (MARL Actor 1)",
+      "traffic_host": "Traffic-Host-W1 (TRex F1/Svc Out)"
+    },
+    {
+      "id": "W2",
+      "name": "W2 (West Site 2)",
+      "site": "W2",
+      "model": "1x Ceragon IP-50 + Siklu TG DN",
+      "role": "west_site",
+      "x": 260,
+      "y": 460,
+      "radios": [
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 1, "target": "W1"},
+        {"type": "tg_60ghz", "model": "Siklu TG DN", "sectors": 4, "role": "distribution_node"}
+      ],
+      "status": "active",
+      "edge_agent_pc": "Edge-PC-W2 (MARL Actor 2)",
+      "traffic_host": "Traffic-Host-W2 (TRex F2/Svc Out)"
+    },
+    {
+      "id": "E1",
+      "name": "E1 (Incident Site 1)",
+      "site": "E1",
+      "model": "2x Ceragon IP-50 + Siklu TG DN",
+      "role": "incident_site",
+      "x": 740,
+      "y": 220,
+      "radios": [
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 1, "target": "CORE"},
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 2, "target": "E2"},
+        {"type": "tg_60ghz", "model": "Siklu TG DN", "sectors": 4, "role": "distribution_node"}
+      ],
+      "status": "active",
+      "edge_agent_pc": "Edge-PC-E1 (MARL Actor 3)",
+      "traffic_host": "Traffic-Host-E1 (TRex F1 In)"
+    },
+    {
+      "id": "E2",
+      "name": "E2 (Incident Site 2)",
+      "site": "E2",
+      "model": "1x Ceragon IP-50 + Siklu TG DN",
+      "role": "incident_site",
+      "x": 740,
+      "y": 460,
+      "radios": [
+        {"type": "microwave", "model": "Ceragon IP-50", "unit": 1, "target": "E1"},
+        {"type": "tg_60ghz", "model": "Siklu TG DN", "sectors": 4, "role": "distribution_node"}
+      ],
+      "status": "active",
+      "edge_agent_pc": "Edge-PC-E2 (MARL Actor 4)",
+      "traffic_host": "Traffic-Host-E2 (TRex F2 In)"
+    },
+    {
+      "id": "N",
+      "name": "N (Field Hospital)",
+      "site": "N",
+      "model": "Siklu TG CN (Terminal)",
+      "role": "field_hospital",
+      "x": 500,
+      "y": 40,
+      "radios": [
+        {"type": "tg_60ghz", "model": "Siklu TG CN", "sectors": 1, "role": "terminal_node"}
+      ],
+      "status": "active",
+      "edge_agent_pc": "Edge-PC-N (MARL Actor 5)",
+      "traffic_host": "Traffic-Host-N (Svc In)"
+    },
+    {
+      "id": "S",
+      "name": "S (Shelter Responders)",
+      "site": "S",
+      "model": "Siklu TG CN (Terminal)",
+      "role": "shelter_responders",
+      "x": 500,
+      "y": 620,
+      "radios": [
+        {"type": "tg_60ghz", "model": "Siklu TG CN", "sectors": 1, "role": "terminal_node"}
+      ],
+      "status": "active",
+      "edge_agent_pc": "Edge-PC-S (MARL Actor 6)",
+      "traffic_host": "Traffic-Host-S (Svc In)"
+    }
+  ],
+  "links": [
+    {
+      "id": "mw-w1-core",
+      "source": "W1",
+      "target": "CORE",
+      "media": "microwave",
+      "capacity_mbps": 10000,
+      "frequency_band": "18GHz",
+      "channel_bw_mhz": 112,
+      "current_modulation": "4096QAM",
+      "latency_ms": 0.4,
+      "status": "active",
+      "attenuator_id": "MW-ATT-1"
+    },
+    {
+      "id": "mw-w2-w1",
+      "source": "W2",
+      "target": "W1",
+      "media": "microwave",
+      "capacity_mbps": 10000,
+      "frequency_band": "18GHz",
+      "channel_bw_mhz": 112,
+      "current_modulation": "4096QAM",
+      "latency_ms": 0.35,
+      "status": "active",
+      "attenuator_id": "MW-ATT-2"
+    },
+    {
+      "id": "mw-core-e1",
+      "source": "CORE",
+      "target": "E1",
+      "media": "microwave",
+      "capacity_mbps": 10000,
+      "frequency_band": "18GHz",
+      "channel_bw_mhz": 112,
+      "current_modulation": "4096QAM",
+      "latency_ms": 0.4,
+      "status": "active",
+      "attenuator_id": "MW-ATT-3"
+    },
+    {
+      "id": "mw-e1-e2",
+      "source": "E1",
+      "target": "E2",
+      "media": "microwave",
+      "capacity_mbps": 10000,
+      "frequency_band": "18GHz",
+      "channel_bw_mhz": 112,
+      "current_modulation": "4096QAM",
+      "latency_ms": 0.35,
+      "status": "active",
+      "attenuator_id": "MW-ATT-4"
+    },
+    {
+      "id": "tg-w1-hub",
+      "source": "W1",
+      "target": "HUB",
+      "media": "tg_60ghz",
+      "capacity_mbps": 1000,
+      "frequency_band": "60GHz",
+      "channel_bw_mhz": 2160,
+      "current_modulation": "64QAM",
+      "sector": "hub-west",
+      "latency_ms": 0.8,
+      "status": "active",
+      "attenuator_id": "VBAND-ATT-1"
+    },
+    {
+      "id": "tg-w2-hub",
+      "source": "W2",
+      "target": "HUB",
+      "media": "tg_60ghz",
+      "capacity_mbps": 1000,
+      "frequency_band": "60GHz",
+      "channel_bw_mhz": 2160,
+      "current_modulation": "64QAM",
+      "sector": "hub-west",
+      "latency_ms": 0.85,
+      "status": "active",
+      "attenuator_id": "VBAND-ATT-2"
+    },
+    {
+      "id": "tg-hub-e1",
+      "source": "HUB",
+      "target": "E1",
+      "media": "tg_60ghz",
+      "capacity_mbps": 1000,
+      "frequency_band": "60GHz",
+      "channel_bw_mhz": 2160,
+      "current_modulation": "64QAM",
+      "sector": "hub-east",
+      "latency_ms": 0.8,
+      "status": "active",
+      "attenuator_id": "VBAND-ATT-3"
+    },
+    {
+      "id": "tg-hub-e2",
+      "source": "HUB",
+      "target": "E2",
+      "media": "tg_60ghz",
+      "capacity_mbps": 1000,
+      "frequency_band": "60GHz",
+      "channel_bw_mhz": 2160,
+      "current_modulation": "64QAM",
+      "sector": "hub-east",
+      "latency_ms": 0.85,
+      "status": "active",
+      "attenuator_id": "VBAND-ATT-4"
+    },
+    {
+      "id": "tg-hub-n",
+      "source": "HUB",
+      "target": "N",
+      "media": "tg_60ghz",
+      "capacity_mbps": 1000,
+      "frequency_band": "60GHz",
+      "channel_bw_mhz": 2160,
+      "current_modulation": "64QAM",
+      "sector": "hub-north",
+      "latency_ms": 0.75,
+      "status": "active",
+      "attenuator_id": "VBAND-ATT-5"
+    },
+    {
+      "id": "tg-hub-s",
+      "source": "HUB",
+      "target": "S",
+      "media": "tg_60ghz",
+      "capacity_mbps": 1000,
+      "frequency_band": "60GHz",
+      "channel_bw_mhz": 2160,
+      "current_modulation": "64QAM",
+      "sector": "hub-south",
+      "latency_ms": 0.75,
+      "status": "active",
+      "attenuator_id": "VBAND-ATT-6"
+    }
+  ],
+  "marl_candidate_bridges": [
+    {
+      "bridge_id": "bridge-1",
+      "name": "Bridge 1: E2 <-> W2",
+      "source": "E2",
+      "target": "W2",
+      "igniter": "E2",
+      "distance_m": 540,
+      "snr_db": 11.0,
+      "modulation": "16QAM",
+      "capacity_mbps": 500,
+      "status": "standby",
+      "steer_angle_deg": 34
+    },
+    {
+      "bridge_id": "bridge-2",
+      "name": "Bridge 2: E1 <-> N",
+      "source": "E1",
+      "target": "N",
+      "igniter": "E1",
+      "distance_m": 504,
+      "snr_db": 12.0,
+      "modulation": "64QAM",
+      "capacity_mbps": 1200,
+      "status": "standby",
+      "steer_angle_deg": 32
+    },
+    {
+      "bridge_id": "bridge-3",
+      "name": "Bridge 3: W1 <-> S",
+      "source": "W1",
+      "target": "S",
+      "igniter": "W1",
+      "distance_m": 747,
+      "snr_db": 5.0,
+      "modulation": "QPSK_1/2",
+      "capacity_mbps": 200,
+      "status": "standby",
+      "steer_angle_deg": 21
+    }
+  ]
+}
