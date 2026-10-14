@@ -25,21 +25,25 @@ logger = logging.getLogger("DigitalTwinRoutes")
 
 dt_bp = Blueprint("digital_twin", __name__, url_prefix="/api/v1/digital-twin")
 
-TFS_URL = os.getenv("TFS_URL", "http://localhost:8088")
+TFS_URL = os.getenv("TFS_URL", os.getenv("TERAFLOW_URL", "http://localhost:8088"))
 TFS_WEBUI_URL = os.getenv("TFS_WEBUI_URL", "http://localhost:8004")
 CERAGON_IP = os.getenv("CERAGON_IP", "192.168.1.225")
 CERAGON_USER = os.getenv("CERAGON_USER", "admin")
 CERAGON_PASS = os.getenv("CERAGON_PASS", "admin")
-CERAGON_UUID = "f676623c-1a65-54bd-b1e8-279c8a6d8a1c"
-NS3_HOST = "cersrv-029"
-NS3_PATH = "/home/efid/ns3-dev/ns3"
+CERAGON_UUID = os.getenv("CERAGON_UUID", "f676623c-1a65-54bd-b1e8-279c8a6d8a1c")
+CERAGON_NAME = os.getenv("CERAGON_NAME", "Ceragon MH-T261 (ctu-96)")
+NS3_HOST = os.getenv("NS3_HOST", "cersrv-029")
+NS3_SSH_HOST = os.getenv("NS3_SSH_HOST", f"{os.getenv('NS3_USER', 'efid')}@{NS3_HOST}" if "@" not in NS3_HOST else NS3_HOST)
+NS3_DIR = os.getenv("NS3_DIR", "/home/efid/ns3-dev")
+NS3_PATH = os.getenv("NS3_PATH", f"{NS3_DIR}/ns3")
+USE_REMOTE_NS3 = os.getenv("USE_REMOTE_NS3", "true").lower() not in ("false", "0", "no")
 
 # In-memory execution state
 _latest_twin_state = {
     "last_sync": 0.0,
     "physical_device": {
         "uuid": CERAGON_UUID,
-        "name": "Ceragon MH-T261 (ctu-96)",
+        "name": CERAGON_NAME,
         "ip": CERAGON_IP,
         "frequency_ghz": 60.48,
         "active_mcs": 8,
@@ -333,8 +337,8 @@ def run_end_to_end_loop():
     stage3_start = time.time()
     ns3_remote_info = _check_ns3_remote()
 
-    # Execute REAL discrete simulation on efid@cersrv-029!
-    runner = TSNSimulationRunner(host="efid@cersrv-029", ns3_dir="/home/efid/ns3-dev")
+    # Execute discrete simulation (remote SSH or analytical fallback)
+    runner = TSNSimulationRunner(host=NS3_SSH_HOST, ns3_dir=NS3_DIR)
     perturb_type = "traffic_surge" if scenario_id == "traffic_surge" else ("rain_degradation" if scenario_id == "channel_degradation" else "none")
     surge_mult = float(custom_params.get("burst_factor", 3.5)) if scenario_id == "traffic_surge" else 1.0
     rain_db = float(custom_params.get("rain_rate_mm_hr", 55.0)) * 0.4 if scenario_id == "channel_degradation" else 0.0
@@ -345,7 +349,7 @@ def run_end_to_end_loop():
         enable_tsn_qos=False if scenario_id in ["traffic_surge", "channel_degradation"] else True,
         surge_multiplier=surge_mult,
         rain_loss_db=rain_db,
-        use_remote=True
+        use_remote=USE_REMOTE_NS3
     )
 
     # Domain specific computation
@@ -618,7 +622,7 @@ def step_stage_execution():
         })
 
     elif stage == 3:
-        runner = TSNSimulationRunner(host="efid@cersrv-029", ns3_dir="/home/efid/ns3-dev")
+        runner = TSNSimulationRunner(host=NS3_SSH_HOST, ns3_dir=NS3_DIR)
         perturb_type = "traffic_surge" if scenario_id == "traffic_surge" else ("rain_degradation" if scenario_id == "channel_degradation" else "none")
         surge_mult = float(custom_params.get("burst_factor", 3.5)) if scenario_id == "traffic_surge" else 1.0
         rain_db = float(custom_params.get("rain_rate_mm_hr", 55.0)) * 0.4 if scenario_id == "channel_degradation" else 0.0
@@ -629,7 +633,7 @@ def step_stage_execution():
             enable_tsn_qos=False, # to demonstrate the breach before mitigation
             surge_multiplier=surge_mult,
             rain_loss_db=rain_db,
-            use_remote=True
+            use_remote=USE_REMOTE_NS3
         )
         elapsed = round((time.time() - start) * 1000, 2)
         flows = real_sim.get("flows", {})

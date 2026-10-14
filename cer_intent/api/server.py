@@ -507,32 +507,52 @@ def create_app(registry, audit_log) -> Flask:
             "source_of_truth": registry.get_source_of_truth(),
         })
 
-    # ── Option A Testbed (8 IP-50 + 8 TG Conducted Bench) ──────────────────────
+    # ── Option A & Multi-Site Portable Testbed API ────────────────────────────
     from cer_intent.architect.dpir_marl_engine import get_option_a_engine
     option_a_engine = get_option_a_engine()
 
     @app.route("/api/v1/testbed/option-a/state", methods=["GET"])
     def get_option_a_state():
-        """Retrieve live operational state of Option A testbed."""
+        """Retrieve live operational state of the testbed."""
         return jsonify(option_a_engine.get_state())
+
+    @app.route("/api/v1/testbed/option-a/topology", methods=["POST"])
+    def load_option_a_custom_topology():
+        """Upload/load a custom site topology JSON at runtime for portable deployment."""
+        body = request.get_json(silent=True) or {}
+        if "nodes" not in body or "links" not in body:
+            return jsonify({"error": "Topology payload must include 'nodes' and 'links' arrays."}), 400
+        state = option_a_engine.load_custom_topology(body)
+        audit_log.system_event(f"Testbed: Loaded custom topology '{body.get('name', 'Custom')}' ({len(body['nodes'])} nodes).")
+        socketio.emit("testbed_state_changed", state)
+        return jsonify(state)
 
     @app.route("/api/v1/testbed/option-a/disaster-cut", methods=["POST"])
     def trigger_option_a_disaster():
-        """Simulate disaster event: PDUs cut CORE & HUB power, attenuators at max."""
-        state = option_a_engine.trigger_disaster()
-        audit_log.system_event("Option A Testbed: Switched PDUs cut CORE & HUB power. Programmable attenuators set to MAX (90 dB). 4 isolated islands formed.")
+        """Simulate disaster event: PDUs cut target nodes power, attenuators set to max."""
+        body = request.get_json(silent=True) or {}
+        cut_nodes = body.get("cut_nodes")
+        state = option_a_engine.trigger_disaster(cut_nodes=cut_nodes)
+        audit_log.system_event(
+            f"Testbed Disaster Cut: Switched PDUs cut power; programmable attenuators set to MAX (90 dB). "
+            f"{len(state['active_islands'])} isolated islands formed."
+        )
         socketio.emit("testbed_state_changed", state)
         return jsonify(state)
 
     @app.route("/api/v1/testbed/option-a/marl-recover", methods=["POST"])
+    @app.route("/api/v1/testbed/option-a/marl-recovery", methods=["POST"])
     def trigger_option_a_marl_recover():
-        """Trigger decentralized MARL edge actors to ignite 3 candidate bridges and restore tree."""
+        """Trigger decentralized MARL edge actors to ignite candidate bridges and restore spanning tree."""
+        candidate_bridges = option_a_engine.topology_data.get("marl_candidate_bridges", [])
+        bridge_ids = [b["bridge_id"] for b in candidate_bridges]
+
         token_verdict = conflict_fabric.submit_raw(
             requester_id="urn:unity6g:agent:ceragon:marl-recovery-actor",
             target_urn="urn:unity6g:resource:ceragon:transport:option-a",
             action="action.transport.ignite_marl_bridges",
             proposed_state={
-                "bridges": ["bridge-1", "bridge-2", "bridge-3"],
+                "bridges": bridge_ids,
                 "policy": "d2.4_disaster_recovery"
             }
         )
@@ -540,47 +560,60 @@ def create_app(registry, audit_log) -> Flask:
 
         from cer_intent.device.tg_adapter import SikluTGAdapter
         tg_adapter = SikluTGAdapter(state_store)
-        for b in option_a_engine.topology_data.get("marl_candidate_bridges", []):
+        for b in candidate_bridges:
+            cap_mbps = b.get("capacity_mbps", int(b.get("capacity_gbps", 1.0) * 1000))
             tg_adapter.ignite_candidate_bridge(
                 bridge_id=b["bridge_id"],
-                igniter=b["igniter"],
+                igniter=b.get("igniter", b["source"]),
                 target=b["target"],
-                steer_angle_deg=b["steer_angle_deg"],
-                snr_db=b["snr_db"],
-                modulation=b["modulation"],
-                capacity_mbps=b["capacity_mbps"],
+                steer_angle_deg=b.get("steer_angle_deg", 0.0),
+                snr_db=b.get("snr_db", 15.0),
+                modulation=b.get("modulation", "16QAM"),
+                capacity_mbps=cap_mbps,
                 conflict_token=token
             )
 
         state = option_a_engine.trigger_marl_recovery()
         audit_log.system_event(
-            f"Option A Testbed: MARL 3-Bridge Reconnection complete under token {token}. "
-            f"Tree restored: F1 (W1-W2-E2-E1), F2 (W2-E2), svc W1-S, svc W2-E2-E1-N."
+            f"Testbed MARL Recovery: {len(candidate_bridges)} emergency bridges ignited under token {token}. "
+            f"Active islands: {len(state['active_islands'])}."
         )
         socketio.emit("testbed_state_changed", state)
         return jsonify(state)
 
     @app.route("/api/v1/testbed/option-a/reset", methods=["POST"])
+    @app.route("/api/v1/testbed/option-a/normal", methods=["POST"])
     def reset_option_a_testbed():
-        """Reset Option A testbed to normal DPIR operation."""
+        """Reset testbed to normal DPIR operation."""
         state = option_a_engine.reset_to_normal()
-        audit_log.system_event("Option A Testbed: Reset to Normal DPIR operation.")
+        audit_log.system_event("Testbed: Reset to Normal DPIR operation.")
         socketio.emit("testbed_state_changed", state)
         return jsonify(state)
 
     @app.route("/api/v1/testbed/option-a/ignite-bridge", methods=["POST"])
     def ignite_option_a_bridge():
-        """Ignite an individual MARL bridge (bridge-1, bridge-2, or bridge-3)."""
+        """Ignite an individual MARL bridge and dynamically recompute islands and flows."""
         body = request.get_json(silent=True) or {}
         bridge_id = body.get("bridge_id", "bridge-1")
         
-        candidate = next((b for b in option_a_engine.topology_data.get("marl_candidate_bridges", []) if b["bridge_id"] == bridge_id), None)
+        alt_id = f"bridge-{bridge_id[1:]}" if bridge_id.upper().startswith("B") and bridge_id[1:].isdigit() else bridge_id
+        candidate = next(
+            (
+                b for b in option_a_engine.topology_data.get("marl_candidate_bridges", [])
+                if b["bridge_id"] in (bridge_id, alt_id) or b.get("name", "").startswith(f"{bridge_id}:")
+            ),
+            None,
+        )
         if not candidate:
             return jsonify({"error": f"Bridge {bridge_id} not found"}), 404
 
+        actual_id = candidate["bridge_id"]
+        igniter = candidate.get("igniter", candidate["source"])
+        cap_mbps = candidate.get("capacity_mbps", int(candidate.get("capacity_gbps", 1.0) * 1000))
+
         token_verdict = conflict_fabric.submit_raw(
-            requester_id=f"urn:unity6g:agent:ceragon:marl-actor-{candidate['igniter'].lower()}",
-            target_urn=f"urn:unity6g:resource:ceragon:node:{candidate['igniter'].lower()}",
+            requester_id=f"urn:unity6g:agent:ceragon:marl-actor-{igniter.lower()}",
+            target_urn=f"urn:unity6g:resource:ceragon:node:{igniter.lower()}",
             action="action.transport.ignite_link",
             proposed_state=candidate
         )
@@ -589,21 +622,24 @@ def create_app(registry, audit_log) -> Flask:
         from cer_intent.device.tg_adapter import SikluTGAdapter
         tg_adapter = SikluTGAdapter(state_store)
         res = tg_adapter.ignite_candidate_bridge(
-            bridge_id=candidate["bridge_id"],
-            igniter=candidate["igniter"],
+            bridge_id=actual_id,
+            igniter=igniter,
             target=candidate["target"],
-            steer_angle_deg=candidate["steer_angle_deg"],
-            snr_db=candidate["snr_db"],
-            modulation=candidate["modulation"],
-            capacity_mbps=candidate["capacity_mbps"],
+            steer_angle_deg=candidate.get("steer_angle_deg", 0.0),
+            snr_db=candidate.get("snr_db", 15.0),
+            modulation=candidate.get("modulation", "16QAM"),
+            capacity_mbps=cap_mbps,
             conflict_token=token
         )
+        state = option_a_engine.ignite_bridge(actual_id)
         audit_log.system_event(
-            f"Option A Bridge {bridge_id} ignited by {candidate['igniter']} -> {candidate['target']}: {res.outcome.value}"
+            f"Testbed Bridge {bridge_id} ignited by {candidate['igniter']} -> {candidate['target']}: {res.outcome.value}"
         )
+        socketio.emit("testbed_state_changed", state)
         return jsonify({
             "result": res.to_dict(),
-            "candidate": candidate
+            "candidate": candidate,
+            "state": state
         })
 
     # ── Health ────────────────────────────────────────────────────────────────

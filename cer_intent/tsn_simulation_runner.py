@@ -7,6 +7,7 @@ Includes real-time discrete packet event streaming for interactive NetAnim playb
 
 import json
 import logging
+import os
 import re
 import subprocess
 import time
@@ -168,9 +169,12 @@ def build_discrete_packet_trace(
 
 
 class TSNSimulationRunner:
-    def __init__(self, host: str = "efid@cersrv-029", ns3_dir: str = "/home/efid/ns3-dev"):
-        self.host = host
-        self.ns3_dir = ns3_dir
+    def __init__(self, host: Optional[str] = None, ns3_dir: Optional[str] = None):
+        default_host = os.getenv("NS3_SSH_HOST", os.getenv("NS3_HOST", "efid@cersrv-029"))
+        if "@" not in default_host and default_host not in ("localhost", "127.0.0.1"):
+            default_host = f"{os.getenv('NS3_USER', 'efid')}@{default_host}"
+        self.host = host or default_host
+        self.ns3_dir = ns3_dir or os.getenv("NS3_DIR", "/home/efid/ns3-dev")
 
     def run_tsn_simulation(
         self,
@@ -343,8 +347,8 @@ class TSNSimulationRunner:
             "ceragon_devices": [
                 {
                     "device_index": 0,
-                    "name": "Ceragon-MH-T261-Ingress (ctu-96)",
-                    "ip": "192.168.1.225",
+                    "name": os.getenv("CERAGON_NAME", "Ceragon-MH-T261-Ingress (ctu-96)"),
+                    "ip": os.getenv("CERAGON_IP", "192.168.1.225"),
                     "role": "Hop 1 Transmitter / Ingress Aggregator",
                     "link_type": "60GHz V-Band Millimeter-Wave",
                     "configured_rate": hop1_rate,

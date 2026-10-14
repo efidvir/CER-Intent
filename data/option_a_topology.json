@@ -310,5 +310,36 @@
       "status": "standby",
       "steer_angle_deg": 21
     }
-  ]
+  ],
+  "flows": {
+    "F1": {
+      "source": "W1",
+      "destination": "E1",
+      "preferred_media": "microwave",
+      "requested_gbps": 2.5,
+      "description": "High-capacity West-to-East Microwave trunk flow"
+    },
+    "F2": {
+      "source": "W2",
+      "destination": "E2",
+      "preferred_media": "tg_60ghz",
+      "requested_gbps": 1.0,
+      "description": "DPIR Interference-Aware 60 GHz PtMP Hub flow"
+    },
+    "svc_W1_S": {
+      "source": "W1",
+      "destination": "S",
+      "preferred_media": "any",
+      "requested_mbps": 200,
+      "description": "Emergency Shelter Responders service"
+    },
+    "svc_W2_N": {
+      "source": "W2",
+      "destination": "N",
+      "preferred_media": "any",
+      "requested_mbps": 500,
+      "description": "Field Hospital telemetry & video service"
+    }
+  }
 }
+
