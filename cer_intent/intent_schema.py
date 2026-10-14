@@ -164,6 +164,14 @@ class ServiceDLCState(str, Enum):
     CLOSED      = "closed"
 
 
+class ActuationOutcomeType(str, Enum):
+    """UNITY-6G D2.4 Section 7.4 Typed Actuation Outcomes (Req-T23-ACT-03)."""
+    ACKNOWLEDGED_VERIFIED   = "acknowledged_verified"    # Controller ACK + verified independent read-back state match (only success state)
+    ACKNOWLEDGED_UNVERIFIED = "acknowledged_unverified"  # Controller ACK, but read-back absent, inconclusive or mismatched
+    REJECTED                = "rejected"                 # Controller explicitly refused command
+    UNRESOLVED              = "unresolved"               # Timeout or loss of transport; state unknown
+
+
 class CustomerFacingService(BaseModel):
     """TM Forum TMF641 / IG1253 Customer Facing Service (CFS) (D5.1 Section 3.3.2.1)"""
     cfs_id: str = Field(default_factory=lambda: f"cfs-{str(uuid.uuid4())[:8]}")
@@ -171,14 +179,18 @@ class CustomerFacingService(BaseModel):
     service_category: str
     customer_sla: Dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    requested_agent_loop: bool = Field(True, description="Whether customer requested an autonomous closed-loop agent")
+    requested_mode: str = Field("closed_loop", description="Requested composition class: closed_loop or open_loop")
 
 
 class ResourceFacingService(BaseModel):
-    """TM Forum TMF652 Resource Facing Service (RFS) (D5.1 Section 3.3.2.1)"""
+    """TM Forum TMF652 Resource Facing Service (RFS) (D5.1 Section 3.3.2.1 & D2.4 Section 1.3)"""
     rfs_id: str = Field(default_factory=lambda: f"rfs-{str(uuid.uuid4())[:8]}")
     target_domain: str
-    resource_type: str
+    resource_type: str  # e.g. "agent-instantiation-service" or "wireless-xhaul-carrier"
     allocated_parameters: Dict[str, Any] = Field(default_factory=dict)
+    agent_descriptor_id: Optional[str] = None
+    agent_instance_id: Optional[str] = None
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -211,15 +223,41 @@ class Intent(BaseModel):
     cfs: Optional[CustomerFacingService] = None
     rfs_list: List[ResourceFacingService] = Field(default_factory=list)
 
+    # ── D2.4 Governance & Actuation Attributes ────────────────────────────────
+    actuation_outcome: Optional[ActuationOutcomeType] = None
+    conflict_token: Optional[str] = Field(None, description="Conflict-resolution token checked at actuation (Req-T23-CG-07)")
+    readback_evidence: Optional[Dict[str, Any]] = Field(None, description="Independent read-back verification evidence (Req-T23-ACT-04)")
+
     def decompose_to_cfs_rfs(self) -> None:
-        """Decompose incoming intent into TM Forum CFS and RFS per D5.1 Section 3.3.2.1."""
+        """Decompose incoming intent into TM Forum CFS and RFS per D5.1 Section 3.3.2.1 and D2.4 Section 1.3."""
         cfs_name = f"CFS-{self.intent_type.value.upper()}-{self.target.identifier}"
         self.cfs = CustomerFacingService(
             name=cfs_name,
             service_category=f"{self.intent_type.value}_service",
-            customer_sla=self.parameters
+            customer_sla=self.parameters,
+            requested_agent_loop=True,
+            requested_mode="closed_loop" if self.priority >= 5 else "open_loop"
         )
 
+        # 1. RFS that runs the service instantiating the agent (using descriptor, authority ceiling, tuples)
+        rfs_agent = ResourceFacingService(
+            target_domain="transport-xhaul",
+            resource_type="agent-instantiation-service",
+            agent_descriptor_id=f"urn:unity6g:agent:ceragon:{self.intent_type.value}-loop",
+            agent_instance_id=f"agent-{str(uuid.uuid4())[:8]}",
+            allocated_parameters={
+                "descriptor_id": f"urn:unity6g:agent:ceragon:{self.intent_type.value}-loop",
+                "version": "1.0.0",
+                "composition_class": "closed_loop",
+                "authority_ceiling": "closed_loop_full" if self.priority >= 6 else "advisory",
+                "target": self.target.identifier,
+                "generation": 1,
+                "tuples": ["MS", "AE", "DE", "ACT"],
+                "operational_timeout": "30s"
+            }
+        )
+
+        # 2. RFS that provides the underlying transport resources
         rfs_transport = ResourceFacingService(
             target_domain="transport-xhaul",
             resource_type="wireless-xhaul-carrier",
@@ -230,7 +268,9 @@ class Intent(BaseModel):
                 "priority": self.priority
             }
         )
-        self.rfs_list = [rfs_transport]
+        self.rfs_list = [rfs_agent, rfs_transport]
+
+        # 3. RFS for O-RAN F1u socket if slicing requested
         if self.intent_type == IntentType.SLICE or "slice" in str(self.parameters).lower():
             rfs_oran = ResourceFacingService(
                 target_domain="oran",

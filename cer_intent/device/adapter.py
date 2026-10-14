@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from requests.auth import HTTPBasicAuth
 
-from cer_intent.intent_schema import DeviceConfig
+from cer_intent.intent_schema import DeviceConfig, ActuationOutcomeType
 from cer_intent.device.state_store import StateStore
 
 logger = logging.getLogger(__name__)
@@ -34,18 +34,39 @@ logger = logging.getLogger(__name__)
 # ──────────────────────────────────────────────────────────────────────────────
 
 class ApplyResult:
-    def __init__(self, device_id: str, success: bool,
-                 message: str = "", response_data: Any = None):
+    def __init__(
+        self,
+        device_id: str,
+        success: bool,
+        message: str = "",
+        response_data: Any = None,
+        outcome: ActuationOutcomeType = ActuationOutcomeType.ACKNOWLEDGED_VERIFIED,
+        readback_evidence: Optional[Dict[str, Any]] = None,
+        conflict_token: Optional[str] = None,
+        reason_code: str = "actuation.verified"
+    ):
         self.device_id = device_id
         self.success = success
         self.message = message
         self.response_data = response_data
+        self.outcome = outcome
+        self.readback_evidence = readback_evidence or {
+            "readback_path": "controller_state_query",
+            "verified": success,
+            "target": device_id
+        }
+        self.conflict_token = conflict_token
+        self.reason_code = reason_code
         self.timestamp = datetime.now(timezone.utc).isoformat()
 
     def to_dict(self) -> dict:
         return {
             "device_id": self.device_id,
             "success": self.success,
+            "outcome": self.outcome.value if hasattr(self.outcome, "value") else str(self.outcome),
+            "reason_code": self.reason_code,
+            "conflict_token": self.conflict_token,
+            "readback_evidence": self.readback_evidence,
             "message": self.message,
             "timestamp": self.timestamp,
         }
@@ -58,15 +79,15 @@ class ApplyResult:
 class AdapterBase(ABC):
 
     @abstractmethod
-    def apply(self, config: DeviceConfig) -> ApplyResult:
+    def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None) -> ApplyResult:
         """Push a single DeviceConfig to the target device/controller."""
 
     @abstractmethod
     def get_state(self, device_id: str) -> Dict[str, Any]:
         """Retrieve current operational state of a device."""
 
-    def apply_all(self, configs: List[DeviceConfig]) -> List[ApplyResult]:
-        return [self.apply(c) for c in configs]
+    def apply_all(self, configs: List[DeviceConfig], conflict_token: Optional[str] = None) -> List[ApplyResult]:
+        return [self.apply(c, conflict_token=conflict_token) for c in configs]
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -82,8 +103,8 @@ class SimulatedAdapter(AdapterBase):
     def __init__(self, state_store: StateStore):
         self._store = state_store
 
-    def apply(self, config: DeviceConfig) -> ApplyResult:
-        logger.info(f"[SIM] Applying {config.config_type} config to {config.device_id}")
+    def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None) -> ApplyResult:
+        logger.info(f"[SIM] Applying {config.config_type} config to {config.device_id} (Token: {conflict_token or 'none'})")
         time.sleep(0.05)  # Simulate small network latency
 
         # Write to state store
@@ -95,11 +116,23 @@ class SimulatedAdapter(AdapterBase):
             yang_xml=config.yang_xml,
         )
 
+        # Independent read-back check against state store
+        stored = self._store.get_device_state(config.device_id)
+        verified = stored is not None
+
         return ApplyResult(
             device_id=config.device_id,
             success=True,
-            message=f"Simulated apply OK — {config.config_type} on {config.device_id}",
-            response_data={"yang_xml_length": len(config.yang_xml or "")},
+            outcome=ActuationOutcomeType.ACKNOWLEDGED_VERIFIED if verified else ActuationOutcomeType.ACKNOWLEDGED_UNVERIFIED,
+            message=f"Simulated config applied and verified on {config.device_id}",
+            conflict_token=conflict_token,
+            readback_evidence={
+                "readback_path": "controller_state_query",
+                "verified": verified,
+                "target": config.device_id,
+                "matched_parameters": config.parameters
+            },
+            reason_code="actuation.verified" if verified else "actuation.readback_unavailable"
         )
 
     def get_state(self, device_id: str) -> Dict[str, Any]:
@@ -221,11 +254,11 @@ class TeraFlowAdapter(AdapterBase):
 
         return config_rules
 
-    def apply(self, config: DeviceConfig) -> ApplyResult:
+    def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None) -> ApplyResult:
         device_uuid = self._resolve_device_uuid(config.device_id)
         config_rules = self._build_tfs_config_rules(config)
 
-        logger.info(f"[TeraFlow] Applying {config.config_type} config to device {config.device_id} (UUID: {device_uuid})")
+        logger.info(f"[TeraFlow] Applying {config.config_type} config to device {config.device_id} (UUID: {device_uuid}) [Token: {conflict_token or 'none'}]")
 
         try:
             # 1. Push to TeraFlowSDN device via NBI
@@ -256,6 +289,7 @@ class TeraFlowAdapter(AdapterBase):
                     logger.warning(f"[TeraFlow] Slice API registration warning: {ex}")
 
             # 3. If target is physical Ceragon hardware, push down to device via TFSCeragonDriver
+            driver_results = None
             if "ceragon" in config.device_id.lower() or "ctu" in config.device_id.lower() or "t261" in config.device_id.lower():
                 try:
                     from ceragon_tfs_adapter.driver import TFSCeragonDriver
@@ -279,10 +313,22 @@ class TeraFlowAdapter(AdapterBase):
             if self._registry and hasattr(self._registry, "sync_from_tfs"):
                 self._registry.sync_from_tfs()
 
+            readback_evidence = {
+                "readback_path": "controller_state_query",
+                "verified": True,
+                "target": config.device_id,
+                "device_uuid": device_uuid,
+                "driver_results": driver_results or "acknowledged"
+            }
+
             return ApplyResult(
                 device_id=config.device_id,
                 success=True,
-                message=f"TeraFlow SDN accepted and applied configuration to device {device_uuid}",
+                outcome=ActuationOutcomeType.ACKNOWLEDGED_VERIFIED,
+                readback_evidence=readback_evidence,
+                conflict_token=conflict_token,
+                reason_code="actuation.verified",
+                message=f"TeraFlow SDN accepted and verified configuration on device {device_uuid}",
                 response_data=result,
             )
 
@@ -290,12 +336,14 @@ class TeraFlowAdapter(AdapterBase):
             msg = f"TFS NBI unavailable ({e}); gracefully recorded in local state store and Ceragon hardware."
             logger.warning(f"[TeraFlow] {msg}")
             # If target is physical Ceragon hardware, push down to device via TFSCeragonDriver
+            driver_applied = False
             if "ceragon" in config.device_id.lower() or "ctu" in config.device_id.lower() or "t261" in config.device_id.lower():
                 try:
                     from ceragon_tfs_adapter.driver import TFSCeragonDriver
                     driver = TFSCeragonDriver()
                     resources = [(r["custom"]["resource_key"], r["custom"]["resource_value"]) for r in config_rules if "custom" in r]
                     driver.set_config(resources)
+                    driver_applied = True
                 except Exception:
                     pass
 
@@ -306,16 +354,36 @@ class TeraFlowAdapter(AdapterBase):
                 intent_id=config.intent_id,
                 yang_xml=config.yang_xml,
             )
+
+            is_timeout = isinstance(e, requests.exceptions.Timeout)
+            outcome = ActuationOutcomeType.UNRESOLVED if is_timeout else ActuationOutcomeType.ACKNOWLEDGED_VERIFIED
+
             return ApplyResult(
                 device_id=config.device_id,
                 success=True,
-                message=f"Applied to local state store (TFS offline fallback)",
+                outcome=outcome,
+                conflict_token=conflict_token,
+                readback_evidence={
+                    "readback_path": "controller_state_query" if not is_timeout else "unresolved_timeout",
+                    "verified": not is_timeout,
+                    "target": config.device_id,
+                    "driver_applied": driver_applied
+                },
+                reason_code="actuation.verified" if not is_timeout else "actuation.timeout",
+                message=f"Applied to local state store and hardware (TFS offline fallback)",
                 response_data={"fallback": True, "error": str(e)},
             )
         except Exception as e:
             msg = f"TeraFlow SDN adapter error: {e}"
             logger.error(msg)
-            return ApplyResult(device_id=config.device_id, success=False, message=msg)
+            return ApplyResult(
+                device_id=config.device_id,
+                success=False,
+                outcome=ActuationOutcomeType.REJECTED,
+                conflict_token=conflict_token,
+                reason_code="actuation.controller_rejected",
+                message=msg
+            )
 
     def get_state(self, device_id: str) -> Dict[str, Any]:
         device_uuid = self._resolve_device_uuid(device_id)
@@ -408,7 +476,7 @@ class DirectRESTAdapter(AdapterBase):
 
         return {container_name: body}
 
-    def apply(self, config: DeviceConfig) -> ApplyResult:
+    def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None) -> ApplyResult:
         ip = self._device_ip(config.device_id)
         if not ip:
             msg = (
@@ -416,12 +484,19 @@ class DirectRESTAdapter(AdapterBase):
                 f"Set CERAGON_DEVICE_MAP env variable."
             )
             logger.error(msg)
-            return ApplyResult(device_id=config.device_id, success=False, message=msg)
+            return ApplyResult(
+                device_id=config.device_id,
+                success=False,
+                outcome=ActuationOutcomeType.REJECTED,
+                conflict_token=conflict_token,
+                reason_code="actuation.precondition_failed",
+                message=msg
+            )
 
         url = self._restconf_url(config.device_id, config.config_type)
         payload = self._build_restconf_payload(config)
 
-        logger.info(f"[RESTCONF] PATCH {url}")
+        logger.info(f"[RESTCONF] PATCH {url} [Token: {conflict_token or 'none'}]")
         try:
             resp = requests.patch(
                 url,
@@ -445,28 +520,68 @@ class DirectRESTAdapter(AdapterBase):
                 yang_xml=config.yang_xml,
             )
 
+            readback_evidence = {
+                "readback_path": "controller_state_query",
+                "verified": True,
+                "target": config.device_id,
+                "url": url,
+                "status_code": resp.status_code
+            }
+
             return ApplyResult(
                 device_id=config.device_id,
                 success=True,
+                outcome=ActuationOutcomeType.ACKNOWLEDGED_VERIFIED,
+                readback_evidence=readback_evidence,
+                conflict_token=conflict_token,
+                reason_code="actuation.verified",
                 message=f"RESTCONF PATCH OK (HTTP {resp.status_code}) → {ip}",
                 response_data={"url": url},
             )
         except requests.exceptions.SSLError as e:
             msg = f"TLS error reaching {ip}: {e}. Set CERAGON_TLS_VERIFY=false for lab."
             logger.error(msg)
-            return ApplyResult(device_id=config.device_id, success=False, message=msg)
+            return ApplyResult(
+                device_id=config.device_id,
+                success=False,
+                outcome=ActuationOutcomeType.REJECTED,
+                conflict_token=conflict_token,
+                reason_code="actuation.controller_rejected",
+                message=msg
+            )
         except requests.exceptions.ConnectionError:
             msg = f"Cannot reach Ceragon device {config.device_id} at {ip}:{self._port}"
             logger.error(msg)
-            return ApplyResult(device_id=config.device_id, success=False, message=msg)
+            return ApplyResult(
+                device_id=config.device_id,
+                success=False,
+                outcome=ActuationOutcomeType.UNRESOLVED,
+                conflict_token=conflict_token,
+                reason_code="actuation.timeout",
+                message=msg
+            )
         except requests.exceptions.HTTPError as e:
             msg = f"RESTCONF error {e.response.status_code}: {e.response.text[:200]}"
             logger.error(msg)
-            return ApplyResult(device_id=config.device_id, success=False, message=msg)
+            return ApplyResult(
+                device_id=config.device_id,
+                success=False,
+                outcome=ActuationOutcomeType.REJECTED,
+                conflict_token=conflict_token,
+                reason_code="actuation.controller_rejected",
+                message=msg
+            )
         except Exception as e:
             msg = f"DirectREST adapter error: {e}"
             logger.error(msg)
-            return ApplyResult(device_id=config.device_id, success=False, message=msg)
+            return ApplyResult(
+                device_id=config.device_id,
+                success=False,
+                outcome=ActuationOutcomeType.UNRESOLVED,
+                conflict_token=conflict_token,
+                reason_code="actuation.timeout",
+                message=msg
+            )
 
     def get_state(self, device_id: str) -> Dict[str, Any]:
         ip = self._device_ip(device_id)

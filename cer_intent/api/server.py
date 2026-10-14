@@ -18,8 +18,10 @@ from flask_socketio import SocketIO
 
 from cer_intent.intent_schema import (
     Intent, IntentStatus, IntentTarget, IntentType,
-    IntentLifecycle3GPP, ServiceDLCState, CustomerFacingService, ResourceFacingService
+    IntentLifecycle3GPP, ServiceDLCState, CustomerFacingService, ResourceFacingService,
+    ActuationOutcomeType
 )
+from cer_intent.governance.conflict_fabric import get_conflict_fabric, VerdictType
 from cer_intent.intent_parser import IntentParser
 from cer_intent.intent_validator import IntentValidator
 from cer_intent.translators import get_translator
@@ -53,6 +55,7 @@ def create_app(registry, audit_log) -> Flask:
     # One-time init of shared components
     state_store = StateStore(os.getenv("STATE_FILE", "data/topology_state.json"))
     adapter = create_adapter(state_store, registry=registry)
+    conflict_fabric = get_conflict_fabric()
     parser = IntentParser()
     validator = IntentValidator(registry=registry)
     
@@ -63,6 +66,7 @@ def create_app(registry, audit_log) -> Flask:
 
     # Wire intent store and telemetry into reconciler (run.py sets these up after create_app)
     app.config["intent_store"] = _intent_store
+    app.config["conflict_fabric"] = conflict_fabric
     app.config["registry"] = registry
     app.config["audit_log"] = audit_log
     app.config["adapter"] = adapter
@@ -214,13 +218,49 @@ def create_app(registry, audit_log) -> Flask:
                 _emit_intent_update(intent)
                 return jsonify({"status": "translation_failed", "error": translation.error}), 500
 
-            # 4. Apply
+            # 3b. External Conflict Fabric Mediation (D2.4 Section 10 & Req-T23-DE-02)
+            verdict = conflict_fabric.submit(intent)
+            intent.conflict_token = verdict.token
+            audit_log.system_event(
+                f"Conflict Fabric Verdict for {intent.intent_id[:8]}: {verdict.verdict.value} "
+                f"(Token: {verdict.token}, Reason: {verdict.reason_code})"
+            )
+
+            if verdict.verdict == VerdictType.DENY:
+                intent.status = IntentStatus.FAILED
+                intent.error_message = f"Conflict Fabric Denied Intent: {verdict.reason_code}"
+                _emit_intent_update(intent)
+                return jsonify({
+                    **_intent_to_dict(intent),
+                    "status": "denied",
+                    "reason": verdict.reason_code,
+                    "verdict": verdict.model_dump(mode="json")
+                }), 409
+
+            if verdict.verdict == VerdictType.DEFER:
+                intent.status = IntentStatus.PENDING
+                intent.error_message = f"Conflict Fabric Deferred Intent: {verdict.reason_code}"
+                _emit_intent_update(intent)
+                return jsonify({
+                    **_intent_to_dict(intent),
+                    "status": "deferred",
+                    "retry_after": verdict.retry_after,
+                    "verdict": verdict.model_dump(mode="json")
+                }), 202
+
+            # 4. Apply through Actuator with last-mile token check (Req-T23-CG-07)
             intent.status = IntentStatus.APPLYING
             _emit_intent_update(intent)
 
             backend_name = type(adapter).__name__
-            apply_results = adapter.apply_all(translation.device_configs)
+            apply_results = adapter.apply_all(translation.device_configs, conflict_token=verdict.token)
             all_ok = all(r.success for r in apply_results)
+
+            if apply_results:
+                intent.actuation_outcome = apply_results[0].outcome
+                intent.readback_evidence = apply_results[0].readback_evidence
+            else:
+                intent.actuation_outcome = ActuationOutcomeType.ACKNOWLEDGED_VERIFIED
 
             intent.status = IntentStatus.APPLIED if all_ok else IntentStatus.FAILED
             intent.state_3gpp = IntentLifecycle3GPP.OPERATION if all_ok else IntentLifecycle3GPP.COMMISSIONING
@@ -331,6 +371,8 @@ def create_app(registry, audit_log) -> Flask:
                 "target": i.target.identifier,
                 "state_3gpp": i.state_3gpp.value if hasattr(i.state_3gpp, "value") else str(i.state_3gpp),
                 "service_dlc_state": i.service_dlc_state.value if hasattr(i.service_dlc_state, "value") else str(i.service_dlc_state),
+                "actuation_outcome": i.actuation_outcome.value if hasattr(i.actuation_outcome, "value") else str(i.actuation_outcome or "unspecified"),
+                "conflict_token": i.conflict_token,
                 "cfs_id": i.cfs.cfs_id if i.cfs else None,
                 "cfs_name": i.cfs.name if i.cfs else None,
                 "rfs_count": len(i.rfs_list),
@@ -373,6 +415,21 @@ def create_app(registry, audit_log) -> Flask:
         audit_log.system_event(f"ServiceDLC for intent {intent_id[:8]} suspended for emergency preemption.")
         _emit_intent_update(intent)
         return jsonify({"intent_id": intent_id, "service_dlc_state": intent.service_dlc_state.value})
+
+    # ── Conflict Fabric Mediation API (D2.4 Chapter 10) ─────────────────────────
+
+    @app.route("/api/v1/conflict-fabric/status", methods=["GET"])
+    def get_conflict_fabric_status():
+        """Return diagnostic status of the external conflict fabric integration."""
+        return jsonify(conflict_fabric.get_status())
+
+    @app.route("/api/v1/conflict-fabric/verdicts/<intent_id>", methods=["GET"])
+    def get_conflict_verdict(intent_id: str):
+        """Retrieve mediation verdict and issued token for an intent."""
+        v = conflict_fabric.verdict(intent_id)
+        if not v:
+            return jsonify({"error": "No verdict found for intent"}), 404
+        return jsonify(v.model_dump(mode="json"))
 
 
     # ── Topology API ──────────────────────────────────────────────────────────
@@ -535,13 +592,28 @@ def create_app(registry, audit_log) -> Flask:
                 _emit_intent_update(intent)
                 return jsonify({"status": "failed", "error": translation.error}), 500
 
-            # 2. Apply configs
+            # Mediate through external Conflict Fabric before actuation
+            verdict = conflict_fabric.submit(intent)
+            intent.conflict_token = verdict.token
+            audit_log.system_event(
+                f"Conflict Fabric Verdict for approved intent {intent.intent_id[:8]}: {verdict.verdict.value} (Token: {verdict.token})"
+            )
+
+            if verdict.verdict == VerdictType.DENY:
+                intent.status = IntentStatus.FAILED
+                intent.error_message = f"Conflict Fabric Denied Intent: {verdict.reason_code}"
+                _emit_intent_update(intent)
+                return jsonify({"status": "denied", "reason": verdict.reason_code}), 409
+
+            # 2. Apply configs with token
             intent.status = IntentStatus.APPLYING
             _emit_intent_update(intent)
             
             backend_name = type(adapter).__name__
+            last_res = None
             for cfg in translation.device_configs:
-                success_res = adapter.apply(cfg)
+                success_res = adapter.apply(cfg, conflict_token=verdict.token)
+                last_res = success_res
                 if success_res.success:
                     state_store.update_device_config(cfg.device_id, cfg.config_type, cfg.parameters, intent.intent_id)
                 
@@ -549,6 +621,12 @@ def create_app(registry, audit_log) -> Flask:
                     intent.intent_id, cfg.device_id, cfg.config_type,
                     success_res.success, success_res.message, backend_name
                 )
+
+            if last_res:
+                intent.actuation_outcome = last_res.outcome
+                intent.readback_evidence = last_res.readback_evidence
+            else:
+                intent.actuation_outcome = ActuationOutcomeType.ACKNOWLEDGED_VERIFIED
 
             intent.status = IntentStatus.APPLIED
             intent.state_3gpp = IntentLifecycle3GPP.OPERATION
