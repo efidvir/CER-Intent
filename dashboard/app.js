@@ -7,18 +7,21 @@
 // ── Config ────────────────────────────────────────────────────────────────────
 const API = "";  // Same origin
 const EXAMPLES = [
+  "Enable IEEE 802.1Qbv TSN Time-Aware Shaper with 802.1Qbu frame preemption and 250 us cycle on link-D-E",
+  "Steer 60.48 GHz massive2 phased-array beam to +15 deg azimuth on ceragon-mh-t261-ctu-96",
+  "Configure O-RAN Split 7.2x eCPRI fronthaul with 9 bit BFP IQ compression and 100 us latency on link-A-B",
+  "Bond 80 GHz E-Band and 18 GHz microwave multi-band carrier aggregation for 10 Gbps on link-A-B",
+  "Configure ITU-T G.8275.1 PTP Telecom Boundary Clock with SyncE QL-PRC and 150 ns phase accuracy on node-A",
+  "Enable MACsec GCM-AES-256 line-rate encryption with PQC Kyber768 key exchange on link-D-E",
+  "Enable XPIC cross-polarization interference cancellation with 30 dB XPD on link-A-C",
+  "Trigger MARL autonomic mesh healing and ignite emergency 60 GHz backup bridges on sector-north",
+  "Enable Digital Twin NS-3 co-simulation telemetry streaming at 500 ms interval on ceragon-mh-t261-ctu-96",
   "Increase capacity on link-A-B to 5 Gbps for eMBB slice",
-  "Enable 1+1 HSB protection on sector-north",
-  "Set minimum modulation to 256QAM on all links",
-  "Ensure latency < 5ms on link-D-E for URLLC traffic",
-  "Allocate 30% bandwidth to eMBB slice on link-E-H",
-  "Enable space diversity on link-A-C",
-  "Set ACM range 64QAM to 2048QAM on sector-south links",
-  "Enable deep sleep mode during night hours for Sector-North",
-  "Turn on MACsec payload encryption on link-D-E",
-  "Configure PTP SyncE timing profile G.8275.1 on node-A",
+  "Ensure latency < 1.5ms on link-D-E for URLLC traffic",
+  "Harden modulation floor to 64QAM for rain fade protection on ceragon-mh-t261-ctu-96",
+  "Enable 1+1 HSB protection and space diversity on sector-north",
   "Configure 1 Gbps capacity for slice-uran-6g on node ceragon-mh-t261-ctu-96",
-  "Tune radio frequency to 60.48 GHz on Ceragon-MH-T261-ctu-96",
+  "Enable Green Telco deep sleep mode during off-peak hours for sector-north",
 ];
 const MODEL_COLORS = {
   "IP-50FX": "#00d4ff",
@@ -1805,3 +1808,94 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   setInterval(fetchCeragonTelemetry, 5000);
 });
+
+// ── AI Architect Skills & Intent Translation Catalog Modal ────────────────────
+function useCatalogPrompt(promptText) {
+  document.getElementById("modal-overlay")?.classList.add("hidden");
+  switchDashboardView("topology");
+  const nlInput = document.getElementById("nl-input");
+  const tabNl = document.getElementById("tab-nl");
+  if (tabNl) tabNl.click();
+  if (nlInput) {
+    nlInput.value = promptText;
+    nlInput.focus();
+    document.getElementById("panel-intent-input")?.scrollIntoView({ behavior: "smooth" });
+  }
+}
+
+async function openSkillsCatalogModal() {
+  const overlay = document.getElementById("modal-overlay");
+  const titleEl = document.getElementById("modal-title");
+  const bodyEl = document.getElementById("modal-body");
+  if (!overlay || !titleEl || !bodyEl) return;
+
+  titleEl.innerHTML = `🧠 AI Architect Skills (17) &amp; Intent Translation Mappings (14)`;
+  bodyEl.innerHTML = `<div style="padding:1.5rem;text-align:center;color:#00d4ff">⟳ Loading Skills &amp; Translation Mappings from /api/v1/intent-mappings...</div>`;
+  overlay.classList.remove("hidden");
+
+  try {
+    const res = await fetch(`${API}/api/v1/intent-mappings`);
+    const data = await res.json();
+    const skills = data.architect_skills || [];
+    const mappings = data.translation_mappings || [];
+
+    const skillsHtml = skills.map(s => {
+      const prompts = (s.example_prompts || []).map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.18);border-radius:6px;padding:6px 10px;margin-top:4px;font-size:0.74rem">
+          <span style="color:#e8f0fe;font-family:'JetBrains Mono',monospace">${escape(p)}</span>
+          <button class="btn btn-primary" style="font-size:0.68rem;padding:3px 8px;white-space:nowrap" onclick="useCatalogPrompt('${escapeBacktick(p).replace(/'/g, "\\'")}')">⚡ Use Prompt</button>
+        </div>
+      `).join("");
+
+      const stdBadges = (s.standards || []).map(std => `
+        <span style="font-size:0.65rem;padding:2px 6px;border-radius:4px;background:rgba(192,132,252,0.15);color:#e9d5ff;border:1px solid rgba(192,132,252,0.3)">${escape(std)}</span>
+      `).join(" ");
+
+      return `
+        <div style="background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:8px;padding:0.85rem;margin-bottom:0.75rem">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">
+            <div>
+              <span style="font-weight:700;color:#00d4ff;font-size:0.88rem">${escape(s.title || s.name)}</span>
+              <code style="margin-left:6px;font-size:0.7rem;color:#94a3b8">${escape(s.name)}</code>
+            </div>
+            <span style="font-size:0.68rem;padding:2px 8px;border-radius:12px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:600">${escape(s.category || "Telecom Skill")}</span>
+          </div>
+          <div style="font-size:0.76rem;color:var(--text-secondary);margin-bottom:6px">${escape(s.what_it_achieves || s.description)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${stdBadges}</div>
+          ${prompts}
+        </div>
+      `;
+    }).join("");
+
+    const mappingsHtml = mappings.map(m => `
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-bottom:0.6rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span class="intent-type-badge type-${escape(m.intent_type)}">${escape(m.intent_type).toUpperCase()}</span>
+          <code style="font-size:0.7rem;color:#ffa726">${escape(m.translator)} → ${escape(m.config_type)}</code>
+        </div>
+        <div style="font-size:0.74rem;color:#e8f0fe;margin-bottom:4px"><b>Standards:</b> ${escape((m.standards || []).join(" · "))}</div>
+        <div style="font-size:0.72rem;color:#00d4ff;font-family:monospace;margin-bottom:4px">YANG Models: ${escape((m.yang_namespaces || []).join(", "))}</div>
+        <div style="font-size:0.73rem;color:var(--text-secondary);margin-bottom:6px">${escape(m.achieves || "")}</div>
+        ${m.example_nl ? `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.22);border-radius:6px;padding:5px 9px;font-size:0.73rem">
+            <span style="font-family:monospace;color:#d1fae5">${escape(m.example_nl)}</span>
+            <button class="btn btn-primary" style="font-size:0.68rem;padding:3px 8px;white-space:nowrap" onclick="useCatalogPrompt('${escapeBacktick(m.example_nl).replace(/'/g, "\\'")}')">⚡ Use Prompt</button>
+          </div>
+        ` : ""}
+      </div>
+    `).join("");
+
+    bodyEl.innerHTML = `
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.8rem">
+        Click <b>⚡ Use Prompt</b> on any skill or intent mapping below to load it into the Intent Manager for immediate AI Architect reasoning, YANG/RESTCONF translation, and TeraFlowSDN + NS-3 Digital Twin actuation.
+      </div>
+      <div class="section-title" style="color:#00d4ff;margin-bottom:0.6rem">17 AI Architect Skills (Domain Reasoning &amp; Multi-Step Strategies)</div>
+      <div style="max-height:340px;overflow-y:auto;padding-right:4px;margin-bottom:1rem">${skillsHtml}</div>
+      <div class="section-title" style="color:#ffa726;margin-bottom:0.6rem">14 Canonical Intent Types &amp; NETCONF/RESTCONF YANG Translators</div>
+      <div style="max-height:300px;overflow-y:auto;padding-right:4px">${mappingsHtml}</div>
+    `;
+  } catch (err) {
+    bodyEl.innerHTML = `<div class="submit-result error">Failed to load catalog: ${escape(err.message)}</div>`;
+  }
+}
+

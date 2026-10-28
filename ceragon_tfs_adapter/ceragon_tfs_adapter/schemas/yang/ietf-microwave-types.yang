@@ -1,0 +1,55 @@
+module ietf-microwave-types {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-microwave-types";
+  prefix mw-types;
+
+  organization "IETF CCAMP Working Group";
+  contact "WG Web: <https://datatracker.ietf.org/wg/ccamp/>";
+  description
+    "Common YANG types and identities for Microwave Radio Links (RFC 8561).";
+
+  revision 2019-06-19 {
+    description "Initial revision.";
+    reference "RFC 8561: A YANG Data Model for Microwave Radio Link";
+  }
+
+  identity coding-modulation {
+    description "Base identity for modulation and coding schemes.";
+  }
+  identity bpsk { base coding-modulation; }
+  identity qpsk { base coding-modulation; }
+  identity qam-16 { base coding-modulation; }
+  identity qam-32 { base coding-modulation; }
+  identity qam-64 { base coding-modulation; }
+  identity qam-128 { base coding-modulation; }
+  identity qam-256 { base coding-modulation; }
+  identity qam-512 { base coding-modulation; }
+  identity qam-1024 { base coding-modulation; }
+  identity qam-2048 { base coding-modulation; }
+  identity qam-4096 { base coding-modulation; }
+
+  identity rlt-mode {
+    description "Base identity for radio link protection/bonding modes.";
+  }
+  identity single-carrier { base rlt-mode; }
+  identity one-plus-one-hsb { base rlt-mode; }
+  identity two-plus-zero { base rlt-mode; }
+  identity xpic-dual-carrier { base rlt-mode; }
+  identity multiband-bonded { base rlt-mode; }
+
+  typedef power-dbm {
+    type decimal64 {
+      fraction-digits 1;
+    }
+    units "dBm";
+    description "RF power level in dBm.";
+  }
+
+  typedef snr-db {
+    type decimal64 {
+      fraction-digits 1;
+    }
+    units "dB";
+    description "Signal-to-Noise or Mean-Square-Error ratio in dB.";
+  }
+}

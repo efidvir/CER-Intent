@@ -1,0 +1,38 @@
+module iana-hardware {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:iana-hardware";
+  prefix ianahw;
+
+  organization "IANA";
+  contact "Internet Assigned Numbers Authority <mailto:iana@iana.org>";
+  description "IANA hardware class identities (RFC 8348).";
+
+  revision 2018-03-13 {
+    description "Initial revision.";
+    reference "RFC 8348: A YANG Data Model for Hardware Management";
+  }
+
+  identity hardware-class {
+    description "Base identity for hardware component classes.";
+  }
+  identity chassis {
+    base hardware-class;
+    description "Overall physical enclosure / radio chassis.";
+  }
+  identity module {
+    base hardware-class;
+    description "Modem or radio carrier module.";
+  }
+  identity port {
+    base hardware-class;
+    description "Physical Ethernet or RF waveguide port.";
+  }
+  identity sensor {
+    base hardware-class;
+    description "Temperature, voltage, or RSL sensor.";
+  }
+  identity power-supply {
+    base hardware-class;
+    description "PoE or DC power supply unit.";
+  }
+}

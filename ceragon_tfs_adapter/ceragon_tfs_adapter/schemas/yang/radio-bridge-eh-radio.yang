@@ -1,0 +1,160 @@
+module radio-bridge-eh-radio {
+  yang-version 1.1;
+  namespace "http://siklu.com/yang/eh/radio";
+  prefix rb-eh-radio;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import radio-bridge-tg-types {
+    prefix rb-tg-types;
+  }
+
+  organization "Siklu by Ceragon";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "YANG 1.1 data model for Siklu by Ceragon EtherHaul Point-to-Point (P2P)
+     E-Band (71-76 / 81-86 GHz) and V-Band (57-66 GHz) radios:
+     EH-500TX, EH-600TX, EH-614TX, EH-700TX, EH-710TX, EH-1200FX, EH-1200TX,
+     EH-2200FX, EH-2500FX, and EH-8010FX.";
+
+  revision 2025-01-15 {
+    description "Complete EtherHaul P2P E-band and V-band radio YANG schema.";
+    reference "Siklu by Ceragon EtherHaul Series MIB & RESTCONF Reference";
+  }
+
+  typedef eh-duplex-mode {
+    type enumeration {
+      enum fdd { value 1; description "Frequency Division Duplex (71-76 / 81-86 GHz)."; }
+      enum tdd { value 2; description "Time Division Duplex (57-66 GHz or 71-76 GHz)."; }
+    }
+  }
+
+  typedef eh-channel-width-mhz {
+    type enumeration {
+      enum bw-125mhz { value 125; }
+      enum bw-250mhz { value 250; }
+      enum bw-500mhz { value 500; }
+      enum bw-1000mhz { value 1000; }
+      enum bw-2000mhz { value 2000; }
+    }
+    default "bw-2000mhz";
+  }
+
+  typedef eh-modulation-mode {
+    type enumeration {
+      enum bpsk-1 { value 1; }
+      enum bpsk-2 { value 2; }
+      enum qpsk-1 { value 3; }
+      enum qpsk-2 { value 4; }
+      enum qpsk-3 { value 5; }
+      enum qam16 { value 6; }
+      enum qam32 { value 7; }
+      enum qam64 { value 8; }
+      enum qam128 { value 9; }
+      enum qam256 { value 10; }
+    }
+  }
+
+  container eh-radio {
+    description "EtherHaul P2P radio configuration and operational telemetry.";
+    leaf system-name {
+      type string;
+    }
+    leaf model-name {
+      type string;
+      default "EH-8010FX";
+    }
+    leaf admin-status {
+      type rb-tg-types:admin-status;
+      default "up";
+    }
+    leaf oper-status {
+      type rb-tg-types:oper-status;
+      config false;
+    }
+    leaf duplex-mode {
+      type eh-duplex-mode;
+      default "fdd";
+    }
+    leaf tx-frequency-mhz {
+      type uint32 {
+        range "57000..86000";
+      }
+      units "MHz";
+      default "73500";
+    }
+    leaf rx-frequency-mhz {
+      type uint32 {
+        range "57000..86000";
+      }
+      units "MHz";
+      default "83500";
+    }
+    leaf channel-width {
+      type eh-channel-width-mhz;
+      default "bw-2000mhz";
+    }
+    leaf tx-power-dbm {
+      type int8 {
+        range "-35..25";
+      }
+      units "dBm";
+      default "18";
+    }
+    leaf atpc-enabled {
+      type boolean;
+      default "true";
+    }
+    leaf acm-enabled {
+      type boolean;
+      default "true";
+    }
+    leaf min-modulation {
+      type eh-modulation-mode;
+      default "bpsk-1";
+    }
+    leaf max-modulation {
+      type eh-modulation-mode;
+      default "qam256";
+    }
+    leaf extend-mm-enabled {
+      type boolean;
+      default "false";
+      description "ExtendMM multiband failover to external microwave radio.";
+    }
+    leaf aes-encryption-enabled {
+      type boolean;
+      default "false";
+    }
+    container state {
+      config false;
+      leaf rssi-dbm {
+        type int16;
+        units "dBm";
+      }
+      leaf cinr-db {
+        type decimal64 {
+          fraction-digits 1;
+        }
+        units "dB";
+      }
+      leaf actual-tx-modulation {
+        type eh-modulation-mode;
+      }
+      leaf actual-rx-modulation {
+        type eh-modulation-mode;
+      }
+      leaf actual-air-capacity-mbps {
+        type uint32;
+        units "Mbps";
+      }
+      leaf system-temperature-celsius {
+        type rb-tg-types:temperature-celsius;
+      }
+      leaf remote-mac-address {
+        type yang:mac-address;
+      }
+    }
+  }
+}

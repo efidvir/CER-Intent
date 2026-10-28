@@ -1,0 +1,78 @@
+module ietf-hardware {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-hardware";
+  prefix hw;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import iana-hardware {
+    prefix ianahw;
+  }
+
+  organization "IETF NETMOD Working Group";
+  contact "WG Web: <https://datatracker.ietf.org/wg/netmod/>";
+  description "YANG Data Model for Hardware Management (RFC 8348).";
+
+  revision 2018-03-13 {
+    description "Initial revision.";
+    reference "RFC 8348: A YANG Data Model for Hardware Management";
+  }
+
+  container hardware {
+    description "Data nodes representing physical hardware components.";
+    leaf last-change {
+      type yang:date-and-time;
+      config false;
+    }
+    list component {
+      key "name";
+      leaf name {
+        type string;
+      }
+      leaf class {
+        type identityref {
+          base ianahw:hardware-class;
+        }
+        mandatory true;
+      }
+      leaf physical-index {
+        type int32 {
+          range "1..2147483647";
+        }
+        config false;
+      }
+      leaf description {
+        type string;
+        config false;
+      }
+      leaf hardware-rev {
+        type string;
+        config false;
+      }
+      leaf firmware-rev {
+        type string;
+        config false;
+      }
+      leaf software-rev {
+        type string;
+        config false;
+      }
+      leaf serial-num {
+        type string;
+        config false;
+      }
+      leaf mfg-name {
+        type string;
+        config false;
+      }
+      leaf model-name {
+        type string;
+        config false;
+      }
+      leaf alias {
+        type string;
+      }
+    }
+  }
+}

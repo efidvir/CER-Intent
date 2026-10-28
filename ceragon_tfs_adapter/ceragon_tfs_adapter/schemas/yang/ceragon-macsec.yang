@@ -1,0 +1,69 @@
+module ceragon-macsec {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/macsec";
+  prefix cer-sec;
+
+  import ieee802-dot1ae-macsec {
+    prefix macsec;
+  }
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS IEEE 802.1AE MACsec and FIPS 140-2 AES-256 radio-layer
+     and Ethernet-layer encryption configuration.";
+
+  revision 2025-01-15 {
+    description "Initial revision.";
+    reference "Ceragon CeraOS Security Guide";
+  }
+
+  container macsec-config {
+    description "Line-rate AES-256-GCM encryption configuration.";
+    leaf global-enabled {
+      type boolean;
+      default "false";
+    }
+    leaf cipher-suite {
+      type macsec:cipher-suite-type;
+      default "gcm-aes-256";
+    }
+    leaf sak-rekey-interval-sec {
+      type uint32 {
+        range "60..86400";
+      }
+      units "seconds";
+      default "3600";
+    }
+    leaf fail-open-policy {
+      type enumeration {
+        enum strict-drop { value 0; }
+        enum must-secure { value 1; }
+        enum should-secure { value 2; }
+      }
+      default "must-secure";
+    }
+    list secured-interface {
+      key "interface-name";
+      leaf interface-name {
+        type string;
+      }
+      leaf enabled {
+        type boolean;
+        default "true";
+      }
+      leaf cak-key-name {
+        type string;
+        default "ceragon-mka-cak-1";
+      }
+      leaf encryption-status {
+        type enumeration {
+          enum secured { value 1; }
+          enum negotiating { value 2; }
+          enum disabled { value 3; }
+        }
+        config false;
+      }
+    }
+  }
+}

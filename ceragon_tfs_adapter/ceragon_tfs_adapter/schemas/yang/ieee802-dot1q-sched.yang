@@ -1,0 +1,85 @@
+module ieee802-dot1q-sched {
+  yang-version 1.1;
+  namespace "urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched";
+  prefix sched;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+  import ieee802-dot1q-types {
+    prefix dot1q-types;
+  }
+
+  organization "IEEE 802.1 Working Group";
+  contact "WG-URL: http://www.ieee802.org/1/";
+  description
+    "IEEE 802.1Qbv Enhancements for Scheduled Traffic (Time-Aware Shaper / TAS).";
+
+  revision 2018-09-10 {
+    description "Published as part of IEEE Std 802.1Qcw / 802.1Qbv.";
+    reference "IEEE Std 802.1Q-2018 Clause 8.6.8.4";
+  }
+
+  augment "/if:interfaces/if:interface" {
+    description "IEEE 802.1Qbv Time-Aware Shaper Gate Parameter Table.";
+    container bridge-port {
+      container gate-parameter-table {
+        leaf gate-enabled {
+          type boolean;
+          default "false";
+          description "Enables IEEE 802.1Qbv scheduled traffic gating on this port.";
+        }
+        leaf admin-gate-states {
+          type uint8;
+          default "255";
+          description "8-bit bitmask of administrative gate states for traffic classes 0..7.";
+        }
+        leaf oper-gate-states {
+          type uint8;
+          config false;
+          description "8-bit bitmask of current operational gate states.";
+        }
+        container admin-control-list {
+          list gate-control-entry {
+            key "index";
+            leaf index {
+              type uint32;
+            }
+            leaf operation-name {
+              type enumeration {
+                enum set-gate-states { value 0; }
+                enum set-and-hold-mac { value 1; }
+                enum set-and-release-mac { value 2; }
+              }
+              default "set-gate-states";
+            }
+            leaf time-interval-value {
+              type uint32;
+              units "nanoseconds";
+              mandatory true;
+            }
+            leaf gate-states-value {
+              type uint8;
+              mandatory true;
+            }
+          }
+        }
+        container admin-cycle-time {
+          leaf numerator {
+            type uint32;
+            default "1";
+          }
+          leaf denominator {
+            type uint32;
+            default "1000";
+          }
+        }
+        leaf frame-preemption-enabled {
+          type boolean;
+          default "false";
+          description "Enables IEEE 802.1Qbu frame preemption for express traffic.";
+        }
+      }
+    }
+  }
+}

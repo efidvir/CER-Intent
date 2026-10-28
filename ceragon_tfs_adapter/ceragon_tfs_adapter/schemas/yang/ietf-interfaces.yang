@@ -1,0 +1,155 @@
+module ietf-interfaces {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-interfaces";
+  prefix if;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  organization "IETF NETMOD (Network Modeling) Working Group";
+  contact "WG Web: <https://datatracker.ietf.org/wg/netmod/>";
+  description
+    "YANG data model for network interface management (RFC 8343).";
+
+  revision 2018-02-20 {
+    description "Updated to support NMDA.";
+    reference "RFC 8343: A YANG Data Model for Interface Management";
+  }
+
+  feature arbitrary-names {
+    description "Allows arbitrary interface names.";
+  }
+  feature pre-provisioning {
+    description "Supports pre-provisioning of interface configuration.";
+  }
+  feature if-mib {
+    description "Implements the IF-MIB (RFC 2863).";
+  }
+
+  identity interface-type {
+    description "Base identity from which specific interface types are derived.";
+  }
+
+  typedef interface-ref {
+    type leafref {
+      path "/if:interfaces/if:interface/if:name";
+    }
+    description "Reference to an interface in /interfaces/interface.";
+  }
+
+  container interfaces {
+    description "Interface parameters.";
+    list interface {
+      key "name";
+      leaf name {
+        type string;
+        description "The name of the interface.";
+      }
+      leaf description {
+        type string;
+        description "Textual description of the interface.";
+      }
+      leaf type {
+        type identityref {
+          base interface-type;
+        }
+        mandatory true;
+        description "The type of the interface.";
+      }
+      leaf enabled {
+        type boolean;
+        default "true";
+        description "Configured administrative state of the interface.";
+      }
+      leaf mtu {
+        type uint32 {
+          range "64..9600";
+        }
+        default "1500";
+        description "Maximum Transmission Unit in octets.";
+      }
+      leaf admin-status {
+        type enumeration {
+          enum up { value 1; }
+          enum down { value 2; }
+          enum testing { value 3; }
+        }
+        config false;
+        description "The desired state of the interface.";
+      }
+      leaf oper-status {
+        type enumeration {
+          enum up { value 1; }
+          enum down { value 2; }
+          enum testing { value 3; }
+          enum unknown { value 4; }
+          enum dormant { value 5; }
+          enum not-present { value 6; }
+          enum lower-layer-down { value 7; }
+        }
+        config false;
+        description "Current operational state of the interface.";
+      }
+      leaf if-index {
+        if-feature if-mib;
+        type int32 {
+          range "1..2147483647";
+        }
+        config false;
+        description "The IF-MIB ifIndex assigned to the interface.";
+      }
+      leaf phys-address {
+        type yang:phys-address;
+        config false;
+        description "The interface MAC / physical layer address.";
+      }
+      leaf speed {
+        type yang:gauge64;
+        units "bits/second";
+        config false;
+        description "Estimate of the interface current bandwidth in bits per second.";
+      }
+      container statistics {
+        config false;
+        description "Collection of interface-related statistics objects.";
+        leaf discontinuity-time {
+          type yang:date-and-time;
+          description "Time of the most recent counter discontinuity.";
+        }
+        leaf in-octets {
+          type yang:counter64;
+          description "Total number of octets received on the interface.";
+        }
+        leaf in-unicast-pkts {
+          type yang:counter64;
+          description "Number of inbound unicast packets.";
+        }
+        leaf in-discards {
+          type yang:counter32;
+          description "Number of inbound packets discarded.";
+        }
+        leaf in-errors {
+          type yang:counter32;
+          description "Number of inbound packets with errors.";
+        }
+        leaf out-octets {
+          type yang:counter64;
+          description "Total number of octets transmitted out of the interface.";
+        }
+        leaf out-unicast-pkts {
+          type yang:counter64;
+          description "Number of outbound unicast packets.";
+        }
+        leaf out-discards {
+          type yang:counter32;
+          description "Number of outbound packets discarded.";
+        }
+        leaf out-errors {
+          type yang:counter32;
+          description "Number of outbound packets with errors.";
+        }
+      }
+    }
+  }
+}

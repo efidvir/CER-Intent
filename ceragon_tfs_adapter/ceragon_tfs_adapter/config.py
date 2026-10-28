@@ -22,6 +22,10 @@ class AdapterConfig:
     use_https: bool = field(default_factory=lambda: os.getenv("CERAGON_USE_HTTPS", "false").lower() == "true")
     verify_tls: bool = field(default_factory=lambda: os.getenv("CERAGON_VERIFY_TLS", "false").lower() == "true")
     timeout_seconds: int = field(default_factory=lambda: int(os.getenv("CERAGON_TIMEOUT_SEC", "10")))
+    # Optional product hint (e.g. "IP-50C", "EH-8010FX", "MH-N366"). Used to pick the
+    # southbound API flavor before probing and as a fallback when the datastore
+    # does not report a model name.
+    model_hint: Optional[str] = field(default_factory=lambda: os.getenv("CERAGON_MODEL"))
 
     # TeraFlowSDN Parameters
     tfs_url: str = field(default_factory=lambda: os.getenv("TERAFLOW_URL", "http://localhost:8088").rstrip("/"))
@@ -36,4 +40,5 @@ class AdapterConfig:
     @property
     def ceragon_base_url(self) -> str:
         scheme = "https" if self.use_https or self.device_port in (443, 8443) else "http"
-        return f"{scheme}://{self.device_ip}:{self.device_port}"
+        port = 443 if (scheme == "https" and self.device_port == 80) else self.device_port
+        return f"{scheme}://{self.device_ip}:{port}"

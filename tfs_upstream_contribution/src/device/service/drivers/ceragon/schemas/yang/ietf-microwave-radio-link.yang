@@ -1,0 +1,153 @@
+module ietf-microwave-radio-link {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-microwave-radio-link";
+  prefix mrl;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+  import iana-if-type {
+    prefix ianaift;
+  }
+  import ietf-microwave-types {
+    prefix mw-types;
+  }
+
+  organization "IETF CCAMP Working Group";
+  contact "WG Web: <https://datatracker.ietf.org/wg/ccamp/>";
+  description
+    "Standard IETF YANG Data Model for Microwave and Millimeter-Wave Radio Links (RFC 8561).";
+
+  revision 2019-06-19 {
+    description "Initial revision.";
+    reference "RFC 8561: A YANG Data Model for Microwave Radio Link";
+  }
+
+  container radio-link-protection-groups {
+    description "Configuration of radio link protection groups (1+1 HSB, 2+0, XPIC).";
+    list protection-group {
+      key "name";
+      leaf name {
+        type string;
+      }
+      leaf protection-architecture-type {
+        type identityref {
+          base mw-types:rlt-mode;
+        }
+        default "mw-types:single-carrier";
+      }
+      leaf-list members {
+        type if:interface-ref;
+      }
+    }
+  }
+
+  augment "/if:interfaces/if:interface" {
+    when "derived-from-or-self(if:type, 'ianaift:microwaveCarrierTermination')";
+    description "Microwave carrier termination parameters per RFC 8561.";
+    leaf tx-enabled {
+      type boolean;
+      default "true";
+    }
+    leaf tx-oper-status {
+      type enumeration {
+        enum off { value 1; }
+        enum on { value 2; }
+        enum standby { value 3; }
+      }
+      config false;
+    }
+    leaf tx-frequency {
+      type uint32;
+      units "kHz";
+      mandatory true;
+    }
+    leaf rx-frequency {
+      type uint32;
+      units "kHz";
+    }
+    leaf channel-separation {
+      type uint32;
+      units "kHz";
+      mandatory true;
+    }
+    leaf polarization {
+      type enumeration {
+        enum horizontal { value 1; }
+        enum vertical { value 2; }
+        enum not-specified { value 3; }
+      }
+      default "not-specified";
+    }
+    container rtpc {
+      description "Remote Transmit Power Control (RTPC / Manual TX Power).";
+      leaf maximum-nominal-power {
+        type mw-types:power-dbm;
+      }
+    }
+    container atpc {
+      description "Automatic Transmit Power Control (ATPC).";
+      leaf enabled {
+        type boolean;
+        default "true";
+      }
+      leaf maximum-nominal-power {
+        type mw-types:power-dbm;
+      }
+      leaf atpc-lower-threshold {
+        type mw-types:power-dbm;
+      }
+      leaf atpc-upper-threshold {
+        type mw-types:power-dbm;
+      }
+    }
+    container acm {
+      description "Adaptive Coding and Modulation (ACM) configuration.";
+      leaf min-coding-modulation {
+        type identityref {
+          base mw-types:coding-modulation;
+        }
+      }
+      leaf max-coding-modulation {
+        type identityref {
+          base mw-types:coding-modulation;
+        }
+      }
+    }
+    container xpic-pairs {
+      description "Cross-Polarization Interference Canceller (XPIC) association.";
+      leaf enabled {
+        type boolean;
+        default "false";
+      }
+    }
+    container capabilities {
+      config false;
+      leaf min-tx-frequency {
+        type uint32;
+        units "kHz";
+      }
+      leaf max-tx-frequency {
+        type uint32;
+        units "kHz";
+      }
+    }
+    container radio-performance {
+      config false;
+      leaf actual-transmitted-level {
+        type mw-types:power-dbm;
+      }
+      leaf actual-received-level {
+        type mw-types:power-dbm;
+      }
+      leaf actual-snir {
+        type mw-types:snr-db;
+      }
+      leaf selected-cm {
+        type identityref {
+          base mw-types:coding-modulation;
+        }
+      }
+    }
+  }
+}

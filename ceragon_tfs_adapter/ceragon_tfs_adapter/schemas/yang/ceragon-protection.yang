@@ -1,0 +1,118 @@
+module ceragon-protection {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/protection";
+  prefix cer-prot;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS Advanced Multi-Carrier Coupling (AMCC), 1+1 Hot-Standby (HSB),
+     2+0 Radio Link Bonding, Space Diversity, XPIC, and 4x4 LoS MIMO configuration.";
+
+  revision 2025-01-15 {
+    description "Aligned with CeraOS AdvancedRadios / AMCC_GROUP_TYPE.";
+    reference "Ceragon CeraOS Technical Description 13.0";
+  }
+
+  container protection-config {
+    description "Top-level radio protection and multi-carrier coupling configuration.";
+    list amcc-group {
+      key "group-id";
+      leaf group-id {
+        type uint8 {
+          range "1..16";
+        }
+      }
+      leaf group-type {
+        type enumeration {
+          enum one-plus-one-hsb { value 1; description "1+1 Hot Standby hitless protection."; }
+          enum two-plus-zero { value 2; description "2+0 Multi-carrier aggregation."; }
+          enum space-diversity { value 4; description "BBS / Space Diversity."; }
+          enum xpic { value 8; description "Cross-Polarization Interference Cancellation."; }
+          enum mimo-4x4 { value 16; description "4x4 Line-of-Sight MIMO."; }
+        }
+        default "xpic";
+      }
+      leaf admin-status {
+        type enumeration {
+          enum enable { value 2; }
+          enum disable { value 3; }
+        }
+        default "enable";
+      }
+      leaf revertive {
+        type boolean;
+        default "true";
+      }
+      leaf wait-to-restore-sec {
+        type uint16 {
+          range "0..3600";
+        }
+        units "seconds";
+        default "300";
+      }
+      leaf active-member-carrier {
+        type uint8;
+        config false;
+      }
+      leaf switchover-time-ms {
+        type uint16;
+        units "milliseconds";
+        config false;
+      }
+      leaf-list member-carriers {
+        type uint8;
+      }
+    }
+  }
+
+  rpc trigger-protection-switch {
+    description "Execute a manual or forced 1+1 HSB protection switchover.";
+    input {
+      leaf group-id {
+        type uint8;
+        mandatory true;
+      }
+      leaf command {
+        type enumeration {
+          enum manual-switch { value 1; }
+          enum forced-switch { value 2; }
+          enum lockout-protection { value 3; }
+          enum clear { value 4; }
+        }
+        default "manual-switch";
+      }
+    }
+    output {
+      leaf status {
+        type string;
+      }
+      leaf active-carrier {
+        type uint8;
+      }
+    }
+  }
+
+  notification protection-switchover-event {
+    description "Notification emitted when a 1+1 HSB switchover occurs.";
+    leaf group-id {
+      type uint8;
+    }
+    leaf previous-active-carrier {
+      type uint8;
+    }
+    leaf new-active-carrier {
+      type uint8;
+    }
+    leaf reason {
+      type string;
+    }
+    leaf timestamp {
+      type yang:date-and-time;
+    }
+  }
+}

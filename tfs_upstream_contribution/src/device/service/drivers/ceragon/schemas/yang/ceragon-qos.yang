@@ -1,0 +1,148 @@
+module ceragon-qos {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/qos";
+  prefix cer-qos;
+
+  import ieee802-dot1q-types {
+    prefix dot1q-types;
+  }
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS Hierarchical QoS (H-QoS) and TSN 802.1Qbv configuration model.
+     Covers 8-CoS queues, classification, policers, WRED, shapers, WFQ/Strict-Priority
+     schedulers, and Time-Aware Shaper (TAS) gate control lists.";
+
+  revision 2025-01-15 {
+    description "Aligned with CeraOS QOS_802_1Q_TABLE, POLICER, WRED, SHAPER, SCHEDULER, and TSN.";
+    reference "Ceragon CeraOS Technical Description 13.0";
+  }
+
+  container qos-config {
+    description "Top-level CeraOS QoS and TSN configuration.";
+    leaf qos-mode {
+      type enumeration {
+        enum standard { value 0; }
+        enum hierarchical-hqos { value 1; }
+        enum tsn-scheduled { value 2; }
+      }
+      default "standard";
+    }
+    leaf trust-vlan-pcp {
+      type boolean;
+      default "true";
+    }
+    leaf trust-dscp {
+      type boolean;
+      default "true";
+    }
+    leaf trust-mpls-exp {
+      type boolean;
+      default "true";
+    }
+
+    list policer-profile {
+      key "profile-id";
+      leaf profile-id {
+        type uint16 {
+          range "1..256";
+        }
+      }
+      leaf description {
+        type string;
+      }
+      leaf cir-mbps {
+        type uint32;
+        units "Mbps";
+        default "100";
+      }
+      leaf cbs-kb {
+        type uint32;
+        units "kB";
+        default "32";
+      }
+      leaf eir-mbps {
+        type uint32;
+        units "Mbps";
+        default "100";
+      }
+      leaf ebs-kb {
+        type uint32;
+        units "kB";
+        default "32";
+      }
+      leaf color-aware {
+        type boolean;
+        default "true";
+      }
+    }
+
+    list cos-queue {
+      key "cos-id";
+      leaf cos-id {
+        type dot1q-types:priority-type;
+        description "CoS queue index 0..7 (7 = highest priority / EF / PTP / URLLC).";
+      }
+      leaf description {
+        type string;
+      }
+      leaf priority-level {
+        type uint8 {
+          range "1..4";
+        }
+        default "2";
+        description "Strict priority level (4 = highest real-time, 1 = best-effort).";
+      }
+      leaf wfq-weight {
+        type uint8 {
+          range "1..100";
+        }
+        default "20";
+      }
+      leaf shaper-cir-mbps {
+        type uint32;
+        units "Mbps";
+      }
+      leaf shaper-pir-mbps {
+        type uint32;
+        units "Mbps";
+      }
+      leaf wred-enabled {
+        type boolean;
+        default "true";
+      }
+    }
+
+    container tsn-tas {
+      description "IEEE 802.1Qbv Time-Aware Shaper (TAS) Gate Control List.";
+      leaf enabled {
+        type boolean;
+        default "false";
+      }
+      leaf cycle-time-ns {
+        type uint32;
+        units "nanoseconds";
+        default "1000000";
+      }
+      leaf frame-preemption-8021qbu {
+        type boolean;
+        default "false";
+      }
+      list gate-control-entry {
+        key "slot-id";
+        leaf slot-id {
+          type uint16;
+        }
+        leaf gate-states-mask {
+          type uint8;
+          description "8-bit gate mask for CoS 0..7 (e.g., 0x80 opens only CoS 7).";
+        }
+        leaf time-interval-ns {
+          type uint32;
+          units "nanoseconds";
+        }
+      }
+    }
+  }
+}

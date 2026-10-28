@@ -1,0 +1,70 @@
+module ieee802-dot1ae-macsec {
+  yang-version 1.1;
+  namespace "urn:ieee:std:802.1AE:yang:ieee802-dot1ae-macsec";
+  prefix macsec;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  organization "IEEE 802.1 Working Group";
+  contact "WG-URL: http://www.ieee802.org/1/";
+  description "IEEE 802.1AE Media Access Control (MAC) Security YANG Model.";
+
+  revision 2020-12-15 {
+    description "IEEE Std 802.1AEcg MACsec YANG model.";
+    reference "IEEE Std 802.1AE-2018";
+  }
+
+  typedef cipher-suite-type {
+    type enumeration {
+      enum gcm-aes-128 { value 1; }
+      enum gcm-aes-256 { value 2; }
+      enum gcm-aes-xpn-128 { value 3; }
+      enum gcm-aes-xpn-256 { value 4; }
+    }
+  }
+
+  augment "/if:interfaces/if:interface" {
+    description "MACsec SecY configuration and counters per interface.";
+    container macsec {
+      leaf protect-frames {
+        type boolean;
+        default "false";
+      }
+      leaf replay-protect {
+        type boolean;
+        default "true";
+      }
+      leaf replay-window {
+        type uint32;
+        default "64";
+      }
+      leaf current-cipher-suite {
+        type cipher-suite-type;
+        default "gcm-aes-256";
+      }
+      leaf confidentiality-offset {
+        type uint8 {
+          range "0 | 30 | 50";
+        }
+        default "0";
+      }
+      container statistics {
+        config false;
+        leaf out-pkts-encrypted {
+          type yang:counter64;
+        }
+        leaf in-pkts-ok {
+          type yang:counter64;
+        }
+        leaf in-pkts-bad-tag {
+          type yang:counter64;
+        }
+      }
+    }
+  }
+}

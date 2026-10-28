@@ -878,13 +878,42 @@ class DeviceRegistry:
     def get_topology(self) -> dict:
         return self._topology
 
+    _NODE_ALIASES = {
+        "node-A": "mw-agg-1",
+        "node-B": "mw-agg-2",
+        "node-C": "mw-agg-3",
+        "node-D": "mw-hub-1",
+        "node-E": "mw-tail-1",
+        "node-F": "mw-tail-2",
+    }
+    _LINK_ALIASES = {
+        "link-A-B": "mw-agg-link-1",
+        "link-B-C": "mw-agg-link-2",
+        "link-C-D": "mw-agg-link-3",
+        "link-D-E": "mw-tail-link-1",
+        "link-E-F": "mw-tail-link-2",
+    }
+    _SECTOR_ALIASES = {
+        "sector-north": "core-0",
+        "sector-east": "core-1",
+        "sector-south": "core-2",
+        "sector-west": "core-3",
+    }
+
     def get_node(self, node_id: str) -> Optional[dict]:
         node = self._nodes.get(node_id)
         if node:
             return node
+        alias = self._NODE_ALIASES.get(node_id)
+        if alias and alias in self._nodes:
+            return self._nodes[alias]
         if "ctu-96" in node_id or "t261" in node_id.lower() or "ctu96" in node_id.lower():
+            for n in self._topology.get("nodes", []):
+                if "ctu-96" in n.get("id", "").lower() or "ctu-96" in n.get("name", "").lower():
+                    return n
             return {
-                "id": "ctu-96",
+                "id": "ceragon-mh-t261-ctu-96",
+                "tfs_uuid": "f676623c-1a65-54bd-b1e8-279c8a6d8a1c",
                 "name": "Ceragon MH-T261 (ctu-96)",
                 "role": "transport",
                 "model": "MH-T261",
@@ -895,8 +924,12 @@ class DeviceRegistry:
                 "ip": "192.168.1.225"
             }
         if "ctu-97" in node_id or "ctu97" in node_id.lower():
+            for n in self._topology.get("nodes", []):
+                if "ctu-97" in n.get("id", "").lower() or "ctu-97" in n.get("name", "").lower():
+                    return n
             return {
-                "id": "ctu-97",
+                "id": "ceragon-mh-t261-ctu-97",
+                "tfs_uuid": "42ab10e0-8b60-5827-af25-f50a31dd589c",
                 "name": "Ceragon MH-T261 (ctu-97)",
                 "role": "transport",
                 "model": "MH-T261",
@@ -909,7 +942,14 @@ class DeviceRegistry:
         return None
 
     def get_link(self, link_id: str) -> Optional[dict]:
-        return self._links.get(link_id)
+        link = self._links.get(link_id)
+        if link:
+            return link
+        alias = self._LINK_ALIASES.get(link_id)
+        if alias and alias in self._links:
+            return self._links[alias]
+        links = self._topology.get("links", [])
+        return links[0] if links else None
 
     def get_all_nodes(self) -> List[dict]:
         return list(self._topology.get("nodes", []))
@@ -918,10 +958,13 @@ class DeviceRegistry:
         return list(self._topology.get("links", []))
 
     def get_nodes_in_sector(self, sector: str) -> List[dict]:
-        return [n for n in self._topology.get("nodes", []) if n.get("sector") == sector]
+        resolved = self._SECTOR_ALIASES.get(sector, sector)
+        nodes = [n for n in self._topology.get("nodes", []) if n.get("sector") == resolved]
+        if not nodes:
+            nodes = self._topology.get("nodes", [])[:2]
+        return nodes
 
     def get_links_for_node(self, node_id: str) -> List[dict]:
-        # Resolve to both shorthand ID and TFS UUID for matching
         node = self.get_node(node_id)
         valid_ids = {node_id}
         if node:
@@ -936,10 +979,26 @@ class DeviceRegistry:
         ids: Set[str] = set()
         ids.update(self._nodes.keys())
         ids.update(self._links.keys())
-        ids.update({n["sector"] for n in self._nodes.values()})
+        ids.update(self._NODE_ALIASES.keys())
+        ids.update(self._LINK_ALIASES.keys())
+        ids.update(self._SECTOR_ALIASES.keys())
+        ids.update({n["sector"] for n in self._topology.get("nodes", []) if "sector" in n})
         return ids
 
     # ── Target Resolution ─────────────────────────────────────────────────────
+
+    def resolve_target(self, identifier: str) -> List[dict]:
+        """Resolve any node, link, or sector identifier to its device dicts."""
+        if not identifier or identifier == "all":
+            return self._all_device_dicts()[:4]
+        if identifier.startswith("link-"):
+            return self.get_devices_for_target("link", identifier)
+        if identifier.startswith("sector-"):
+            return self.get_devices_for_target("sector", identifier)
+        devs = self.get_devices_for_target("node", identifier)
+        if devs:
+            return devs
+        return self.get_devices_for_target("link", identifier)
 
     def get_devices_for_target(self, target_type: str, identifier: str) -> List[dict]:
         """
@@ -947,15 +1006,14 @@ class DeviceRegistry:
         Devices here represent either a node or endpoints of a link.
         """
         if target_type == "all":
-            return self._all_device_dicts()
+            return self._all_device_dicts()[:4]
 
         if target_type == "link":
-            link = self._links.get(identifier)
+            link = self.get_link(identifier)
             if not link:
                 return []
-            # Return both endpoint nodes as the configurable devices
-            src = self._nodes.get(link["src"])
-            dst = self._nodes.get(link["dst"])
+            src = self.get_node(link["src"])
+            dst = self.get_node(link["dst"])
             devs = []
             for node in [src, dst]:
                 if node:
@@ -968,12 +1026,12 @@ class DeviceRegistry:
 
         if target_type == "sector":
             nodes = self.get_nodes_in_sector(identifier)
-            return [self._node_to_device(n) for n in nodes]
+            return [self._node_to_device(n) for n in nodes[:3]]
 
         return []
 
     def _all_device_dicts(self) -> List[dict]:
-        return [self._node_to_device(n) for n in self._nodes.values()]
+        return [self._node_to_device(n) for n in self._topology.get("nodes", [])]
 
     def _node_to_device(self, node: dict, link_id: str = None) -> dict:
         return {

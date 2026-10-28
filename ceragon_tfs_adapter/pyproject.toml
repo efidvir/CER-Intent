@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ceragon-tfs-adapter"
-version = "1.0.0"
+version = "1.1.0"
 description = "TeraFlowSDN (TFS) Device Adapter for Ceragon Wireless Transport Devices via REST/RESTCONF"
 readme = "README.md"
 authors = [

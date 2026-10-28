@@ -36,7 +36,7 @@ class TFSClient:
         base_url: Optional[str] = None,
         context_name: Optional[str] = None,
         topology_name: Optional[str] = None,
-        timeout: int = 10,
+        timeout: int = 3,
     ):
         self.base_url = (base_url or os.getenv("TERAFLOW_URL", "http://localhost:8088")).rstrip("/")
         self.context_name = context_name or os.getenv("TFS_CONTEXT", "admin")
@@ -238,16 +238,16 @@ class TFSClient:
 
             node_id = meta.get("id") or dev_name.lower().replace(" ", "-").replace("&", "and")
             
-            # Model resolution
-            model = caps.get("model") or meta.get("model")
+            # Model resolution: TFS capabilities -> layout metadata -> Ceragon portfolio catalog
+            spec = None
+            try:
+                from ceragon_tfs_adapter.portfolio import resolve_model
+                spec = resolve_model(caps.get("model")) or resolve_model(meta.get("model")) or resolve_model(dev_name)
+            except ImportError:
+                pass  # ceragon_tfs_adapter not installed: fall back to name heuristics below
+            model = caps.get("model") or meta.get("model") or (spec.model if spec else None)
             if not model:
-                if "MH-T261" in dev_name or "T261" in dev_name:
-                    model = "MH-T261"
-                elif "IP-50C" in dev_name:
-                    model = "IP-50C"
-                elif "IP-50E" in dev_name:
-                    model = "IP-50E"
-                elif "router" in dev_type:
+                if "router" in dev_type:
                     model = "IP-50FX"
                 else:
                     model = "Generic"
@@ -263,6 +263,12 @@ class TFSClient:
             is_physical = "ceragon" in dev_name.lower() or "ctu" in dev_name.lower()
             sector = meta.get("sector") or ("sector-physical-lab" if is_physical else "sector-teraflow")
             max_tp = float(caps.get("max_throughput_gbps") or meta.get("max_throughput_gbps", 1.0 if is_physical else 10.0))
+            if spec:
+                caps.setdefault("catalog_max_throughput_gbps", spec.max_capacity_gbps)
+                caps.setdefault("family", spec.family)
+                caps.setdefault("api_flavor", spec.api_flavor)
+                caps.setdefault("catalog_match", "family_fallback" if spec.is_family_fallback else "exact")
+                caps.setdefault("portfolio_role", spec.role)
 
             # Coordinates: use reference layout, or calculate circular layout
             if "x" in meta and "y" in meta:

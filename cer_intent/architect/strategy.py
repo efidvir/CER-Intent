@@ -31,15 +31,24 @@ class ConflictLevel(str, Enum):
 
 
 class ActionType(str, Enum):
-    TRANSLATE      = "translate"        # Invoke a translator → push config
-    PATH_CHANGE    = "path_change"      # Steer traffic to alternate path
-    VPN_REROUTE    = "vpn_reroute"      # Change VPN tunnel routing
-    POWER_ADJUST   = "power_adjust"     # Increase/decrease TX power
-    RADIO_TUNE     = "radio_tune"       # ACM / modulation adjustment
-    QOS_MARK       = "qos_mark"         # Traffic class / DSCP marking
-    SLICE_ADJUST   = "slice_adjust"     # Bandwidth slice reallocation
-    MONITOR        = "monitor"          # Increase monitoring cadence
-    ALERT          = "alert"            # Emit recommendation without config change
+    TRANSLATE       = "translate"        # Invoke a translator → push config
+    PATH_CHANGE     = "path_change"      # Steer traffic to alternate path
+    VPN_REROUTE     = "vpn_reroute"      # Change VPN tunnel routing
+    POWER_ADJUST    = "power_adjust"     # Increase/decrease TX power
+    RADIO_TUNE      = "radio_tune"       # ACM / modulation adjustment
+    QOS_MARK        = "qos_mark"         # Traffic class / DSCP marking
+    SLICE_ADJUST    = "slice_adjust"     # Bandwidth slice reallocation
+    TSN_SCHEDULE    = "tsn_schedule"     # IEEE 802.1Qbv TAS / 802.1Qbu / PfifoFast Band-0
+    BEAM_STEER      = "beam_steer"       # 60 GHz V-Band massive2 phased-array steering
+    MULTIBAND_BOND  = "multiband_bond"   # 80 GHz E-Band + Microwave L1 carrier bonding
+    ORAN_TUNE       = "oran_tune"        # O-RAN 7.2x eCPRI BFP9 + F1-U DSCP + CTI
+    SYNC_CONFIG     = "sync_config"      # ITU-T G.8275.1 PTP + SyncE phase lock
+    SECURITY_ENCRYPT = "security_encrypt" # IEEE 802.1AE MACsec AES-GCM-256 + PQC
+    XPIC_ENABLE     = "xpic_enable"      # XPIC dual-pol cancellation + ATPC + DFC
+    MARL_IGNITE     = "marl_ignite"      # DPIR + MARL emergency mesh bridge ignition
+    TELEMETRY_PROBE = "telemetry_probe"  # RFC 8641 YANG Push + TWAMP + NS-3 preflight
+    MONITOR         = "monitor"          # Increase monitoring cadence
+    ALERT           = "alert"            # Emit recommendation without config change
 
 
 from typing import Any, Dict, List, Optional, TYPE_CHECKING

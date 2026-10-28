@@ -1,0 +1,207 @@
+module ceragon-radio-link {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/radio-link";
+  prefix cer-radio;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ceragon-common-types {
+    prefix cer-types;
+  }
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS Radio Link configuration, operational state, ACM, ATPC,
+     XPIC, MIMO, and carrier telemetry model for FibeAir IP-20, IP-50, and IP-100.";
+
+  revision 2025-01-15 {
+    description "Complete CeraOS radio carrier schema with ACM, ATPC, XPIC, and energy saving.";
+    reference "Ceragon IP-50C / IP-50E / IP-50FX / IP-20C Technical Description";
+  }
+
+  grouping carrier-attributes {
+    leaf id {
+      type uint8 {
+        range "1..16";
+      }
+      description "Radio carrier index (1..2 for dual-core IP-50C, up to 16 for IP-20N/LH).";
+    }
+    leaf interface-index {
+      type uint32;
+      default "268451905";
+      description "CeraOS internal radio slot/port interface index (e.g., 268451905 = Slot 1 Port 1).";
+    }
+    leaf admin-status {
+      type cer-types:admin-state;
+      default "up";
+    }
+    leaf oper-status {
+      type cer-types:oper-state;
+      config false;
+    }
+    leaf tx-frequency-khz {
+      type cer-types:frequency-khz;
+      description "Transmit center frequency in kHz.";
+    }
+    leaf rx-frequency-khz {
+      type cer-types:frequency-khz;
+      description "Receive center frequency in kHz.";
+    }
+    leaf tx-frequency-mhz {
+      type cer-types:frequency-mhz;
+      description "Transmit center frequency in MHz.";
+    }
+    leaf rx-frequency-mhz {
+      type cer-types:frequency-mhz;
+      description "Receive center frequency in MHz.";
+    }
+    leaf channel-bandwidth-mhz {
+      type cer-types:channel-bandwidth-mhz;
+      default "80.0";
+      description "Channel bandwidth in MHz (3.5..2000 MHz).";
+    }
+    leaf tx-power-dbm {
+      type cer-types:power-dbm;
+      default "15.0";
+      description "Configured transmit output power in dBm.";
+    }
+    leaf tx-mute {
+      type boolean;
+      default "false";
+    }
+    leaf mrmc-script-id {
+      type uint32;
+      default "4501";
+      description "CeraOS MRMC radio script ID (e.g., 4501 for 80MHz 4096-QAM XPIC).";
+    }
+    leaf mrmc-mode {
+      type enumeration {
+        enum fixed { value 1; }
+        enum adaptive { value 3; }
+      }
+      default "adaptive";
+      description "Fixed modulation vs Adaptive Coding and Modulation (ACM).";
+    }
+    leaf mrmc-min-profile {
+      type cer-types:modulation-profile;
+      default "bpsk";
+      description "Minimum modulation floor for ACM.";
+    }
+    leaf mrmc-max-profile {
+      type cer-types:modulation-profile;
+      default "qam-4096";
+      description "Maximum modulation ceiling for ACM.";
+    }
+    leaf atpc-enabled {
+      type boolean;
+      default "true";
+      description "Automatic Transmit Power Control (ATPC) administrative state.";
+    }
+    leaf atpc-reference-rx-level-dbm {
+      type cer-types:power-dbm;
+      default "-42.0";
+      description "Target remote RSL in dBm maintained by ATPC.";
+    }
+    leaf xpic-enabled {
+      type boolean;
+      default "true";
+      description "Cross-Polarization Interference Canceller (XPIC) state.";
+    }
+    leaf cut-through-mode {
+      type boolean;
+      default "false";
+      description "Ultra-low-latency frame cut-through mode.";
+    }
+    leaf energy-saving-mode {
+      type enumeration {
+        enum disabled { value 0; }
+        enum green-atpc { value 1; }
+        enum secondary-carrier-sleep { value 2; }
+      }
+      default "disabled";
+      description "Green radio power policy.";
+    }
+    leaf rsl-dbm {
+      type cer-types:power-dbm;
+      config false;
+      description "Live Received Signal Level (RSL) in dBm.";
+    }
+    leaf tsl-dbm {
+      type cer-types:power-dbm;
+      config false;
+      description "Live Transmitted Signal Level (TSL) in dBm.";
+    }
+    leaf snr-db {
+      type cer-types:ratio-db;
+      config false;
+      description "Live Signal-to-Noise Ratio (SNR) in dB.";
+    }
+    leaf mse-db {
+      type cer-types:ratio-db;
+      config false;
+      description "Live equalizer Mean Square Error (MSE) in dB.";
+    }
+    leaf xpi-db {
+      type cer-types:ratio-db;
+      config false;
+      description "Live Cross-Polarization Isolation (XPI) in dB.";
+    }
+    leaf current-modulation {
+      type cer-types:modulation-profile;
+      config false;
+      description "Active modulation profile selected by ACM.";
+    }
+    leaf current-capacity-mbps {
+      type decimal64 {
+        fraction-digits 2;
+      }
+      units "Mbps";
+      config false;
+      description "Current over-the-air link capacity in Mbps.";
+    }
+    leaf modem-temperature {
+      type int16;
+      units "Celsius";
+      config false;
+    }
+    leaf rf-temperature {
+      type int16;
+      units "Celsius";
+      config false;
+    }
+  }
+
+  container radio-link-cfg {
+    description
+      "Top-level CeraOS radio link configuration and state container.
+       Supports both single-carrier flat leaves and multi-carrier list access.";
+    uses carrier-attributes;
+
+    list carrier {
+      key "id";
+      description "Per-carrier configuration and live RF telemetry.";
+      uses carrier-attributes;
+    }
+  }
+
+  notification radio-link-state-change {
+    description "Emitted when a radio carrier operational state or RSL threshold changes.";
+    leaf carrier-id {
+      type uint8;
+    }
+    leaf oper-status {
+      type cer-types:oper-state;
+    }
+    leaf rsl-dbm {
+      type cer-types:power-dbm;
+    }
+    leaf current-modulation {
+      type cer-types:modulation-profile;
+    }
+    leaf timestamp {
+      type yang:date-and-time;
+    }
+  }
+}

@@ -1,0 +1,65 @@
+module ceragon-oran-xhaul {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/oran-xhaul";
+  prefix cer-oran;
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon O-RAN Fronthaul / Midhaul (xHaul) Split 7.2x eCPRI & RoE
+     adaptation model for Neptune-powered IP-50FX, IP-50CX, IP-50EX, and IP-100E.";
+
+  revision 2025-01-15 {
+    description "Initial revision.";
+    reference "O-RAN WG4 / WG9 xHaul Packet Switched Transport Specification";
+  }
+
+  container oran-xhaul-config {
+    description "O-RAN Split 7.2x eCPRI fronthaul transport configuration.";
+    leaf enabled {
+      type boolean;
+      default "false";
+    }
+    leaf functional-split {
+      type enumeration {
+        enum split-2-f1-midhaul { value 2; }
+        enum split-7-2x-ecpri-fronthaul { value 7; }
+        enum split-8-cpri-roe { value 8; }
+      }
+      default "split-7-2x-ecpri-fronthaul";
+    }
+    leaf iq-compression {
+      type enumeration {
+        enum none { value 0; }
+        enum bfp-9bit { value 9; description "Block Floating Point 9-bit (3:1 compression)."; }
+        enum bfp-12bit { value 12; description "Block Floating Point 12-bit."; }
+        enum mu-law { value 16; }
+      }
+      default "bfp-9bit";
+    }
+    leaf cti-enabled {
+      type boolean;
+      default "true";
+      description "O-RAN Cooperative Transport Interface (CTI) dynamic capacity reporting to O-DU.";
+    }
+    leaf one-way-delay-budget-us {
+      type uint16 {
+        range "25..5000";
+      }
+      units "microseconds";
+      default "100";
+    }
+    leaf ecpri-vlan-id {
+      type uint16 {
+        range "1..4094";
+      }
+      default "10";
+    }
+    leaf ecpri-pcp-priority {
+      type uint8 {
+        range "0..7";
+      }
+      default "7";
+    }
+  }
+}

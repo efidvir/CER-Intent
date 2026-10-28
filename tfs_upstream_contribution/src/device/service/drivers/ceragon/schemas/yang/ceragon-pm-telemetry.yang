@@ -1,0 +1,190 @@
+module ceragon-pm-telemetry {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/pm-telemetry";
+  prefix cer-pm;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ceragon-common-types {
+    prefix cer-types;
+  }
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS Performance Monitoring (PM) 15-minute / 24-hour ITU-T G.826/G.828
+     telemetry bins, real-time RF/Ethernet KPIs, and event streaming RPCs.";
+
+  revision 2025-01-15 {
+    description "Complete CeraOS PM telemetry and event streaming model.";
+    reference "Ceragon CeraOS Performance Monitoring Guide";
+  }
+
+  grouping rmon-rf-bin {
+    leaf period-type {
+      type enumeration {
+        enum fifteen-min { value 1; }
+        enum twenty-four-hour { value 2; }
+        enum instantaneous { value 3; }
+      }
+      default "fifteen-min";
+    }
+    leaf start-time {
+      type yang:date-and-time;
+    }
+    leaf rsl-min-dbm {
+      type cer-types:power-dbm;
+    }
+    leaf rsl-max-dbm {
+      type cer-types:power-dbm;
+    }
+    leaf rsl-avg-dbm {
+      type cer-types:power-dbm;
+    }
+    leaf tsl-min-dbm {
+      type cer-types:power-dbm;
+    }
+    leaf tsl-max-dbm {
+      type cer-types:power-dbm;
+    }
+    leaf tsl-avg-dbm {
+      type cer-types:power-dbm;
+    }
+    leaf mse-avg-db {
+      type cer-types:ratio-db;
+    }
+    leaf xpi-avg-db {
+      type cer-types:ratio-db;
+    }
+    leaf errored-seconds {
+      type uint32;
+      units "seconds";
+    }
+    leaf severely-errored-seconds {
+      type uint32;
+      units "seconds";
+    }
+    leaf background-block-errors {
+      type uint64;
+    }
+    leaf unavailable-seconds {
+      type uint32;
+      units "seconds";
+    }
+    leaf throughput-avg-mbps {
+      type decimal64 {
+        fraction-digits 2;
+      }
+      units "Mbps";
+    }
+    leaf capacity-avg-mbps {
+      type decimal64 {
+        fraction-digits 2;
+      }
+      units "Mbps";
+    }
+    leaf validity {
+      type boolean;
+      default "true";
+    }
+  }
+
+  container pm-telemetry {
+    config false;
+    description "Live and historical PM counters for CeraOS carriers and Ethernet ports.";
+    list carrier-pm {
+      key "carrier-id bin-index";
+      leaf carrier-id {
+        type uint8;
+      }
+      leaf bin-index {
+        type uint16;
+      }
+      uses rmon-rf-bin;
+    }
+    list event-log {
+      key "index";
+      leaf index {
+        type uint32;
+      }
+      leaf timestamp {
+        type yang:date-and-time;
+      }
+      leaf severity {
+        type enumeration {
+          enum info { value 1; }
+          enum warning { value 2; }
+          enum minor { value 3; }
+          enum major { value 4; }
+          enum critical { value 5; }
+        }
+      }
+      leaf source {
+        type string;
+      }
+      leaf description {
+        type string;
+      }
+    }
+  }
+
+  rpc get-pm-bins {
+    description "Fetch 15-min or 24-hour RF performance monitoring bins.";
+    input {
+      leaf carrier-id {
+        type uint8;
+        default "1";
+      }
+      leaf period-type {
+        type enumeration {
+          enum fifteen-min { value 1; }
+          enum twenty-four-hour { value 2; }
+          enum instantaneous { value 3; }
+        }
+        default "fifteen-min";
+      }
+    }
+    output {
+      list bins {
+        key "bin-index";
+        leaf bin-index {
+          type uint16;
+        }
+        uses rmon-rf-bin;
+      }
+    }
+  }
+
+  rpc get-events {
+    description "Fetch latest system and RF events from the CeraOS event log.";
+    input {
+      leaf number {
+        type uint32;
+        default "20";
+      }
+    }
+    output {
+      list events {
+        key "index";
+        leaf index {
+          type uint32;
+        }
+        leaf event {
+          type string;
+        }
+      }
+    }
+  }
+
+  notification telemetry-push-update {
+    description "Streaming telemetry notification pushed to SDN controllers (TFS / YANG-Push).";
+    leaf device-id {
+      type string;
+    }
+    leaf carrier-id {
+      type uint8;
+    }
+    uses rmon-rf-bin;
+  }
+}

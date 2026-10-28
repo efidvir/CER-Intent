@@ -1,0 +1,93 @@
+module ceragon-common-types {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/common-types";
+  prefix cer-types;
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Common YANG types, enumerations, and modulation profiles for Ceragon CeraOS
+     wireless transport devices (FibeAir IP-20, IP-50, and IP-100 families).";
+
+  revision 2025-01-15 {
+    description "Full portfolio alignment for IP-20, IP-50, and IP-100 series.";
+    reference "Ceragon CeraOS Technical Description 13.0";
+  }
+
+  typedef admin-state {
+    type enumeration {
+      enum up { value 1; description "Administratively enabled."; }
+      enum down { value 2; description "Administratively disabled."; }
+      enum mute { value 3; description "Transmitter muted."; }
+    }
+    default "up";
+  }
+
+  typedef oper-state {
+    type enumeration {
+      enum up { value 1; }
+      enum down { value 2; }
+      enum degraded { value 3; }
+      enum standby { value 4; }
+    }
+  }
+
+  typedef modulation-profile {
+    type enumeration {
+      enum bpsk { value 0; description "Profile 0: BPSK / 2-QAM"; }
+      enum qpsk { value 1; description "Profile 1: QPSK / 4-QAM"; }
+      enum qam-8 { value 2; description "Profile 2: 8-QAM"; }
+      enum qam-16 { value 3; description "Profile 3: 16-QAM"; }
+      enum qam-32 { value 4; description "Profile 4: 32-QAM"; }
+      enum qam-64 { value 5; description "Profile 5: 64-QAM"; }
+      enum qam-128 { value 6; description "Profile 6: 128-QAM"; }
+      enum qam-256 { value 7; description "Profile 7: 256-QAM"; }
+      enum qam-512 { value 8; description "Profile 8: 512-QAM"; }
+      enum qam-1024 { value 9; description "Profile 9: 1024-QAM"; }
+      enum qam-2048 { value 10; description "Profile 10: 2048-QAM"; }
+      enum qam-4096 { value 12; description "Profile 12: 4096-QAM"; }
+    }
+    description "CeraOS Multi-Rate Multi-Coding (MRMC) modulation profile.";
+  }
+
+  typedef frequency-khz {
+    type uint32 {
+      range "4000000..175000000";
+    }
+    units "kHz";
+    description "Carrier center frequency in kHz (4 GHz to 175 GHz).";
+  }
+
+  typedef frequency-mhz {
+    type decimal64 {
+      fraction-digits 3;
+      range "4000.0..175000.0";
+    }
+    units "MHz";
+    description "Carrier center frequency in MHz (4 GHz to 175 GHz).";
+  }
+
+  typedef channel-bandwidth-mhz {
+    type decimal64 {
+      fraction-digits 2;
+    }
+    units "MHz";
+    description "RF channel bandwidth (e.g., 7, 14, 28, 56, 80, 112, 224, 250, 500, 1000, 2000 MHz).";
+  }
+
+  typedef power-dbm {
+    type decimal64 {
+      fraction-digits 1;
+      range "-100.0..50.0";
+    }
+    units "dBm";
+  }
+
+  typedef ratio-db {
+    type decimal64 {
+      fraction-digits 1;
+      range "-60.0..100.0";
+    }
+    units "dB";
+  }
+}

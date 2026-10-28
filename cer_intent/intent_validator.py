@@ -98,6 +98,15 @@ DEVICE_CAPABILITIES = {
         "supports_hsb": False,
         "supports_sd": False,
     },
+    "MH-T261": {
+        "max_modulation": "256QAM",
+        "max_throughput_gbps": 1.0,
+        "supported_bw_mhz": [2000],
+        "supports_hsb": True,
+        "supports_sd": True,
+        "supports_beamforming": True,
+        "supports_tsn": True,
+    },
 }
 
 
@@ -187,9 +196,23 @@ class IntentValidator:
 
         elif intent.intent_type == IntentType.RESILIENCE:
             mode = params.get("protection_mode", "1+1-hsb")
-            valid_modes = ["1+1-hsb", "1+1-cold", "space-diversity", "frequency-diversity", "none"]
+            valid_modes = [
+                "1+1-hsb", "1+1-cold", "space-diversity", "frequency-diversity",
+                "marl-autonomic-mesh", "ti-lfa-fast-reroute", "ring", "none"
+            ]
             if mode not in valid_modes:
                 result.add_error(f"Invalid protection_mode '{mode}'. Valid: {valid_modes}")
+
+        elif intent.intent_type == IntentType.TSN:
+            cycle_us = params.get("cycle_time_us", 1000)
+            urllc_us = params.get("urllc_slot_us", 250)
+            if cycle_us <= 0 or urllc_us <= 0 or urllc_us >= cycle_us:
+                result.add_error("TSN urllc_slot_us must be > 0 and < cycle_time_us")
+
+        elif intent.intent_type == IntentType.BEAMFORMING:
+            az = params.get("steer_azimuth_deg", 0.0)
+            if abs(az) > 75.0:
+                result.add_error("Beamforming steer_azimuth_deg must be within [-75, +75] degrees")
 
     # ─────────────────────────────────────────────────────────────────────────
     # Topology Validation

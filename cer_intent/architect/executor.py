@@ -77,31 +77,44 @@ class ArchitectExecutor:
             target_spec.get("target_type", "all"),
             target_spec.get("identifier", "all")
         )
+        if not target_devices:
+            target_devices = self._registry.get_devices_for_target("all", "all")
+
         # Enrich with state-store data for 'already applied' detection
-        # We need a reference to state_store here. 
-        # For PoC, the state_store is usually available on the app object or passed in.
-        from flask import current_app
-        state_store = current_app.config.get("state_store")
-        if state_store:
-            device_states = state_store.get_all_device_states()
-            for dev in target_devices:
-                dev["applied_configs"] = device_states.get(dev["id"], {}).get("configs", {})
+        try:
+            from flask import current_app
+            state_store = current_app.config.get("state_store")
+            if state_store:
+                device_states = state_store.get_all_device_states()
+                for dev in target_devices:
+                    dev["applied_configs"] = device_states.get(dev["id"], {}).get("configs", {})
+        except Exception:
+            pass
 
         # Map ActionType to IntentType for translator lookup
         intent_type_map = {
-            ActionType.TRANSLATE:    action.intent_type_override or original_intent.intent_type.value,
-            ActionType.QOS_MARK:     "qos",
-            ActionType.PATH_CHANGE:  "qos",   # Steering is often handled by QoS/PBR
-            ActionType.VPN_REROUTE:  "qos",
-            ActionType.RADIO_TUNE:   "modulation",
-            ActionType.POWER_ADJUST: "modulation",
-            ActionType.SLICE_ADJUST: "slice",
+            ActionType.TRANSLATE:        action.intent_type_override or original_intent.intent_type.value,
+            ActionType.QOS_MARK:         action.intent_type_override or "qos",
+            ActionType.PATH_CHANGE:      action.intent_type_override or "qos",
+            ActionType.VPN_REROUTE:      action.intent_type_override or "qos",
+            ActionType.RADIO_TUNE:       action.intent_type_override or "modulation",
+            ActionType.POWER_ADJUST:     action.intent_type_override or "modulation",
+            ActionType.SLICE_ADJUST:     action.intent_type_override or "slice",
+            ActionType.TSN_SCHEDULE:     action.intent_type_override or "tsn",
+            ActionType.BEAM_STEER:       action.intent_type_override or "beamforming",
+            ActionType.MULTIBAND_BOND:   action.intent_type_override or "multiband",
+            ActionType.ORAN_TUNE:        action.intent_type_override or "oran_xhaul",
+            ActionType.SYNC_CONFIG:      action.intent_type_override or "sync",
+            ActionType.SECURITY_ENCRYPT: action.intent_type_override or "security",
+            ActionType.XPIC_ENABLE:      action.intent_type_override or "interference",
+            ActionType.MARL_IGNITE:      action.intent_type_override or "beamforming",
+            ActionType.TELEMETRY_PROBE:  action.intent_type_override or "telemetry",
         }
 
-        intent_type_str = intent_type_map.get(action.action_type, "qos")
+        intent_type_str = action.intent_type_override or intent_type_map.get(action.action_type, original_intent.intent_type.value)
         
-        # If action is ALERT or MONITOR, no config change
-        if action.action_type in [ActionType.ALERT, ActionType.MONITOR]:
+        # If action is ALERT or MONITOR without translator override, no config change
+        if action.action_type in [ActionType.ALERT, ActionType.MONITOR] and not action.intent_type_override:
             return [], f"[{action.action_type.value.upper()}] {action.rationale}"
 
         # Create a "Synthetic Intent" for the translator with overridden parameters

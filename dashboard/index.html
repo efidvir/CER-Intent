@@ -51,10 +51,17 @@
       </div>
     </div>
     <div class="header-right">
+      <a class="btn btn-primary" href="/flow.html" style="text-decoration:none;background:linear-gradient(135deg,#00d4ff,#a855f7);color:#020617;font-weight:700">🎬 Animated Step-by-Step Flow</a>
+      <button class="btn btn-ghost" onclick="openSkillsCatalogModal()" title="Browse 17 AI Architect Skills &amp; 14 YANG Translation Mappings" style="border:1px solid rgba(0,212,255,0.35);color:#00d4ff">🧠 Skills &amp; Mappings (17)</button>
       <button class="btn btn-ghost" id="btn-clear-intents" title="Clear all intents">🗑 Clear</button>
       <button class="btn btn-primary" id="btn-open-intent" title="Submit new intent">＋ New Intent</button>
     </div>
   </header>
+  <script>
+    if (!window.location.search.includes("view=expert") && window.location.pathname === "/") {
+      window.location.replace("/flow.html");
+    }
+  </script>
 
   <!-- View 1: Ceragon Dedicated Live TFS View -->
   <div id="view-ceragon" class="ceragon-view-wrap hidden">
@@ -365,7 +372,10 @@
           <!-- NL Mode -->
           <div id="mode-nl">
             <div class="examples-scroll">
-              <div class="example-label">Try an example:</div>
+              <div class="example-label" style="display:flex;justify-content:space-between;align-items:center">
+                <span>Try an enriched skill prompt (14 Intent Types · 17 AI Skills):</span>
+                <button type="button" class="btn btn-ghost" onclick="openSkillsCatalogModal()" style="font-size:0.7rem;padding:2px 8px;color:#00d4ff;border:1px solid rgba(0,212,255,0.3)">📚 Browse Full Skill Catalog</button>
+              </div>
               <div class="examples-row" id="examples-row"></div>
             </div>
             <textarea id="nl-input" class="intent-textarea"

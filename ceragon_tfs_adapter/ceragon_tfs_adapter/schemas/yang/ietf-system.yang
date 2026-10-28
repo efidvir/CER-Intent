@@ -1,0 +1,98 @@
+module ietf-system {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-system";
+  prefix sys;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  organization "IETF NETMOD Working Group";
+  contact "WG Web: <https://datatracker.ietf.org/wg/netmod/>";
+  description "YANG Data Model for System Management (RFC 7317).";
+
+  revision 2014-08-06 {
+    description "Initial revision.";
+    reference "RFC 7317: A YANG Data Model for System Management";
+  }
+
+  container system {
+    description "System group configuration.";
+    leaf contact {
+      type string;
+    }
+    leaf hostname {
+      type inet:domain-name;
+    }
+    leaf location {
+      type string;
+    }
+    container clock {
+      leaf timezone-utc-offset {
+        type int16 {
+          range "-1500..1500";
+        }
+        units "minutes";
+      }
+    }
+    container ntp {
+      leaf enabled {
+        type boolean;
+        default "true";
+      }
+      list server {
+        key "name";
+        leaf name {
+          type string;
+        }
+        leaf address {
+          type inet:host;
+        }
+      }
+    }
+  }
+
+  container system-state {
+    config false;
+    description "System group operational state.";
+    container platform {
+      leaf os-name {
+        type string;
+      }
+      leaf os-release {
+        type string;
+      }
+      leaf os-version {
+        type string;
+      }
+      leaf machine {
+        type string;
+      }
+    }
+    container clock {
+      leaf current-datetime {
+        type yang:date-and-time;
+      }
+      leaf boot-datetime {
+        type yang:date-and-time;
+      }
+    }
+  }
+
+  rpc set-current-datetime {
+    description "Set the current system date and time.";
+    input {
+      leaf current-datetime {
+        type yang:date-and-time;
+        mandatory true;
+      }
+    }
+  }
+
+  rpc system-restart {
+    description "Request a soft restart of the system.";
+  }
+}

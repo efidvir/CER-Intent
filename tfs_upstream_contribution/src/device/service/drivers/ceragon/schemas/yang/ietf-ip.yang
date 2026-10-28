@@ -1,0 +1,78 @@
+module ietf-ip {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-ip";
+  prefix ip;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  organization "IETF NETMOD Working Group";
+  contact "WG Web: <https://datatracker.ietf.org/wg/netmod/>";
+  description "YANG model for IPv4 and IPv6 management on interfaces (RFC 8344).";
+
+  revision 2018-02-22 {
+    description "Updated to support NMDA.";
+    reference "RFC 8344: A YANG Data Model for IP Management";
+  }
+
+  augment "/if:interfaces/if:interface" {
+    description "IPv4 and IPv6 configuration on interfaces.";
+    container ipv4 {
+      presence "Enables IPv4 on the interface.";
+      leaf enabled {
+        type boolean;
+        default "true";
+      }
+      leaf mtu {
+        type uint16 {
+          range "68..65535";
+        }
+      }
+      list address {
+        key "ip";
+        leaf ip {
+          type inet:ipv4-address-no-zone;
+        }
+        leaf prefix-length {
+          type uint8 {
+            range "0..32";
+          }
+        }
+      }
+    }
+    container ipv6 {
+      presence "Enables IPv6 on the interface.";
+      leaf enabled {
+        type boolean;
+        default "true";
+      }
+      list address {
+        key "ip";
+        leaf ip {
+          type inet:ipv6-address-no-zone;
+        }
+        leaf prefix-length {
+          type uint8 {
+            range "0..128";
+          }
+        }
+      }
+      list neighbor {
+        key "ip";
+        leaf ip {
+          type inet:ipv6-address-no-zone;
+        }
+        leaf link-layer-address {
+          type yang:phys-address;
+        }
+      }
+    }
+  }
+}

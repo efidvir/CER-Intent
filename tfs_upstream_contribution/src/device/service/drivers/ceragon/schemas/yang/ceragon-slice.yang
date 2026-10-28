@@ -1,0 +1,87 @@
+module ceragon-slice {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/slice";
+  prefix cer-slice;
+
+  import ieee802-dot1q-types {
+    prefix dot1q-types;
+  }
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS Ethernet Virtual Connections (EVC) and Transport Network Slicing
+     configuration model for 5G xHaul SLA isolation.";
+
+  revision 2025-01-15 {
+    description "Complete CeraOS EVC / transport slice model.";
+    reference "Ceragon CeraOS Carrier Ethernet Services Guide";
+  }
+
+  container slice-config {
+    description "Provisioned transport slices and Metro Ethernet Forum (MEF) EVCs.";
+    list slice {
+      key "slice-id";
+      leaf slice-id {
+        type string;
+        description "Unique slice or EVC identifier (e.g., 'slice-urllc-100').";
+      }
+      leaf service-type {
+        type enumeration {
+          enum p2p-eline { value 1; }
+          enum mp2mp-elan { value 2; }
+          enum management { value 3; }
+        }
+        default "p2p-eline";
+      }
+      leaf vlan-tag {
+        type dot1q-types:vlanid;
+        mandatory true;
+        description "Customer or transport 802.1Q VLAN ID (1..4094).";
+      }
+      leaf s-vlan-tag {
+        type dot1q-types:vlanid;
+        description "Optional outer 802.1ad S-VLAN tag for Q-in-Q.";
+      }
+      leaf bandwidth-reservation-mbps {
+        type uint32;
+        units "Mbps";
+        default "1000";
+        description "Guaranteed CIR bandwidth reservation in Mbps.";
+      }
+      leaf eir-mbps {
+        type uint32;
+        units "Mbps";
+        default "0";
+        description "Excess Information Rate (EIR) in Mbps.";
+      }
+      leaf priority-queue {
+        type enumeration {
+          enum best-effort { value 0; }
+          enum assured-forwarding { value 4; }
+          enum voice-control { value 6; }
+          enum expedited-forwarding { value 7; }
+        }
+        default "expedited-forwarding";
+      }
+      leaf max-latency-ms {
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "milliseconds";
+        default "1.00";
+      }
+      leaf admin-status {
+        type enumeration {
+          enum up { value 1; }
+          enum down { value 2; }
+        }
+        default "up";
+      }
+      leaf-list endpoints {
+        type string;
+        description "Bound Ethernet and RF interfaces participating in the slice.";
+      }
+    }
+  }
+}

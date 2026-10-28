@@ -81,10 +81,15 @@ def create_app(registry, audit_log) -> Flask:
     @app.route("/<path:path>")
     def serve_dashboard(path):
         if DASHBOARD_DIR.exists():
-            file_path = DASHBOARD_DIR / (path or "index.html")
-            if file_path.exists() and file_path.is_file():
-                return send_from_directory(str(DASHBOARD_DIR), path or "index.html")
-            return send_from_directory(str(DASHBOARD_DIR), "index.html")
+            target = path
+            if not target:
+                target = "index.html" if request.args.get("view") == "expert" else "flow.html"
+            file_path = DASHBOARD_DIR / target
+            if not (file_path.exists() and file_path.is_file()):
+                target = "index.html"
+            resp = send_from_directory(str(DASHBOARD_DIR), target, max_age=0)
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            return resp
         return "<h1>CER-Intent API is running</h1><p>Dashboard not found at dashboard/</p>", 200
 
     # ── Intent API ────────────────────────────────────────────────────────────
@@ -496,6 +501,18 @@ def create_app(registry, audit_log) -> Flask:
     def get_device_state(device_id: str):
         state = state_store.get_device_state(device_id)
         if not state:
+            resolved = registry.resolve_target(device_id)
+            for dev in resolved:
+                dev_id = dev.get("id")
+                if dev_id:
+                    st = state_store.get_device_state(dev_id)
+                    if st:
+                        return jsonify({
+                            "requested_target": device_id,
+                            "resolved_device_id": dev_id,
+                            "resolved_devices": [d.get("id") for d in resolved],
+                            **st,
+                        })
             return jsonify({"device_id": device_id, "configs": {}}), 200
         return jsonify({"device_id": device_id, **state})
 
@@ -668,6 +685,30 @@ def create_app(registry, audit_log) -> Flask:
         profile = kb.get_profile(model)
         return jsonify(profile.to_dict())
 
+    # ── Enriched Skills & Intent Translation Catalog API ──────────────────────
+
+    @app.route("/api/v1/skills", methods=["GET"])
+    def list_architect_skills():
+        """Return the complete catalog of 17 AI Architect skills, standards, and example prompts."""
+        catalog = architect._skills.skill_catalog()
+        return jsonify({
+            "count": len(catalog),
+            "skills": catalog,
+        })
+
+    @app.route("/api/v1/intent-mappings", methods=["GET"])
+    def list_intent_mappings():
+        """Return all 14 Intent Translation Mappings, YANG namespaces, and AI Architect skills."""
+        from cer_intent.translators import TRANSLATION_MAPPING_CATALOG, TRANSLATOR_MAP
+        skills = architect._skills.skill_catalog()
+        return jsonify({
+            "intent_types_count": len(TRANSLATOR_MAP),
+            "skills_count": len(skills),
+            "intent_types": [it.value for it in IntentType],
+            "translation_mappings": TRANSLATION_MAPPING_CATALOG,
+            "architect_skills": skills,
+        })
+
     # ── Approval API ──────────────────────────────────────────────────────────
 
     @app.route("/api/v1/intents/<intent_id>/approve", methods=["POST"])
@@ -745,13 +786,11 @@ def create_app(registry, audit_log) -> Flask:
             _emit_intent_update(intent)
             
             backend_name = type(adapter).__name__
-            last_res = None
-            for cfg in translation.device_configs:
-                success_res = adapter.apply(cfg, conflict_token=verdict.token)
-                last_res = success_res
+            apply_results = adapter.apply_all(translation.device_configs, conflict_token=verdict.token)
+            last_res = apply_results[0] if apply_results else None
+            for cfg, success_res in zip(translation.device_configs, apply_results):
                 if success_res.success:
                     state_store.update_device_config(cfg.device_id, cfg.config_type, cfg.parameters, intent.intent_id)
-                
                 audit_log.config_applied(
                     intent.intent_id, cfg.device_id, cfg.config_type,
                     success_res.success, success_res.message, backend_name
@@ -787,6 +826,169 @@ def create_app(registry, audit_log) -> Flask:
             intent.error_message = str(e)
             _emit_intent_update(intent)
             return jsonify({"status": "error", "error": str(e)}), 500
+
+    # ── Ceragon TFS Adapter: Portfolio, YANG Schemas, Bidirectional Control & Streaming ──
+
+    _active_adapter_drivers: Dict[str, Any] = {}
+
+    def _get_or_create_ceragon_driver(ip: Optional[str] = None, model: Optional[str] = None):
+        from ceragon_tfs_adapter.config import AdapterConfig
+        from ceragon_tfs_adapter.driver import TFSCeragonDriver
+
+        cfg = AdapterConfig()
+        if ip:
+            cfg.device_ip = ip
+        if model:
+            cfg.model_hint = model
+        key = f"{cfg.device_ip}:{cfg.device_port}:{cfg.model_hint or ''}"
+        drv = _active_adapter_drivers.get(key)
+        if drv is None:
+            drv = TFSCeragonDriver(cfg)
+            drv.register_stream_callback(
+                lambda sample: socketio.emit("ceragon_telemetry_stream", sample.to_dict())
+            )
+            _active_adapter_drivers[key] = drv
+        return drv
+
+    @app.route("/api/v1/adapter/portfolio", methods=["GET"])
+    def adapter_portfolio():
+        """List all supported Ceragon portfolio models and capabilities, or resolve ?model=<str>."""
+        from ceragon_tfs_adapter.portfolio import list_models, resolve_model
+
+        q_model = request.args.get("model")
+        if q_model:
+            spec = resolve_model(q_model)
+            if not spec:
+                return jsonify({"error": f"Unknown model '{q_model}'"}), 404
+            return jsonify(spec.to_capabilities()), 200
+
+        models = list_models(include_fallbacks=True)
+        return jsonify({
+            "count": len(models),
+            "families": sorted({m.family for m in models}),
+            "api_flavors": sorted({m.api_flavor for m in models}),
+            "models": [m.to_dict() for m in models],
+        }), 200
+
+    @app.route("/api/v1/adapter/schemas", methods=["GET"])
+    def adapter_schemas():
+        """List all bundled YANG 1.1 schemas, metadata, and import/include closure verification."""
+        from ceragon_tfs_adapter.schemas import (
+            get_schema_metadata,
+            get_schemas_for_family,
+            list_schemas,
+            validate_schema_closure,
+        )
+
+        family = request.args.get("family")
+        names = get_schemas_for_family(family) if family else list_schemas()
+        ok, closure_report = validate_schema_closure()
+        return jsonify({
+            "closure": closure_report,
+            "family_filter": family,
+            "count": len(names),
+            "schemas": [get_schema_metadata(n) for n in names],
+        }), 200
+
+    @app.route("/api/v1/adapter/schemas/<module_name>", methods=["GET"])
+    def adapter_schema_detail(module_name: str):
+        """Return raw YANG 1.1 text and parsed metadata for a specific module."""
+        from ceragon_tfs_adapter.schemas import get_schema_content, get_schema_metadata
+
+        live = request.args.get("live", "false").lower() == "true"
+        ip = request.args.get("ip")
+        content = None
+        if live:
+            drv = _get_or_create_ceragon_driver(ip=ip)
+            content = drv.client.download_schema(module_name)
+        if not content:
+            content = get_schema_content(module_name)
+        if not content:
+            return jsonify({"error": f"YANG module '{module_name}' not found"}), 404
+
+        meta = get_schema_metadata(module_name) or {"name": module_name}
+        return jsonify({
+            **meta,
+            "yang_text": content,
+        }), 200
+
+    @app.route("/api/v1/adapter/telemetry", methods=["GET"])
+    def adapter_telemetry():
+        """Fetch real-time bidirectional PM telemetry, RF link KPIs, and hardware events."""
+        ip = request.args.get("ip")
+        model = request.args.get("model")
+        period = request.args.get("period", "quarter")
+        history = request.args.get("history", "false").lower() == "true"
+        drv = _get_or_create_ceragon_driver(ip=ip, model=model)
+        try:
+            if history:
+                return jsonify({
+                    "history": drv.get_telemetry_history(limit=int(request.args.get("limit", 20))),
+                }), 200
+            sample = drv.client.fetch_pm_telemetry(period_type=period)
+            return jsonify(sample.to_dict()), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 502
+
+    @app.route("/api/v1/adapter/control", methods=["POST"])
+    def adapter_control():
+        """
+        Execute southbound control (set_config, delete_config, or RPC) on a Ceragon device
+        with portfolio capability checking and 2-phase candidate commit/rollback.
+        """
+        body = request.get_json(silent=True) or {}
+        ip = body.get("ip")
+        model = body.get("model")
+        action = str(body.get("action", "set")).lower()
+        auto_commit = bool(body.get("auto_commit", True))
+        drv = _get_or_create_ceragon_driver(ip=ip, model=model)
+
+        raw_resources = body.get("resources") or []
+        if not raw_resources and body.get("resource_key"):
+            raw_resources = [(body["resource_key"], body.get("resource_value", {}))]
+        resources = [
+            (r[0], r[1]) if isinstance(r, (list, tuple)) else (r.get("key"), r.get("value"))
+            for r in raw_resources
+        ]
+
+        if action == "delete":
+            results = drv.delete_config(resources, auto_commit=auto_commit)
+        elif action == "get":
+            keys = [k for k, _ in resources if k]
+            got = drv.get_config(keys or None)
+            return jsonify({"action": "get", "results": [{"key": k, "value": v} for k, v in got]}), 200
+        else:
+            results = drv.set_config(resources, auto_commit=auto_commit)
+
+        all_ok = all(ok for _, ok, _ in results) if results else False
+        return jsonify({
+            "action": action,
+            "model": drv.product_spec.model if drv.product_spec else model,
+            "success": all_ok,
+            "results": [{"key": k, "success": ok, "message": m} for k, ok, m in results],
+        }), (200 if all_ok else 422)
+
+    @app.route("/api/v1/adapter/subscribe", methods=["POST"])
+    def adapter_subscribe():
+        """Subscribe or unsubscribe to continuous telemetry & event streaming."""
+        body = request.get_json(silent=True) or {}
+        ip = body.get("ip")
+        model = body.get("model")
+        action = str(body.get("action", "subscribe")).lower()
+        interval = float(body.get("interval_sec", 5.0))
+        duration = float(body.get("duration_sec", 0.0))
+        keys = body.get("keys") or ["/device/pm_telemetry", "/device/events"]
+        subs = [(k, duration, interval) for k in keys]
+
+        drv = _get_or_create_ceragon_driver(ip=ip, model=model)
+        if action == "unsubscribe":
+            res = drv.unsubscribe_state(subs)
+        else:
+            res = drv.subscribe_state(subs)
+        return jsonify({
+            "action": action,
+            "subscriptions": [{"key": k, "active": ok, "message": m} for k, ok, m in res],
+        }), 200
 
     # ── Socket.IO Events ──────────────────────────────────────────────────────
 

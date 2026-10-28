@@ -1,0 +1,97 @@
+module ietf-ptp {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-ptp";
+  prefix ptp;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+
+  organization "IETF TICTOC Working Group";
+  contact "WG Web: <https://datatracker.ietf.org/wg/tictoc/>";
+  description "YANG Data Model for IEEE 1588-2008 Precision Time Protocol (RFC 8575).";
+
+  revision 2019-05-07 {
+    description "Initial revision.";
+    reference "RFC 8575: YANG Data Model for the Precision Time Protocol (PTP)";
+  }
+
+  container ptp {
+    description "IEEE 1588v2 PTP instances and transparent clock configuration.";
+    list instance-list {
+      key "instance-number";
+      leaf instance-number {
+        type uint32;
+      }
+      container default-ds {
+        leaf two-step-flag {
+          type boolean;
+          default "true";
+        }
+        leaf clock-quality-clock-class {
+          type uint8;
+          default "248";
+        }
+        leaf priority1 {
+          type uint8;
+          default "128";
+        }
+        leaf priority2 {
+          type uint8;
+          default "128";
+        }
+        leaf domain-number {
+          type uint8;
+          default "24";
+          description "Domain 24 is default for ITU-T G.8275.1 full timing support.";
+        }
+        leaf telecom-profile {
+          type enumeration {
+            enum default-1588 { value 0; }
+            enum g8265-1 { value 1; }
+            enum g8275-1 { value 2; }
+            enum g8275-2 { value 3; }
+          }
+          default "g8275-1";
+        }
+      }
+      container current-ds {
+        config false;
+        leaf steps-removed {
+          type uint16;
+        }
+        leaf offset-from-master {
+          type int64;
+          units "nanoseconds";
+        }
+        leaf mean-path-delay {
+          type int64;
+          units "nanoseconds";
+        }
+      }
+      list port-ds-list {
+        key "port-number";
+        leaf port-number {
+          type uint16;
+        }
+        leaf underlying-interface {
+          type if:interface-ref;
+        }
+        leaf port-state {
+          type enumeration {
+            enum initializing { value 1; }
+            enum faulty { value 2; }
+            enum disabled { value 3; }
+            enum listening { value 4; }
+            enum pre-master { value 5; }
+            enum master { value 6; }
+            enum passive { value 7; }
+            enum uncalibrated { value 8; }
+            enum slave { value 9; }
+          }
+          config false;
+        }
+      }
+    }
+  }
+}

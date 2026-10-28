@@ -1,0 +1,49 @@
+module iana-if-type {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:iana-if-type";
+  prefix ianaift;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+
+  organization "IANA";
+  contact "Internet Assigned Numbers Authority <mailto:iana@iana.org>";
+  description
+    "This YANG module defines the iana-if-typetypedef and identities for IETF interfaces (RFC 7224).";
+
+  revision 2023-01-26 {
+    description "Updated IANA interface type identities for wireless transport.";
+    reference "RFC 7224: IANA Interface Type YANG Module";
+  }
+
+  identity iana-interface-type {
+    base if:interface-type;
+    description "Base identity for IANA-registered interface types.";
+  }
+
+  identity ethernetCsmacd {
+    base iana-interface-type;
+    description "For all Ethernet-like interfaces (enum 6).";
+  }
+
+  identity ieee8023adLag {
+    base iana-interface-type;
+    description "IEEE 802.3ad Link Aggregate (enum 161).";
+  }
+
+  identity l2vlan {
+    base iana-interface-type;
+    description "Layer 2 Virtual LAN using 802.1Q (enum 135).";
+  }
+
+  identity microwaveCarrierTermination {
+    base iana-interface-type;
+    description "Microwaveenstein/ETSI Radio Carrier Termination (enum 246).";
+  }
+
+  identity radioMAC {
+    base iana-interface-type;
+    description "MAC layer over radio link (enum 188).";
+  }
+}

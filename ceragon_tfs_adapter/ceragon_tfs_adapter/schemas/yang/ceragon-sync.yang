@@ -1,0 +1,111 @@
+module ceragon-sync {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/sync";
+  prefix cer-sync;
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS Synchronization (ITU-T G.8262 SyncE and IEEE 1588v2 PTP
+     G.8275.1 / G.8275.2 Boundary and Transparent Clock) model.";
+
+  revision 2025-01-15 {
+    description "Aligned with CeraOS Synchronization / SyncE / Protocol1588 XML schema.";
+    reference "Ceragon CeraOS Technical Description 13.0";
+  }
+
+  typedef ssm-quality-level {
+    type enumeration {
+      enum ql-prc { value 1; description "Primary Reference Clock (G.811)."; }
+      enum ql-ssu-a { value 2; description "Synchronization Supply Unit Type A."; }
+      enum ql-ssu-b { value 3; description "Synchronization Supply Unit Type B."; }
+      enum ql-eec1 { value 4; description "Synchronous Ethernet Equipment Clock (G.8262)."; }
+      enum ql-dnu { value 15; description "Do Not Use for synchronization."; }
+    }
+  }
+
+  container sync-config {
+    description "System timing and synchronization configuration.";
+    container synce {
+      leaf enabled {
+        type boolean;
+        default "true";
+      }
+      leaf ssm-enabled {
+        type boolean;
+        default "true";
+      }
+      list clock-source {
+        key "interface-id";
+        leaf interface-id {
+          type uint32;
+        }
+        leaf quality-level {
+          type ssm-quality-level;
+          default "ql-eec1";
+        }
+        leaf priority {
+          type uint8 {
+            range "1..16";
+          }
+          default "1";
+        }
+      }
+    }
+    container ptp-1588 {
+      leaf admin-state {
+        type enumeration {
+          enum enabled { value 2; }
+          enum disabled { value 3; }
+        }
+        default "enabled";
+      }
+      leaf clock-mode {
+        type enumeration {
+          enum transparent-clock { value 1; }
+          enum telecom-boundary-clock { value 2; }
+          enum telecom-slave-clock { value 3; }
+        }
+        default "transparent-clock";
+      }
+      leaf profile {
+        type enumeration {
+          enum default-1588v2 { value 0; }
+          enum itu-g8265-1 { value 1; }
+          enum itu-g8275-1 { value 2; }
+          enum itu-g8275-2 { value 3; }
+        }
+        default "itu-g8275-1";
+      }
+      leaf domain-number {
+        type uint8;
+        default "24";
+      }
+      leaf cos-preserve-enabled {
+        type boolean;
+        default "true";
+      }
+      leaf cos-value {
+        type uint8 {
+          range "0..7";
+        }
+        default "7";
+      }
+      leaf phase-offset-ns {
+        type int32;
+        units "nanoseconds";
+        config false;
+        description "Measured phase error from grandmaster in nanoseconds.";
+      }
+      leaf clock-lock-state {
+        type enumeration {
+          enum free-running { value 0; }
+          enum acquiring { value 1; }
+          enum phase-locked { value 2; }
+          enum holdover { value 3; }
+        }
+        config false;
+      }
+    }
+  }
+}

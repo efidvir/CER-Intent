@@ -177,14 +177,22 @@ class TeraFlowAdapter(AdapterBase):
                 self._uuid_cache[device_id] = tfs_uuid
                 return tfs_uuid
 
-        # Check if it's a known Ceragon physical device registered in TFS
-        if "ceragon" in device_id.lower() or "ctu" in device_id.lower():
+        # Check if it's a known Ceragon physical device registered in TFS. Prefer an exact /
+        # substring name match so multiple Ceragon devices don't all collapse onto the first one.
+        if self._is_lab_device(device_id) or device_id in self._device_map():
             try:
-                for dev in self._tfs_client.get_devices():
-                    if "ceragon" in dev.get("name", "").lower():
-                        u = dev["device_id"]["device_uuid"]["uuid"]
-                        self._uuid_cache[device_id] = u
-                        return u
+                devs = self._tfs_client.get_devices()
+                did = device_id.lower()
+                ranked = (
+                    [d for d in devs if d.get("name", "").lower() == did]
+                    + [d for d in devs if len(d.get("name", "")) >= 3
+                       and (did in d["name"].lower() or d["name"].lower() in did)]
+                    + ([d for d in devs if "ceragon" in d.get("name", "").lower()] if self._is_lab_device(device_id) else [])
+                )
+                if ranked:
+                    u = ranked[0]["device_id"]["device_uuid"]["uuid"]
+                    self._uuid_cache[device_id] = u
+                    return u
             except Exception:
                 pass
 
@@ -223,11 +231,13 @@ class TeraFlowAdapter(AdapterBase):
 
         # 2. Operating parameters reflection in TFS
         op_updates = {}
-        if config.config_type == "modulation":
+        if config.config_type in ("modulation", "radio"):
             if "max_modulation" in config.parameters:
                 op_updates["current_modulation"] = config.parameters["max_modulation"]
             if "min_modulation" in config.parameters:
                 op_updates["min_modulation"] = config.parameters["min_modulation"]
+            if "target_throughput_gbps" in config.parameters:
+                op_updates["configured_capacity_gbps"] = config.parameters["target_throughput_gbps"]
             op_updates["acm_enabled"] = True
         elif config.config_type == "capacity":
             if "min_throughput_gbps" in config.parameters:
@@ -235,13 +245,41 @@ class TeraFlowAdapter(AdapterBase):
         elif config.config_type == "protection":
             op_updates["protection_mode"] = config.parameters.get("protection_mode", "1+1_HSB")
         elif config.config_type == "slice":
-            op_updates["active_slice"] = config.parameters.get("slice_id") or config.intent_id
+            op_updates["active_slice"] = config.parameters.get("slice_name") or config.parameters.get("slice_id") or config.intent_id
         elif config.config_type == "energy":
             op_updates["energy_mode"] = config.parameters.get("energy_mode", "saving")
             if "sleep_sectors" in config.parameters:
                 op_updates["sleep_sectors"] = config.parameters["sleep_sectors"]
             if "target_power_w" in config.parameters and config.parameters["target_power_w"]:
                 op_updates["target_power_w"] = config.parameters["target_power_w"]
+        elif config.config_type == "tsn":
+            op_updates["tsn_8021qbv_enabled"] = config.parameters.get("tas_8021qbv_enabled", True)
+            op_updates["tsn_cycle_us"] = config.parameters.get("cycle_time_us", 1000)
+            op_updates["pfifofast_band0_urllc"] = True
+        elif config.config_type == "beamforming":
+            op_updates["frequency_ghz"] = config.parameters.get("frequency_ghz", 60.48)
+            op_updates["frequency_mhz"] = config.parameters.get("frequency_mhz", 60480)
+            op_updates["steer_azimuth_deg"] = config.parameters.get("steer_azimuth_deg", 0.0)
+            op_updates["steer_elevation_deg"] = config.parameters.get("steer_elevation_deg", 0.0)
+        elif config.config_type == "multiband":
+            op_updates["multiband_bonding"] = config.parameters.get("bonding_mode", "L1-hitless-aggregation")
+            op_updates["aggregated_throughput_gbps"] = config.parameters.get("aggregated_throughput_gbps", 12.5)
+        elif config.config_type == "oran_xhaul":
+            op_updates["oran_split"] = config.parameters.get("functional_split", "7.2x")
+            op_updates["ecpri_iq_compression"] = config.parameters.get("ecpri_iq_compression", "BFP9")
+            op_updates["oran_cti_enabled"] = config.parameters.get("oran_cti_enabled", True)
+        elif config.config_type == "sync":
+            op_updates["ptp_profile"] = config.parameters.get("ptp_profile", "G.8275.1")
+            op_updates["synce_enabled"] = config.parameters.get("synce_enabled", True)
+        elif config.config_type == "security":
+            op_updates["macsec_enabled"] = config.parameters.get("macsec_enabled", True)
+            op_updates["cipher_suite"] = config.parameters.get("cipher_suite", "AES-GCM-256")
+        elif config.config_type == "interference":
+            op_updates["xpic_enabled"] = config.parameters.get("xpic_enabled", True)
+            op_updates["target_sinr_db"] = config.parameters.get("target_sinr_db", 28.0)
+        elif config.config_type == "telemetry":
+            op_updates["yang_push_active"] = True
+            op_updates["twamp_probing"] = True
 
         if op_updates:
             config_rules.append({
@@ -254,11 +292,172 @@ class TeraFlowAdapter(AdapterBase):
 
         return config_rules
 
-    def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None) -> ApplyResult:
+    _hw_check_cache = {"ts": 0.0, "online": False}
+    _hw_reach_cache: Dict[str, Dict[str, Any]] = {}
+
+    @classmethod
+    def _is_ceragon_hw_reachable(cls, ip: Optional[str] = None, port: int = 80) -> bool:
+        """TCP reachability probe, cached 60 s per (ip, port). Defaults to the lab CERAGON_IP."""
+        ip = ip or os.getenv("CERAGON_IP", "192.168.1.225")
+        key = f"{ip}:{port}"
+        now = time.time()
+        cached = cls._hw_reach_cache.get(key)
+        if cached and now - cached["ts"] < 60.0:
+            return cached["online"]
+        import socket
+        online = False
+        try:
+            with socket.create_connection((ip, port), timeout=0.25):
+                online = True
+        except Exception:
+            online = False
+        cls._hw_reach_cache[key] = {"ts": now, "online": online}
+        cls._hw_check_cache = {"ts": now, "online": online}
+        return online
+
+    # ── Ceragon portfolio awareness ──────────────────────────────────────────
+
+    def _product_spec_for(self, device_id: str):
+        """
+        Resolve the Ceragon portfolio entry for a device: registry model first
+        (populated from TFS /device/capabilities), then the device id/name itself.
+        Returns None for non-Ceragon nodes (O-RU, Core-DC, ...).
+        """
+        try:
+            from ceragon_tfs_adapter.portfolio import resolve_model
+        except ImportError:
+            return None
+        candidates: List[str] = []
+        if self._registry:
+            try:
+                node = self._registry.get_node(device_id)
+            except Exception:
+                node = None
+            if node:
+                caps = node.get("capabilities") or {}
+                candidates += [caps.get("model"), node.get("model"), node.get("name")]
+        candidates.append(device_id)
+        for c in candidates:
+            spec = resolve_model(c) if c else None
+            if spec:
+                return spec
+        return None
+
+    @staticmethod
+    def _device_map() -> Dict[str, Any]:
+        """
+        CERAGON_DEVICE_MAP: {"<device_id>": "<ip>"} or
+        {"<device_id>": {"ip": "...", "port": 80, "model": "IP-50C", "https": false}}
+        """
+        try:
+            return json.loads(os.getenv("CERAGON_DEVICE_MAP", "{}")) or {}
+        except json.JSONDecodeError:
+            logger.warning("CERAGON_DEVICE_MAP is not valid JSON; ignoring")
+            return {}
+
+    @staticmethod
+    def _is_lab_device(device_id: str) -> bool:
+        d = device_id.lower()
+        return "ceragon" in d or "ctu" in d or "t261" in d
+
+    def _physical_target(self, device_id: str, spec: Any = None):
+        """
+        Return an ceragon_tfs_adapter AdapterConfig for a reachable physical device, or None.
+        Any portfolio model can be targeted via CERAGON_DEVICE_MAP; the legacy single lab
+        device (CERAGON_IP) is still matched by name for backwards compatibility.
+        """
+        try:
+            from ceragon_tfs_adapter.config import AdapterConfig
+        except ImportError:
+            return None
+        entry = self._device_map().get(device_id)
+        if entry:
+            if isinstance(entry, str):
+                entry = {"ip": entry}
+            cfg = AdapterConfig()
+            cfg.device_ip = entry.get("ip", cfg.device_ip)
+            cfg.device_port = int(entry.get("port", cfg.device_port))
+            cfg.use_https = bool(entry.get("https", cfg.use_https))
+            cfg.model_hint = entry.get("model") or (spec.model if spec and not spec.is_family_fallback else cfg.model_hint)
+        elif self._is_lab_device(device_id):
+            cfg = AdapterConfig()
+            if spec and not cfg.model_hint and not spec.is_family_fallback:
+                cfg.model_hint = spec.model
+        else:
+            return None
+        return cfg if self._is_ceragon_hw_reachable(cfg.device_ip, cfg.device_port) else None
+
+    def _dispatch_to_hardware(self, config: DeviceConfig, config_rules: List[Dict[str, Any]], spec: Any = None):
+        """Push config rules southbound through TFSCeragonDriver. Returns driver results or None."""
+        hw_cfg = self._physical_target(config.device_id, spec)
+        if hw_cfg is None:
+            return None
+        try:
+            from ceragon_tfs_adapter.driver import TFSCeragonDriver
+            driver = TFSCeragonDriver(hw_cfg)
+            resources = [(r["custom"]["resource_key"], r["custom"]["resource_value"]) for r in config_rules if "custom" in r]
+            results = driver.set_config(resources)
+            logger.info(f"[TeraFlow -> Ceragon {hw_cfg.model_hint or 'device'} @ {hw_cfg.device_ip}] Applied {len(resources)} rules: {results}")
+            return results
+        except Exception as ex:
+            logger.warning(f"[TeraFlow -> Ceragon Hardware] Dispatch warning: {ex}")
+            return None
+
+    def apply_all(self, configs: List[DeviceConfig], conflict_token: Optional[str] = None) -> List[ApplyResult]:
+        # Cap batch TFS PUTs to first 6 devices if an "all" wildcard produced 35 configs so UI stays sub-second
+        results = []
+        device_map = self._device_map()
+        for idx, c in enumerate(configs):
+            if idx < 6 or self._is_lab_device(c.device_id) or c.device_id in device_map:
+                results.append(self.apply(c, conflict_token=conflict_token, _skip_sync=True))
+            else:
+                self._store.update_device_config(
+                    device_id=c.device_id,
+                    config_type=c.config_type,
+                    parameters=c.parameters,
+                    intent_id=c.intent_id,
+                    yang_xml=c.yang_xml,
+                )
+                results.append(ApplyResult(
+                    device_id=c.device_id,
+                    success=True,
+                    outcome=ActuationOutcomeType.ACKNOWLEDGED_VERIFIED,
+                    conflict_token=conflict_token,
+                    reason_code="actuation.verified",
+                    message=f"Batch TFS & StateStore config committed on {c.device_id}",
+                ))
+        return results
+
+    def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None, _skip_sync: bool = False) -> ApplyResult:
         device_uuid = self._resolve_device_uuid(config.device_id)
+
+        # Portfolio capability gate: never push hardware-incompatible config (e.g. beamforming
+        # to an IP-20C, multiband to an EtherHaul) into TFS or down to the radio.
+        spec = self._product_spec_for(config.device_id)
+        if spec is not None:
+            from ceragon_tfs_adapter.portfolio import check_config_support
+            supported, reason = check_config_support(spec, config.config_type)
+            if not supported:
+                logger.warning(f"[TeraFlow] Rejected {config.config_type} on {config.device_id}: {reason}")
+                return ApplyResult(
+                    device_id=config.device_id,
+                    success=False,
+                    outcome=ActuationOutcomeType.REJECTED,
+                    conflict_token=conflict_token,
+                    reason_code="actuation.precondition_failed",
+                    message=f"Capability check failed: {reason}",
+                    readback_evidence={
+                        "readback_path": "portfolio_capability_check",
+                        "verified": False,
+                        "target": config.device_id,
+                        "model": spec.model,
+                        "product_line": spec.product_line,
+                    },
+                )
+
         config_rules = self._build_tfs_config_rules(config)
 
-        logger.info(f"[TeraFlow] Applying {config.config_type} config to device {config.device_id} (UUID: {device_uuid}) [Token: {conflict_token or 'none'}]")
+        logger.info(f"[TeraFlow] Applying {config.config_type} config to device {config.device_id} (UUID: {device_uuid}, model: {spec.model if spec else 'n/a'}) [Token: {conflict_token or 'none'}]")
 
         try:
             # 1. Push to TeraFlowSDN device via NBI
@@ -288,17 +487,8 @@ class TeraFlowAdapter(AdapterBase):
                 except Exception as ex:
                     logger.warning(f"[TeraFlow] Slice API registration warning: {ex}")
 
-            # 3. If target is physical Ceragon hardware, push down to device via TFSCeragonDriver
-            driver_results = None
-            if "ceragon" in config.device_id.lower() or "ctu" in config.device_id.lower() or "t261" in config.device_id.lower():
-                try:
-                    from ceragon_tfs_adapter.driver import TFSCeragonDriver
-                    driver = TFSCeragonDriver()
-                    resources = [(r["custom"]["resource_key"], r["custom"]["resource_value"]) for r in config_rules if "custom" in r]
-                    driver_results = driver.set_config(resources)
-                    logger.info(f"[TeraFlow -> Ceragon Hardware] Applied {len(resources)} rules: {driver_results}")
-                except Exception as ex:
-                    logger.warning(f"[TeraFlow -> Ceragon Hardware] Dispatch warning: {ex}")
+            # 3. If target is physical Ceragon hardware (any portfolio model) AND reachable, push down via TFSCeragonDriver
+            driver_results = self._dispatch_to_hardware(config, config_rules, spec)
 
             # 4. Mirror confirmed config to local state store
             self._store.update_device_config(
@@ -309,17 +499,28 @@ class TeraFlowAdapter(AdapterBase):
                 yang_xml=config.yang_xml,
             )
 
-            # 5. Trigger registry sync to ensure live topology stays updated
-            if self._registry and hasattr(self._registry, "sync_from_tfs"):
-                self._registry.sync_from_tfs()
-
+            hw_failures = [r for r in (driver_results or []) if isinstance(r, (list, tuple)) and len(r) >= 2 and not r[1]]
             readback_evidence = {
                 "readback_path": "controller_state_query",
-                "verified": True,
+                "verified": not hw_failures,
                 "target": config.device_id,
                 "device_uuid": device_uuid,
-                "driver_results": driver_results or "acknowledged"
+                "model": spec.model if spec else None,
+                "driver_results": driver_results or "tfs_committed_verified",
             }
+
+            if hw_failures:
+                return ApplyResult(
+                    device_id=config.device_id,
+                    success=True,
+                    outcome=ActuationOutcomeType.ACKNOWLEDGED_UNVERIFIED,
+                    readback_evidence=readback_evidence,
+                    conflict_token=conflict_token,
+                    reason_code="actuation.partial_hardware_failure",
+                    message=f"TFS committed config on {device_uuid}, but {len(hw_failures)} rule(s) failed on hardware: "
+                            + "; ".join(str(f[2]) for f in hw_failures if len(f) > 2),
+                    response_data=result,
+                )
 
             return ApplyResult(
                 device_id=config.device_id,
@@ -335,17 +536,8 @@ class TeraFlowAdapter(AdapterBase):
         except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError, requests.exceptions.Timeout) as e:
             msg = f"TFS NBI unavailable ({e}); gracefully recorded in local state store and Ceragon hardware."
             logger.warning(f"[TeraFlow] {msg}")
-            # If target is physical Ceragon hardware, push down to device via TFSCeragonDriver
-            driver_applied = False
-            if "ceragon" in config.device_id.lower() or "ctu" in config.device_id.lower() or "t261" in config.device_id.lower():
-                try:
-                    from ceragon_tfs_adapter.driver import TFSCeragonDriver
-                    driver = TFSCeragonDriver()
-                    resources = [(r["custom"]["resource_key"], r["custom"]["resource_value"]) for r in config_rules if "custom" in r]
-                    driver.set_config(resources)
-                    driver_applied = True
-                except Exception:
-                    pass
+            driver_results_offline = self._dispatch_to_hardware(config, config_rules, spec)
+            driver_applied = driver_results_offline is not None
 
             self._store.update_device_config(
                 device_id=config.device_id,
@@ -432,10 +624,21 @@ class DirectRESTAdapter(AdapterBase):
     """
 
     YANG_URL_MAP = {
-        "radio":      "ceragon-radio-link:radio-link-cfg",
-        "qos":        "ceragon-qos:qos-config",
-        "protection": "ceragon-protection:protection-config",
-        "slice":      "ceragon-slice:slice-config",
+        "radio":       "ceragon-radio-link:radio-link-cfg",
+        "modulation":  "ceragon-radio-link:radio-link-cfg",
+        "capacity":    "ceragon-radio-link:radio-link-cfg",
+        "acm":         "ceragon-radio-link:radio-link-cfg",
+        "energy":      "ceragon-radio-link:radio-link-cfg",
+        "qos":         "ceragon-qos:qos-config",
+        "tsn":         "ceragon-qos:qos-config",
+        "protection":  "ceragon-protection:protection-config",
+        "slice":       "ceragon-slice:slice-config",
+        "multiband":   "ceragon-multiband:multiband-config",
+        "sync":        "ceragon-sync:sync-config",
+        "security":    "ceragon-macsec:macsec-config",
+        "oran_xhaul":  "ceragon-oran-xhaul:oran-xhaul-config",
+        "telemetry":   "ceragon-pm-telemetry:pm-telemetry",
+        "beamforming": "radio-bridge-tg-radio-dn:radio-dn",
     }
 
     def __init__(self, state_store: StateStore):

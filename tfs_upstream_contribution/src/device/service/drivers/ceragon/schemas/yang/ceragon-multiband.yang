@@ -1,0 +1,94 @@
+module ceragon-multiband {
+  yang-version 1.1;
+  namespace "http://ceragon.com/ns/yang/ceraos/multiband";
+  prefix cer-mb;
+
+  organization "Ceragon Networks Ltd.";
+  contact "Support: <https://www.ceragon.com/support>";
+  description
+    "Ceragon CeraOS Layer-1 Multi-Band (E-Band + Microwave) Link Bonding and
+     Advanced Hitless Bandwidth Notification (AHBN) configuration.";
+
+  revision 2025-01-15 {
+    description "Initial revision for IP-50EX, IP-50C, IP-50E, and IP-20C Multi-Band bonding.";
+    reference "Ceragon Multi-Band Solution Guide";
+  }
+
+  container multiband-config {
+    description "Multi-Band bonding groups combining E-Band (80 GHz) and MW (6-42 GHz) carriers.";
+    list bonding-group {
+      key "group-id";
+      leaf group-id {
+        type uint8 {
+          range "1..8";
+        }
+      }
+      leaf name {
+        type string;
+        default "mb-bond-1";
+      }
+      leaf bonding-mode {
+        type enumeration {
+          enum l1-radio-link-bonding { value 1; description "Hardware L1 frame distribution."; }
+          enum l2-enhanced-lag { value 2; description "Sub-flow L2+L3+L4 hash distribution."; }
+          enum extend-mm-active-standby { value 3; description "E-band primary + MW high-availability backup."; }
+        }
+        default "l1-radio-link-bonding";
+      }
+      leaf throughput-enhancement {
+        type boolean;
+        default "true";
+        description "Header compression / Link Bonding Throughput Enhancement.";
+      }
+      leaf bnp-protocol {
+        type enumeration {
+          enum none { value 0; }
+          enum eoam-csf { value 1; }
+          enum g8013-eth-bnm { value 2; }
+        }
+        default "g8013-eth-bnm";
+        description "ITU-T G.8013 Ethernet Bandwidth Notification Message (ETH-BNM).";
+      }
+      leaf min-priority-for-mw-backup {
+        type uint8 {
+          range "0..7";
+        }
+        default "5";
+        description "Minimum CoS priority preserved on MW carrier during E-band rain fade.";
+      }
+      leaf aggregate-capacity-mbps {
+        type uint32;
+        units "Mbps";
+        config false;
+      }
+      list member {
+        key "interface-name";
+        leaf interface-name {
+          type string;
+        }
+        leaf band-role {
+          type enumeration {
+            enum primary-eband { value 1; }
+            enum secondary-microwave { value 2; }
+            enum secondary-vband { value 3; }
+          }
+          default "primary-eband";
+        }
+        leaf weight {
+          type uint8 {
+            range "1..100";
+          }
+          default "50";
+        }
+        leaf oper-status {
+          type enumeration {
+            enum up { value 1; }
+            enum degraded-fade { value 2; }
+            enum down { value 3; }
+          }
+          config false;
+        }
+      }
+    }
+  }
+}
