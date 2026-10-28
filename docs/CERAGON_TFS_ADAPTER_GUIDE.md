@@ -47,16 +47,17 @@ The adapter serves as an autonomous, bi-directional mediator connecting physical
 
 ---
 
-## 2. Hardware Compatibility Matrix
+## 2. Hardware Compatibility Matrix (Full Ceragon Portfolio)
 
-The adapter auto-detects the connected device family upon initial handshake:
+The adapter resolves every Ceragon and Siklu model via [`portfolio.py`](../ceragon_tfs_adapter/ceragon_tfs_adapter/portfolio.py) (with family-level fallbacks for new/unlisted variants):
 
-| Family | Models | Management Interface | Protocol | Key Supported Capabilities |
+| Family | Models | Management Interface | Protocol & Flavor | Key Supported Capabilities |
 |---|---|---|---|---|
-| **MultiHaul TG / Terragraph** | `MH-T261`, `MH-T280`, `MH-N366` | `http(s)://<ip>:80/443` | RESTCONF RFC 8040 (`candidate` datastore) | 60 GHz V-Band (57-66 GHz), Beamforming (`massive2`), 1 Gbps Ethernet (`eth1`), User Bridges/VLANs, auto TX power. |
-| **EtherHaul** | `EH-8010FX`, `EH-2500FX`, `EH-1200TX` | `http(s)://<ip>:80/443` | RESTCONF / CLI | 70/80 GHz E-Band Millimeter Wave, up to 10 Gbps throughput. |
-| **CeraOS Multi-Core** | `IP-50C`, `IP-50E`, `IP-20C`, `IP-20N` | `https://<ip>:443` | RESTCONF RFC 8040 (`data` datastore) | Up to 4096 QAM, XPIC (cross-polarization), MRMC scripts, channel spacing up to 112 MHz, 2.5–20 Gbps. |
-| **CeraOS Disaggregated** | `IP-50FX` | `https://<ip>:443` | RESTCONF RFC 8040 (`data` datastore) | 10G/25G carrier ethernet interfaces, ultra-low latency Expedited Forwarding queues, hierarchical QoS. |
+| **MultiHaul TG / Terragraph** | `MH-T261` *(lab-verified)*, `MH-T260`, `MH-T265`, `MH-T280`, `MH-N265`, `MH-N366`, `MH-N367` | `http(s)://<ip>:80/443` | RESTCONF RFC 8040 (`candidate` DS, `siklu_tg`) | 60 GHz V-Band (57–71 GHz), Beamforming (`massive2`), Mesh / PtMP, `user-bridge` VLAN slicing, `active-backup` bonding, PM bins & event RPCs. |
+| **EtherHaul** | `EH-614TX`, `EH-710TX`, `EH-1200TX`, `EH-1200FX`, `EH-2500FX`, `EH-8010FX`, `EH-8020FX` | `http(s)://<ip>:80/443` | RESTCONF RFC 8040 (`candidate` DS, `siklu_eh`) | 70/80 GHz E-Band & 60 GHz V-Band PtP, up to 20 Gbps throughput, ExtendMM link bonding, AES encryption, PTP/SyncE. |
+| **FibeAir IP-20 (CeraOS)** | `IP-20C`, `IP-20C-HP`, `IP-20S`, `IP-20E`, `IP-20V`, `IP-20N`, `IP-20A`, `IP-20A-LH`, `IP-20G`, `IP-20GX` | `https://<ip>:443` | RESTCONF RFC 8040 (`data` DS, `ceraos`) | 4–86 GHz Microwave & mmWave, up to 4096 QAM, XPIC, 1+1 HSB / Space Diversity, MRMC scripts, 8-queue H-QoS. |
+| **IP-50 (CeraOS Disaggregated)** | `IP-50C`, `IP-50CX`, `IP-50E`, `IP-50EX`, `IP-50EXA`, `IP-50FX` | `https://<ip>:443` | RESTCONF RFC 8040 (`data` DS, `ceraos`) | Multi-core MW & E-Band, L1 Multi-Band bonding (`ceragon-multiband`), IEEE 802.1Qbv TSN, MACsec AES-256, O-RAN Split 7.2x eCPRI BFP9. |
+| **IP-100 (Next-Gen E-Band)** | `IP-100E` | `https://<ip>:443` | RESTCONF RFC 8040 (`data` DS, `ceraos`) | Dual-carrier E-Band (25 Gbps, 1024 QAM, up to 2000 MHz channels), Multi-Band, MACsec, PTP G.8275.1. |
 
 ---
 
@@ -164,17 +165,32 @@ Runs continuously in the background, interrogating the device every `interval` s
 ceragon-tfs-adapter daemon --interval 15
 ```
 
-### 5. YANG Schema Repository & Inspector (`schemas`)
-Inspect, display, and export all 51 bundled RFC-compliant YANG data models:
+### 5. YANG Schema Repository & Closure Validator (`schemas`)
+Inspect, validate, display, and export all **84 bundled RFC-compliant YANG 1.1 data models**:
 ```bash
-# List all 51 bundled YANG schemas
+# List all 84 bundled YANG schemas (or filter by family: siklu_tg, siklu_eh, ceraos, standard)
 ceragon-tfs-adapter schemas list
+ceragon-tfs-adapter schemas list --family ceraos
 
-# Print full YANG schema content for a module (e.g. user bridge)
+# Validate 100% import/include dependency closure across all 84 YANG modules
+ceragon-tfs-adapter schemas validate
+
+# Print full YANG schema content for a module
 ceragon-tfs-adapter schemas show radio-bridge-tg-user-bridge
 
-# Export all 51 .yang schema files to a custom directory
+# Export all 84 .yang schema files to a custom directory
 ceragon-tfs-adapter schemas export --output-dir ./extracted_schemas
+```
+
+### 6. Real-Time Telemetry Streaming (`stream`) & Direct Control (`control`)
+```bash
+# Stream live PM telemetry, RF metrics, and device events (both ways)
+ceragon-tfs-adapter stream --ip 192.168.1.225 --https --interval 5 --count 3
+
+# Execute a southbound SetConfig or DeleteConfig operation across any of the 12 domains
+ceragon-tfs-adapter control --ip 192.168.1.225 --https \
+  --key "/interface[name=ctu-96]/slice" \
+  --value '{"vlan_id": 200, "slice_name": "uran-slice", "bandwidth_mbps": 1000}'
 ```
 
 
@@ -251,32 +267,46 @@ The adapter issues an RFC 8040 `PATCH` to the radio configuration container and 
 
 ---
 
-## 9. Bundled Device Schema Repository (51 Modules)
+## 9. Bundled Device Schema Repository (84 Modules — 100% YANG 1.1 Closure)
 
-The adapter package bundles the complete set of **51 RFC-compliant YANG schema data models** extracted directly from Ceragon Terragraph mmWave hardware:
+The adapter package bundles **84 RFC-compliant YANG 1.1 schema data models** covering the entire Ceragon & Siklu portfolio with **0 missing `import`/`include` dependencies**:
 
-### A. Proprietary MultiHaul TG Modules (24 Modules)
+### A. MultiHaul TG (`siklu_tg`) Modules & Submodules
 - **Ethernet & Switching**: `radio-bridge-tg-user-bridge.yang`, `radio-bridge-tg-interfaces.yang`, `radio-bridge-tg-bond.yang`, `radio-bridge-tg-tunnel.yang`
 - **Radio & RF Layer**: `radio-bridge-tg-radio-common.yang`, `radio-bridge-tg-radio-dn.yang`, `radio-bridge-tg-acm.yang`, `radio-bridge-tg-spider-attenuation-control.yang`
 - **OAM & Telemetry**: `radio-bridge-tg-cfm.yang`, `radio-bridge-tg-pm.yang`, `radio-bridge-tg-ping.yang`, `radio-bridge-tg-events.yang`
-- **Inventory & System**: `radio-bridge-tg-system.yang`, `radio-bridge-tg-inventory.yang`, `radio-bridge-tg-software-upgrade.yang`, `radio-bridge-tg-rollback.yang`, `radio-bridge-tg-database-version.yang`
+- **Inventory & System**: `radio-bridge-tg-system.yang`, `radio-bridge-tg-inventory.yang`, `radio-bridge-tg-software-upgrade.yang`, `radio-bridge-tg-rollback.yang`, `radio-bridge-tg-database-version.yang`, `radio-bridge-tg-Configuration-Management.yang`
 - **Services & Management**: `radio-bridge-tg-ip.yang`, `radio-bridge-tg-gps.yang`, `radio-bridge-tg-logging.yang`, `radio-bridge-tg-snmp.yang`, `radio-bridge-tg-gui.yang`, `radio-bridge-tg-user-management.yang`, `radio-bridge-tg-types.yang`
 
-### B. Standard IETF / IEEE Models (27 Modules)
-- `ietf-yang-library.yang`, `ietf-netconf-monitoring.yang`, `ietf-restconf.yang`, `ietf-datastores.yang`, `ietf-netconf.yang`, `ietf-netconf-nmda.yang`, `ietf-netconf-acm.yang`, `ietf-origin.yang`, `ietf-inet-types.yang`, `ietf-yang-types.yang`, `ieee802-dot1q-types.yang`, `ieee802-dot1q-cfm.yang`, `IANAifType-MIB.yang`, `SNMPv2-TC.yang`, etc.
+### B. EtherHaul (`siklu_eh`) & CeraOS (`ceraos`) Modules
+- **EtherHaul**: `radio-bridge-eh-radio.yang` (E-band/V-band PtP channel BW, ATPC, ACM, ExtendMM link bonding)
+- **CeraOS (`IP-20`, `IP-50`, `IP-100`)**: `ceragon-common-types.yang`, `ceragon-radio-link.yang`, `ceragon-qos.yang`, `ceragon-protection.yang`, `ceragon-slice.yang`, `ceragon-multiband.yang`, `ceragon-sync.yang`, `ceragon-macsec.yang`, `ceragon-oran-xhaul.yang`, `ceragon-pm-telemetry.yang`
 
-### C. Python Schema Accessor API
-Applications or scripts can access any schema programmatically:
+### C. Standard IETF / IEEE / IANA Transport Models
+- `ietf-microwave-radio-link.yang` (RFC 8561), `ietf-microwave-types.yang`, `ietf-interfaces.yang`, `iana-if-type.yang`, `ietf-ip.yang`, `ietf-hardware.yang`, `iana-hardware.yang`, `ietf-system.yang`, `ietf-ptp.yang`, `ieee802-dot1q-types.yang`, `ieee802-dot1q-sched.yang` (802.1Qbv TSN), `ieee802-dot1ae-macsec.yang` (802.1AE MACsec), `ieee802-dot1q-cfm.yang`, `ietf-yang-library.yang`, `ietf-netconf-monitoring.yang`, `ietf-restconf.yang`, `ietf-datastores.yang`, `ietf-netconf.yang`, `ietf-netconf-nmda.yang`, `ietf-netconf-acm.yang`, and all 11 `ietf-snmp-*` submodules (`ietf-snmp-common` through `ietf-snmp-vacm`).
+
+### D. Python Schema Accessor & Closure Validation API
+Applications or scripts can access and validate any schema programmatically:
 ```python
-from ceragon_tfs_adapter.schemas import list_schemas, get_schema_content, get_schema_path
+from ceragon_tfs_adapter.schemas import (
+    list_schemas,
+    get_schema_content,
+    get_schema_metadata,
+    get_schemas_for_family,
+    validate_schema_closure,
+)
 
-# List all available modules
-all_modules = list_schemas()  # ['IANAifType-MIB', ..., 'radio-bridge-tg-user-bridge']
+# List all 84 available modules
+all_modules = list_schemas()
+
+# Validate 100% import/include dependency closure
+closure = validate_schema_closure()
+assert closure["closure_complete"] is True  # 84 schemas, 58 RPCs, 5 notifications
+
+# Retrieve schemas for a specific portfolio family ('siklu_tg', 'siklu_eh', 'ceraos', 'standard')
+ceraos_modules = get_schemas_for_family("ceraos")
 
 # Retrieve raw YANG schema text
-yang_text = get_schema_content("radio-bridge-tg-user-bridge")
-
-# Retrieve filesystem path to the schema
-path = get_schema_path("radio-bridge-tg-radio-common")
+yang_text = get_schema_content("ceragon-radio-link")
 ```
 

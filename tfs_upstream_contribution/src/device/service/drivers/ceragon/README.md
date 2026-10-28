@@ -12,26 +12,31 @@ src/device/service/drivers/ceragon/
 ├── CeragonDriver.py          # Main TFS driver implementation (_Driver subclass)
 ├── client.py                 # RFC 8040 RESTCONF client with 2-phase candidate datastore commit
 ├── models.py                 # Transport domain models (RadioSector, NetworkInterface, SliceConfig)
+├── portfolio.py              # Full Ceragon 5-family product catalog & capability gating
 ├── templates.py              # Candidate datastore JSON/XML payload templates
 ├── Tools.py                  # Endpoint generation and TFS resource rule parser
 ├── README.md                 # This documentation file
-└── schemas/                  # 51 RFC-compliant YANG data models
-    ├── __init__.py           # Schema accessor utilities
-    └── yang/                 # Raw YANG definitions extracted from physical hardware
+└── schemas/                  # 84 RFC-compliant YANG 1.1 data models (100% dependency closure)
+    ├── __init__.py           # Schema accessor, family filter & closure validation utilities
+    └── yang/                 # Bundled YANG definitions across MultiHaul TG, EtherHaul, CeraOS & IETF/IEEE
         ├── radio-bridge-tg-*.yang
-        ├── ieee802-dot1q-*.yang
+        ├── radio-bridge-eh-radio.yang
+        ├── ceragon-*.yang
+        ├── ieee802-dot1*.yang
         └── ietf-*.yang
 ```
 
 ---
 
-## 2. Supported Hardware
+## 2. Supported Hardware (Full Ceragon Portfolio)
 
 | Family | Model Series | Spectrum | Max Throughput | Transport Role |
 | :--- | :--- | :--- | :--- | :--- |
-| **MultiHaul TG** | `MH-T261`, `MH-T280`, `MH-N366` | 57–66 GHz (V-Band) | Up to 3.8 Gbps | mmWave Mesh / PtMP / Terragraph |
-| **EtherHaul** | `EH-8010FX`, `EH-2500FX`, `EH-1200` | 70/80 GHz (E-Band) | Up to 10 Gbps | Ultra-High-Capacity PtP Carrier Link |
-| **CeraOS Microwave** | `IP-50C`, `IP-50E`, `IP-20C`, `IP-20N` | 6–42 GHz (Microwave) | Up to 20 Gbps | Multi-Core Long-Haul & Backhaul |
+| **MultiHaul TG** | `MH-T261` *(lab-verified)*, `MH-T260`, `MH-T265`, `MH-T280`, `MH-N265`, `MH-N366`, `MH-N367` | 57–71 GHz (V-Band) | Up to 7.2 Gbps | mmWave Mesh / PtMP / Terragraph |
+| **EtherHaul** | `EH-614TX`, `EH-710TX`, `EH-1200TX`, `EH-1200FX`, `EH-2500FX`, `EH-8010FX`, `EH-8020FX` | 60 GHz (V-Band) / 70–80 GHz (E-Band) | Up to 20 Gbps | Ultra-High-Capacity PtP Carrier Link |
+| **FibeAir IP-20** | `IP-20C`, `IP-20C-HP`, `IP-20S`, `IP-20E`, `IP-20V`, `IP-20N`, `IP-20A`, `IP-20A-LH`, `IP-20G`, `IP-20GX` | 4–86 GHz (MW / E-Band / V-Band) | Up to 10 Gbps | Split-Mount & All-Outdoor Microwave / Trunk |
+| **IP-50** | `IP-50C`, `IP-50CX`, `IP-50E`, `IP-50EX`, `IP-50EXA`, `IP-50FX` | 6–42 GHz MW & 70/80 GHz E-Band | Up to 25 Gbps | Disaggregated Multi-Core MW, Multi-Band & Nodal |
+| **IP-100** | `IP-100E` | 70/80 GHz (Dual-Carrier E-Band) | Up to 25 Gbps | Next-Gen Ultra-Capacity E-Band |
 
 ---
 
@@ -45,11 +50,23 @@ The driver processes TFS `ConfigRule` structures dispatched by the TFS Device Se
 | `_connect/port` | Read/Write | `integer` | RESTCONF management port (Default: `80` for HTTP, `443` for HTTPS). |
 | `_connect/settings` | Read/Write | `dict` | Connection options: `{"username": "admin", "password": "...", "scheme": "http", "timeout": 15}`. |
 | `/device/hardware_info` | Read-Only | `dict` | Inventory metadata: serial number, hardware revision, software version, uptime. |
-| `/device/capabilities` | Read-Only | `dict` | Transport capabilities: supported bands, beamforming profile, max throughput. |
-| `/device/operating_parameters` | Read-Only | `dict` | Live telemetry: frequency, modem/RF temperatures, ATPC state, admin status. |
-| `/radio/tuning` | Write | `dict` | Tunes radio frequency (`frequency_mhz`), channel, and transmit power. |
-| `/slice/<slice_name>` | Write / Delete | `dict` | Creates/deletes IEEE 802.1Q VLAN sub-interfaces, bridges, and bandwidth limits. |
-| `/modulation/acm_floor` | Write | `dict` | Sets minimum ACM modulation floor (e.g. `MCS2` / `QPSK`) during severe rain fade. |
+| `/device/capabilities` | Read-Only | `dict` | Transport capabilities: supported bands, beamforming profile, max throughput, portfolio features. |
+| `/device/operating_parameters` | Read/Write | `dict` | Live telemetry & radio tuning: frequency, TX power, channel BW, temperatures, ATPC state, admin status. |
+| `/device/yang_schemas` | Read-Only | `dict` | Bundled & live RFC 8525 YANG 1.1 schema catalog + closure verification. |
+| `/device/pm_telemetry` | Stream / Read | `dict` | Live northbound PM counters (`in-octets`, `out-octets`, BER/FER, 15-min/24-hr bins, RSL, SNR, MCS/QAM). |
+| `/device/events` | Stream / Read | `list` | Live alarm and system event notifications (`radio-bridge-tg-events` / `ceragon-pm-telemetry`). |
+| `/interface[name=*]/slice` | Write / Delete | `dict` | Creates/deletes IEEE 802.1Q VLAN bridges (`c-vlan`, `s-vlan`, `q-in-q`) and slice rate limits. |
+| `/interface[name=*]/radio` | Write | `dict` | Tunes carrier frequency (`frequency_mhz`), channel BW, MRMC script, TX power, and ATPC. |
+| `/interface[name=*]/acm` | Write | `dict` | Configures Adaptive Coding & Modulation min/max profile (`QPSK`..`4096QAM`, `MCS2`..`MCS12`). |
+| `/interface[name=*]/qos` | Write | `dict` | Configures 8-queue scheduler, CIR/PIR/CBS/EBS shaper, and WRED/tail-drop profiles. |
+| `/interface[name=*]/tsn` | Write | `dict` | Configures IEEE 802.1Qbv Gate Control List (GCL) and 802.1Qbu frame preemption. |
+| `/interface[name=*]/beamforming` | Write | `dict` | Overrides 60 GHz TX/RX beam index and invokes `radio-bridge-tg-radio-dn:start-topo-scan`. |
+| `/interface[name=*]/multiband` | Write | `dict` | Bonds E-Band + Microwave carriers (`ceragon-multiband`) with hitless L1 failover. |
+| `/interface[name=*]/protection` | Write | `dict` | Configures `1+1 HSB`, `2+0 XPIC`, or `active-backup` bonding + manual switchover RPC. |
+| `/interface[name=*]/sync` | Write | `dict` | Configures IEEE 1588v2 PTP (`G.8275.1`/`G.8275.2`), SyncE SSM, and GPS/RF timing sources. |
+| `/interface[name=*]/security` | Write | `dict` | Configures IEEE 802.1AE MACsec (`GCM-AES-128`/`256`) and air-interface AES encryption. |
+| `/interface[name=*]/oran_xhaul` | Write | `dict` | Configures O-RAN Split 7.2x eCPRI BFP9 IQ compression and delay windows. |
+| `/interface[name=*]/energy` | Write | `dict` | Configures Green-ATPC target RSL and low-load secondary carrier sleep. |
 
 ---
 

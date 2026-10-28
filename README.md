@@ -87,15 +87,36 @@ python run.py
 
 ---
 
-## Supported Intent Types
+## Supported Intent Types (12 Domains)
 
 | Type | Example Input | Ceragon Config Generated |
 |---|---|---|
-| **Capacity** | "Ensure 5 Gbps on link-A-B for eMBB" | MRMC script #50, 112 MHz BW, ACM 64QAM–2048QAM |
-| **QoS** | "Enforce < 5ms latency on link-D-E for URLLC" | QoS profile: EF class, DSCP 46 |
-| **Modulation** | "Set minimum ACM to 256QAM on all links" | ACM profile: min=256QAM, max=2048QAM |
-| **Resilience** | "Enable 1+1 HSB protection on sector-north" | Protection group: mode=1+1-hsb, revertive, WTR=300s |
-| **Slice** | "Allocate 30% to eMBB slice on link-E-H" | Slice config: VLAN 104, priority 5, 30% BW |
+| **Capacity** | `"Ensure 5 Gbps on link-A-B for eMBB"` | MRMC script #50, 112 MHz BW, ACM 64QAM–2048QAM |
+| **QoS** | `"Enforce < 5ms latency on link-D-E for URLLC"` | QoS profile: EF class, DSCP 46, IEEE 802.1Qbv GCL |
+| **Modulation** | `"Set minimum ACM to 256QAM on all links"` | ACM profile: min=256QAM, max=2048QAM |
+| **Resilience** | `"Enable 1+1 HSB protection on sector-north"` | Protection group: mode=1+1-hsb / active-backup bond |
+| **Slice** | `"Allocate 30% to eMBB slice on link-E-H"` | Slice config: VLAN 104 / `user-bridge`, priority 5, 30% BW |
+| **Beamforming** | `"Steer 60 GHz beam +15 deg on ctu-96 and run topo-scan"` | `radio-bridge-tg-radio-dn` beam override + `start-topo-scan` RPC |
+| **Multi-Band** | `"Bond E-band and 18 GHz microwave on IP-50EX"` | `ceragon-multiband` L1 carrier bonding + hitless failover |
+| **Sync / Timing** | `"Configure ITU-T G.8275.1 PTP + SyncE PRC on node-A"` | `ietf-ptp` + `ceragon-sync` / `radio-bridge-tg-gps` |
+| **Security** | `"Enable line-rate AES-256 MACsec on link-A-B"` | `ieee802-dot1ae-macsec` + `ceragon-macsec` GCM-AES-256 |
+| **Energy** | `"Enable green ATPC and low-load carrier sleep on sector-south"` | Green-ATPC target RSL + secondary carrier sleep |
+| **O-RAN xHaul** | `"Provision Split 7.2x eCPRI with BFP9 compression"` | `ceragon-oran-xhaul` BFP-9bit IQ compression & delay window |
+| **Interference** | `"Mitigate co-channel interference on 60 GHz sector"` | Channel switch / XPIC cross-pol cancellation + ATPC boost |
+
+---
+
+## Ceragon Portfolio & YANG 1.1 Schema Support
+
+The [`ceragon_tfs_adapter`](file:///c:/CER_Intent/ceragon_tfs_adapter/README.md) supports the full Ceragon & Siklu product portfolio with **100% YANG 1.1 schema closure (84 modules/submodules, 58 RPCs, 5 notifications)**:
+
+| Product Family | Models Covered | API Flavor | Bundled YANG Schemas |
+|---|---|---|---|
+| **MultiHaul TG** (60 GHz Terragraph) | `MH-T261` *(lab-verified at `192.168.1.225`)*, `MH-T260`, `MH-T265`, `MH-T280`, `MH-N265`, `MH-N366`, `MH-N367` + family fallback | `siklu_tg` | 62 modules (`radio-bridge-tg-*`, `ietf-snmp-*`, NMDA/RESTCONF) |
+| **EtherHaul** (70/80 GHz E-Band & 60 GHz PtP) | `EH-614TX`, `EH-710TX`, `EH-1200TX`, `EH-1200FX`, `EH-2500FX`, `EH-8010FX`, `EH-8020FX` + family fallback | `siklu_eh` | `radio-bridge-eh-radio.yang` + shared `radio-bridge-tg-*` & standard models |
+| **FibeAir IP-20** (4–86 GHz CeraOS) | `IP-20C`, `IP-20C-HP`, `IP-20S`, `IP-20E`, `IP-20V`, `IP-20N`, `IP-20A`, `IP-20A-LH`, `IP-20G`, `IP-20GX` + family fallback | `ceraos` | 10 `ceragon-*.yang` modules + `ietf-microwave-radio-link` (RFC 8561) |
+| **IP-50** (Disaggregated MW, E-Band & Nodal) | `IP-50C`, `IP-50CX`, `IP-50E`, `IP-50EX`, `IP-50EXA`, `IP-50FX` + family fallback | `ceraos` | 10 `ceragon-*.yang` + `ieee802-dot1q-sched` (802.1Qbv) + `ieee802-dot1ae-macsec` + `ietf-ptp` |
+| **IP-100** (Next-Gen 25 Gbps Dual-Carrier E-Band) | `IP-100E` + family fallback | `ceraos` | 10 `ceragon-*.yang` + RFC 8561 + IEEE 802.1Qbv / 802.1AE |
 
 ---
 
@@ -141,6 +162,12 @@ python run.py
 | `GET` | `/api/v1/topology` | Network topology + device states |
 | `GET` | `/api/v1/devices` | List all nodes and links |
 | `GET` | `/api/v1/devices/<id>/state` | Device running config |
+| `GET` | `/api/v1/adapter/portfolio` | Full Ceragon product catalog (5 families, 36 models) |
+| `GET` | `/api/v1/adapter/schemas` | Bundled YANG 1.1 schema catalog + dependency closure report |
+| `GET` | `/api/v1/adapter/schemas/<module>` | Raw YANG text + parsed metadata for a specific module |
+| `GET` | `/api/v1/adapter/telemetry` | Live northbound PM telemetry & event stream from device |
+| `POST` | `/api/v1/adapter/control` | Direct southbound SetConfig/DeleteConfig across all 12 domains |
+| `POST` | `/api/v1/adapter/subscribe` | Start/stop background bidirectional telemetry streaming |
 | `GET` | `/api/v1/audit-log` | Event audit trail |
 | `GET` | `/api/v1/health` | System health check |
 

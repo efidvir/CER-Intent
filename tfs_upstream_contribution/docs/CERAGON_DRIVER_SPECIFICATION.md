@@ -23,10 +23,11 @@ flowchart TD
     subgraph DRIVER_LAYER ["Ceragon Southbound Driver (SBI)"]
         DF["DriverFactory"]
         CD["CeragonDriver (implements _Driver)"]
+        PORTFOLIO["Portfolio Catalog (5 Families, 36 Models)"]
         TOOLS["Tools (Resource Rules & Endpoint Mapping)"]
         CLIENT["CeragonRestClient (RFC 8040 Engine)"]
         MODELS["Normalized Transport Domain Models"]
-        SCHEMAS["51 Bundled YANG Schemas"]
+        SCHEMAS["84 Bundled YANG 1.1 Schemas (100% Closure)"]
     end
 
     subgraph HARDWARE_PLANE ["Physical Wireless Transport Equipment"]
@@ -249,39 +250,34 @@ Enforces minimum Adaptive Coding and Modulation (ACM) floor for rain fade resili
 
 ---
 
-## 6. Bundled YANG Schema Catalog (51 Models)
+## 6. Bundled YANG 1.1 Schema Catalog (84 Models — 100% Dependency Closure)
 
-All 51 RFC-compliant data models bundled in `src/device/service/drivers/ceragon/schemas/yang/` are extracted directly from production hardware:
+All **84 RFC-compliant YANG 1.1 data models** bundled in `src/device/service/drivers/ceragon/schemas/yang/` have 100% `import`/`include` closure (`0` missing dependencies) across all 5 Ceragon product families:
 
-### A. Radio & Wireless Millimeter-Wave Models
+### A. MultiHaul TG (`siklu_tg`) Radio & Millimeter-Wave Models (62 Modules/Submodules)
 - `radio-bridge-tg-radio-common.yang`: Core radio parameters, channel plans, antenna profiles.
-- `radio-bridge-tg-radio-dn.yang`: Terragraph Distribution Node (DN) beamforming and sectors.
+- `radio-bridge-tg-radio-dn.yang`: Terragraph Distribution Node (DN) beamforming, sectors, and `start-topo-scan` RPC.
 - `radio-bridge-tg-acm.yang`: Adaptive Coding and Modulation state machines and hysteresis.
-- `radio-bridge-tg-bond.yang`: Wireless link bonding and LAG aggregation.
+- `radio-bridge-tg-bond.yang`: Wireless `active-backup` link bonding and protection.
 - `radio-bridge-tg-spider-attenuation-control.yang`: Dynamic RF attenuation and beam shaping.
 - `radio-bridge-tg-gps.yang`: Synchronous Ethernet and GPS timing synchronization.
 
-### B. Transport & Bridging Models
+### B. EtherHaul (`siklu_eh`) & CeraOS (`ceraos`) Models (11 Modules)
+- `radio-bridge-eh-radio.yang`: EtherHaul E-band/V-band PtP channel bandwidth, ATPC, ACM, ExtendMM link bonding.
+- `ceragon-common-types.yang`, `ceragon-radio-link.yang`, `ceragon-qos.yang`, `ceragon-protection.yang`, `ceragon-slice.yang`, `ceragon-multiband.yang`, `ceragon-sync.yang`, `ceragon-macsec.yang`, `ceragon-oran-xhaul.yang`, `ceragon-pm-telemetry.yang`.
+
+### C. Transport, Bridging & OAM Models
 - `radio-bridge-tg-interfaces.yang`: Physical port and radio interface definitions.
-- `radio-bridge-tg-user-bridge.yang`: User plane Ethernet bridging and VLAN isolation.
+- `radio-bridge-tg-user-bridge.yang`: User plane Ethernet bridging and VLAN isolation (`c-vlan`, `s-vlan`, `q-in-q`).
 - `radio-bridge-tg-tunnel.yang`: Point-to-Point and Point-to-Multipoint transport tunneling.
 - `radio-bridge-tg-cfm.yang`: IEEE 802.1ag Connectivity Fault Management (CFM).
-- `ieee802-dot1q-cfm.yang`, `ieee802-dot1q-cfm-types.yang`, `ieee802-dot1q-types.yang`: Standard IEEE 802.1Q definitions.
+- `radio-bridge-tg-system.yang`, `radio-bridge-tg-inventory.yang`, `radio-bridge-tg-software-upgrade.yang`, `radio-bridge-tg-rollback.yang`, `radio-bridge-tg-Configuration-Management.yang`, `radio-bridge-tg-pm.yang`, `radio-bridge-tg-events.yang`, `radio-bridge-tg-logging.yang`.
 
-### C. System, OAM & Maintenance Models
-- `radio-bridge-tg-system.yang`: System hostname, location, operational mode.
-- `radio-bridge-tg-inventory.yang`: Hardware inventory, board revisions, serial numbers.
-- `radio-bridge-tg-software-upgrade.yang`: Dual-image software upgrade and bank switching.
-- `radio-bridge-tg-rollback.yang`: Automatic configuration rollback timer.
-- `radio-bridge-tg-pm.yang`: Performance monitoring and 15-min / 24-hr historical bins.
-- `radio-bridge-tg-events.yang`, `radio-bridge-tg-logging.yang`: Alarm and syslog notifications.
-
-### D. IETF & Standard Base Models
-- `ietf-datastores.yang`: RFC 8342 NMDA datastore definitions.
-- `ietf-yang-library.yang`: RFC 8525 YANG library module catalog.
-- `ietf-restconf.yang`: RFC 8040 RESTCONF protocol definitions.
-- `ietf-netconf.yang`, `ietf-netconf-nmda.yang`, `ietf-netconf-acm.yang`: Netconf access control and operations.
-- `ietf-interfaces.yang`, `ietf-ip.yang`, `ietf-inet-types.yang`, `ietf-yang-types.yang`: Standard network primitives.
+### D. IETF, IEEE & IANA Standard Base Models
+- `ietf-microwave-radio-link.yang` (RFC 8561), `ietf-microwave-types.yang`: IETF standard microwave radio link model.
+- `ieee802-dot1q-types.yang`, `ieee802-dot1q-sched.yang` (IEEE 802.1Qbv TSN), `ieee802-dot1ae-macsec.yang` (IEEE 802.1AE MACsec), `ieee802-dot1q-cfm.yang`, `ieee802-dot1q-cfm-types.yang`.
+- `ietf-ptp.yang` (IEEE 1588v2 PTP), `ietf-interfaces.yang`, `iana-if-type.yang`, `ietf-ip.yang`, `ietf-hardware.yang`, `iana-hardware.yang`, `ietf-system.yang`.
+- `ietf-datastores.yang` (RFC 8342 NMDA), `ietf-yang-library.yang` (RFC 8525), `ietf-restconf.yang` (RFC 8040), `ietf-netconf.yang`, `ietf-netconf-nmda.yang`, `ietf-netconf-acm.yang`, `ietf-netconf-monitoring.yang` (RFC 6022), and all 11 `ietf-snmp-*` submodules (`ietf-snmp-common` through `ietf-snmp-vacm`).
 
 ---
 
