@@ -120,6 +120,18 @@ The [`ceragon_tfs_adapter`](file:///c:/CER_Intent/ceragon_tfs_adapter/README.md)
 
 ---
 
+## NS-3.45 Functional Digital Twin (`contrib/ceragon`)
+
+The [`ns3_ceragon/contrib/ceragon`](file:///c:/CER_Intent/ns3_ceragon/contrib/ceragon/README.md) C++20 module provides a packet-level **Functional Digital Twin** of all 36 Ceragon/Siklu portfolio entries inside **ns-3.45** (`libns3.45-ceragon-default.so`):
+
+- **ITU-R Millimeter-Wave & Microwave PHY**: ITU-R P.525 free-space path loss, ITU-R P.676 gaseous absorption (including the 60 GHz $O_2$ peak and 22 GHz $H_2O$ line), ITU-R P.838-3 rain attenuation, and ITU-R P.530-17 depolarization (XPD) with time-varying `CeragonWeatherModel`.
+- **Hitless ACM & Multi-Carrier Bonding**: CeraOS MRMC (`BPSK`..`4096QAM`) and Siklu 802.11ad (`MCS1`..`MCS12`) state machines with hysteresis, XPIC `2+0` cross-pol cancellation, and `IP-50EX` Multi-Band L1 bonding (E-Band + Microwave anchor).
+- **Resilience & 60 GHz Beamforming**: `1+1 HSB`, `Space Diversity`, and Terragraph `active-backup` protection; 60 GHz phased-array beam steering, wind-induced pole sway, and `start-topo-scan` RPC emulation.
+- **Deterministic QoS, TSN, Security, Timing & O-RAN**: 8-CoS SP+DRR `CeragonQosQueueDisc` with per-slice PIR shapers, IEEE 802.1Qbv Time-Aware Shaper (GCL), and IEEE 802.1Qbu frame preemption; AES-128/256-GCM MACsec overhead; Green-ATPC + carrier sleep; IEEE 1588v2 PTP / SyncE cTE/dTE/holdover time error; and O-RAN Split 7.2x eCPRI BFP9 dimensioning.
+- **Full Documentation**: See [Ceragon Functional Digital Twin for NS-3 Guide](file:///c:/CER_Intent/docs/CERAGON_NS3_FUNCTIONAL_TWIN_GUIDE.md) and Sphinx manual [`doc/ceragon.rst`](file:///c:/CER_Intent/ns3_ceragon/contrib/ceragon/doc/ceragon.rst).
+
+---
+
 ## Device Adapter Backends
 
 Select backend via `ADAPTER_BACKEND` environment variable:
@@ -168,6 +180,9 @@ python run.py
 | `GET` | `/api/v1/adapter/telemetry` | Live northbound PM telemetry & event stream from device |
 | `POST` | `/api/v1/adapter/control` | Direct southbound SetConfig/DeleteConfig across all 12 domains |
 | `POST` | `/api/v1/adapter/subscribe` | Start/stop background bidirectional telemetry streaming |
+| `GET` | `/api/v1/digital-twin/ceragon/portfolio` | Query compiled ns-3 `contrib/ceragon` portfolio catalog (36 entries) |
+| `GET` | `/api/v1/digital-twin/ceragon/topology` | Export active CER-Intent / TeraFlowSDN topology in `.twin` format |
+| `POST` | `/api/v1/digital-twin/ceragon/run` | Run live ns-3.45 Ceragon functional twin simulation with rain/cut/override |
 | `GET` | `/api/v1/audit-log` | Event audit trail |
 | `GET` | `/api/v1/health` | System health check |
 
@@ -254,16 +269,23 @@ CER_Intent/
 │   │   ├── reconciler.py     # Closed-loop drift detection
 │   │   └── audit_log.py      # Append-only event log
 │   └── api/
-│       └── server.py         # Flask REST + Socket.IO
-└── dashboard/                # Web UI (D3.js topology + live telemetry)
+│       ├── server.py         # Flask REST + Socket.IO
+│       └── digital_twin_routes.py  # NS-3 & TeraFlowSDN Digital Twin API
+├── ceragon_tfs_adapter/      # TeraFlowSDN Ceragon RESTCONF/YANG Adapter (84 YANGs)
+├── ns3_ceragon/              # NS-3.45 Functional Twin C++ module (contrib/ceragon)
+│   ├── contrib/ceragon/      # Model, helper, 11-test suite, 6 examples, Sphinx docs
+│   ├── tools/                # CER-Intent / TeraFlowSDN -> .twin topology converter
+│   └── deploy_to_ns3.sh      # Automated NS-3.45 installer & builder
+└── dashboard/                # Web UI (Native SVG topology + live telemetry)
 ```
 
 ---
 
-## References
-
 ## Documentation
 
+- **TeraFlowSDN Adapter Guide**: [Ceragon TeraFlowSDN Adapter Guide](file:///c:/CER_Intent/docs/CERAGON_TFS_ADAPTER_GUIDE.md) — Complete portfolio, YANG 1.1 schema closure, and bidirectional control/telemetry reference.
+- **NS-3 Functional Twin Guide**: [Ceragon Functional Digital Twin for NS-3 (`contrib/ceragon`)](file:///c:/CER_Intent/docs/CERAGON_NS3_FUNCTIONAL_TWIN_GUIDE.md) — Architecture, ITU-R PHY/MAC/QoS/TSN mathematical models, `.twin` grammar, and validation suite.
+- **NS-3 Sphinx Module Manual**: [`ns3_ceragon/contrib/ceragon/doc/ceragon.rst`](file:///c:/CER_Intent/ns3_ceragon/contrib/ceragon/doc/ceragon.rst) — Native ns-3 Sphinx documentation.
 - **System Specification**: [Ceragon Intent Architect — The Cognitive Future of 6G Transport](file:///c:/CER_Intent/docs/Ceragon_Intent_Architect_System_Spec.docx) — Detailed 10-page enterprise architecture guide.
 - **Technical Whitepaper**: [The Cognitive Future of 6G Transport](file:///c:/CER_Intent/docs/CER_Intent_Technical_Whitepaper.docx) — Deep dive into intent lifecycle management.
 - Ceragon CeraOS NETCONF/YANG: [Ceragon Support Portal](https://www.ceragon.com)

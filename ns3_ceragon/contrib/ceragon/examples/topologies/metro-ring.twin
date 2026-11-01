@@ -1,0 +1,57 @@
+# ---------------------------------------------------------------------------
+# Ceragon functional twin - metro aggregation ring (mixed portfolio)
+#   IP-50EX Multi-Band trunk (E-band + 18 GHz, 1+1 HSB), IP-50FX XPIC ring hops,
+#   IP-20C green tail, EtherHaul E-band spur with MACsec, MultiHaul TG access.
+#   A "site" node can host several radios: use model= on the link line.
+# Run:
+#   ./ns3 run "ceragon-twin-from-file --topology=contrib/ceragon/examples/topologies/metro-ring.twin --simTime=12"
+# ---------------------------------------------------------------------------
+
+# name     model      x(m)    y(m)
+node dc     host       -50     0
+node hubA   site        0      0
+node hubB   site       2800    0
+node hubC   site       2800   4000
+node hubD   site        0     4000
+node tailC  IP-20C     8000   4000
+node ehHub  EH-8010FX  2810   20
+node ehSpur EH-8010FX  2800   1800
+node pop    MH-N366    3000   1810
+node cn1    MH-T261    3150   1900
+node cn2    MH-T265    3120   1680
+node cell1  host       8050   4000
+node fwa1   host       3200   1950
+
+wire dc hubA rate=25Gbps
+link hubA hubB model=IP-50EX distance=2800 protection=hsb sync=bc
+link hubB hubC model=IP-50FX distance=4000 sync=bc
+link hubC hubD model=IP-50FX distance=2800 sync=bc
+link hubD hubA model=IP-50FX distance=4000
+link hubC tailC model=IP-20C distance=5200 atpc=1 rsl=-45 sleep=1
+wire hubB ehHub rate=10Gbps
+link ehHub ehSpur distance=1780 macsec=1
+wire ehSpur pop rate=10Gbps
+link pop cn1 distance=170
+link pop cn2 distance=180
+wire tailC cell1 rate=10Gbps
+wire cn1 fwa1 rate=1Gbps
+
+# transport slice on the trunk (CoS 5 = video slice capped at 1 Gb/s)
+slice hubA hubB 5 1Gbps dscp=34,36 weight=4
+# 802.1Qbv express window for fronthaul on the tail hop
+tsn hubC tailC 500 250 express_mask=0x80
+
+# services
+flow fronthaul dc cell1 400Mbps dscp=46 start=0.5
+flow video     dc cell1 700Mbps dscp=34 start=0.5
+flow fwa       dc fwa1  400Mbps dscp=0  start=0.5
+flow bulk      dc ehSpur 2Gbps  dscp=0  start=1.0
+
+# weather: storm crossing the ring
+rain 3 6 110
+
+# operator / intent actions
+event 7.0 hubA hubB fail-unit 0
+event 8.0 pop cn1 pole-sway 2
+event 9.0 hubC tailC min-mod 64QAM
+event 10.0 hubA hubB restore-unit 0

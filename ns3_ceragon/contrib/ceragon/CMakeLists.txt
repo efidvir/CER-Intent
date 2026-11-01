@@ -1,0 +1,36 @@
+build_lib(
+  LIBNAME ceragon
+  SOURCE_FILES
+    model/ceragon-portfolio.cc
+    model/ceragon-acm.cc
+    model/ceragon-propagation.cc
+    model/ceragon-radio-header.cc
+    model/ceragon-radio-channel.cc
+    model/ceragon-radio-net-device.cc
+    model/ceragon-qos-queue-disc.cc
+    model/ceragon-oran-xhaul.cc
+    helper/ceragon-helper.cc
+    helper/ceragon-twin-helper.cc
+  HEADER_FILES
+    model/ceragon-portfolio.h
+    model/ceragon-acm.h
+    model/ceragon-propagation.h
+    model/ceragon-radio-header.h
+    model/ceragon-radio-channel.h
+    model/ceragon-radio-net-device.h
+    model/ceragon-qos-queue-disc.h
+    model/ceragon-oran-xhaul.h
+    helper/ceragon-helper.h
+    helper/ceragon-twin-helper.h
+  LIBRARIES_TO_LINK
+    ${libcore}
+    ${libnetwork}
+    ${libinternet}
+    ${libtraffic-control}
+    ${libmobility}
+    ${libpoint-to-point}
+    ${libapplications}
+    ${libflow-monitor}
+  TEST_SOURCES
+    test/ceragon-test-suite.cc
+)

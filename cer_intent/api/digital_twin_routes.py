@@ -1227,3 +1227,65 @@ def get_restconf_wire_log():
         }
     ])
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ceragon portfolio functional twin (ns-3 contrib/ceragon module)
+# ─────────────────────────────────────────────────────────────────────────────
+from cer_intent.ceragon_ns3_twin_runner import CeragonNs3TwinRunner  # noqa: E402
+
+
+def _ceragon_runner() -> CeragonNs3TwinRunner:
+    return CeragonNs3TwinRunner(host=NS3_SSH_HOST, ns3_dir=NS3_DIR)
+
+
+@dt_bp.route("/ceragon/portfolio", methods=["GET"])
+def ceragon_twin_portfolio():
+    """Products modelled by the ns-3 Ceragon functional twin (queried live from ns-3)."""
+    try:
+        models = _ceragon_runner().portfolio()
+        return jsonify({"source": "ns-3 contrib/ceragon", "count": len(models), "models": models})
+    except Exception as e:
+        logger.warning(f"Ceragon twin portfolio query failed: {e}")
+        return jsonify({"error": str(e)}), 502
+
+
+@dt_bp.route("/ceragon/topology", methods=["GET"])
+def ceragon_twin_topology():
+    """The .twin topology generated from the current CER-Intent / TFS state."""
+    try:
+        text = _ceragon_runner().build_twin_text(auto_flows=int(request.args.get("auto_flows", 2)))
+        return jsonify({"format": "ceragon-twin", "topology": text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@dt_bp.route("/ceragon/run", methods=["POST"])
+def ceragon_twin_run():
+    """
+    Run the Ceragon functional twin on the ns-3 host.
+
+    Body (all optional):
+      topology_text : explicit .twin text (otherwise generated from CER-Intent state)
+      sim_time      : seconds (default 10)
+      rain          : [start_s, duration_s, peak_mm_h]
+      flows         : ["name,src,dst,rate,dscp", ...]
+      events        : ["<t> <a> <b> <action> [value]", ...]
+      auto_flows    : number of auto-generated tail flows (default 2)
+    """
+    body = request.get_json(silent=True) or {}
+    runner = _ceragon_runner()
+    try:
+        sim_time = float(body.get("sim_time", 10.0))
+        if body.get("topology_text"):
+            text = body["topology_text"]
+        else:
+            text = runner.build_twin_text(rain=body.get("rain"), flows=body.get("flows"),
+                                          events=body.get("events"),
+                                          auto_flows=int(body.get("auto_flows", 2)))
+        report = runner.run(text, sim_time=sim_time)
+        report["twin_topology"] = text
+        return jsonify(report)
+    except Exception as e:
+        logger.error(f"Ceragon twin run failed: {e}")
+        return jsonify({"error": str(e)}), 502

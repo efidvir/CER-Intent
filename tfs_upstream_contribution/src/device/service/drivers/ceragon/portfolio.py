@@ -376,9 +376,9 @@ def family_of(norm: str) -> Optional[str]:
         return "IP-50"
     if re.search(r"IP-20|EVOLUTION", norm):
         return "IP-20"
-    if re.search(r"\bEH-\d", norm):
+    if re.search(r"\bEH-\d|^EH$", norm):
         return "EtherHaul"
-    if re.search(r"\bMH-[TN]\d|\bMPL-\d|\bTG\d|\b[TN]\d{3}\b", norm):
+    if re.search(r"\bMH-[TN]\d|\bMPL-\d|\bTG\d|\b[TN]\d{3}\b|^MH(?:-TG)?$", norm):
         return "MultiHaul TG"
     return None
 
