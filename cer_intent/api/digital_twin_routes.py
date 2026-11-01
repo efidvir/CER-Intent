@@ -19,7 +19,7 @@ from cer_intent.simulation_resolution_governor import (
     ResolutionTier,
     TIER_SPECIFICATIONS,
 )
-from cer_intent.tsn_simulation_runner import TSNSimulationRunner
+from cer_intent.tsn_simulation_runner import TSNSimulationRunner, build_scenario_simulation_data
 
 logger = logging.getLogger("DigitalTwinRoutes")
 
@@ -977,6 +977,17 @@ def step_stage_execution():
         mitigated_lat = prof["mitigated_delay_ms"] if use_case in ("oran_fronthaul", "ptp_sync", "marl_healing") else (measured_delay or prof["mitigated_delay_ms"])
         unmitigated_lat = prof["unmitigated_delay_ms"]
 
+        scenario_sim_data = build_scenario_simulation_data(
+            use_case=use_case,
+            target_id=target_id,
+            prof=prof,
+            before_sim=before_sim,
+            after_sim=real_sim,
+        )
+        real_sim["simulated_topology"] = scenario_sim_data["simulated_topology"]
+        real_sim["data_streams"] = scenario_sim_data["data_streams"]
+        real_sim["scenario_events"] = scenario_sim_data["scenario_events"]
+
         return jsonify({
             "stage": 3,
             "use_case": use_case,
@@ -988,6 +999,9 @@ def step_stage_execution():
             "wall_clock_elapsed_ms": real_sim.get("wall_clock_elapsed_ms", elapsed),
             "use_case_profile": prof,
             "visual_blueprint": prof.get("blueprint", {}),
+            "simulated_topology": scenario_sim_data["simulated_topology"],
+            "data_streams": scenario_sim_data["data_streams"],
+            "scenario_events": scenario_sim_data["scenario_events"],
             "before_sim": before_sim,
             "sim_results": real_sim,
             "outcome": {

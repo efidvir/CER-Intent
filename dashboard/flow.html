@@ -721,6 +721,7 @@
     </nav>
 
     <div class="controls">
+      <a class="btn" href="/ceragon-twin.html" target="_top" style="background:linear-gradient(135deg,#10b981,#0284c7);border:none;color:#fff;font-weight:700;box-shadow:0 0 14px rgba(16,185,129,0.4)">🛰️ Ceragon Portfolio &amp; NS-3.45 Twin (36 Models / 84 YANGs)</a>
       <button class="btn btn-primary" onclick="launchGoal(selectedGoalIdx)">▶ Run 5-Stage Pipeline</button>
       <button class="btn btn-amber" onclick="toggleDebugMinimize()" id="btn-toggle-debug">🐞 Live Debug Console</button>
       <a class="btn" href="/?view=expert" target="_top">🎛 Expert View</a>
@@ -1326,6 +1327,9 @@
 
       for (let i = 1; i <= 5; i++) setPillState(i, i < startFromStage ? "done" : "");
 
+      liveState.simulatedTopology = null;
+      liveState.dataStreams = null;
+      liveState.scenarioEvents = null;
       liveState.rawProofLog = {
         pipeline_run: myRun,
         use_case: activeGoal.useCase,
@@ -1578,6 +1582,9 @@
         liveState.blueprint = bp;
         liveState.simResults = sim;
         liveState.beforeSim = beforeSim;
+        liveState.simulatedTopology = data3.simulated_topology || sim.simulated_topology || null;
+        liveState.dataStreams = data3.data_streams || sim.data_streams || null;
+        liveState.scenarioEvents = data3.scenario_events || sim.scenario_events || null;
         liveState.ceragonDevices = sim.ceragon_devices || [];
         liveState.wifiAps = sim.wifi_access_points || [];
         liveState.packetTrace = sim.discrete_packet_trace || [];
@@ -2030,11 +2037,368 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // STAGE 3 ON-THE-FLY GENERATOR:
-    // Constructs a custom physics & topology simulation visual directly from
-    // data3.visual_blueprint, data3.sim_results, discrete_packet_trace & CLI flags
+    // SCENARIO TOPOLOGY, DATA STREAMS & DISCRETE EVENT ANIMATION ENGINE
+    // Strictly adheres to the active simulated scenario across Stages 3, 4, and 5
     // ═══════════════════════════════════════════════════════════════════════════
     const stage3Rain = Array.from({ length: 48 }, () => ({ x: 40 + Math.random() * 360, y: 70 + Math.random() * 290 }));
+
+    function getActiveScenarioData(uc) {
+      if (liveState.simulatedTopology && liveState.simulatedTopology.nodes && liveState.dataStreams) {
+        return {
+          nodes: liveState.simulatedTopology.nodes,
+          links: liveState.simulatedTopology.links || [],
+          streams: liveState.dataStreams || [],
+          events: liveState.scenarioEvents || []
+        };
+      }
+      // Client-side scenario defaults matching backend build_scenario_simulation_data() while SSH is in flight
+      const DEFAULTS = {
+        beam_steering: {
+          nodes: [
+            { id: "du-agg", label: "5G-DU Agg", model: "CSR-Router", role: "Fronthaul Source", rx: 0.10, ry: 0.50, q_before: 12, q_after: 2 },
+            { id: "ctu-96", label: "ctu-96 (Tx)", model: "MH-T261 (60G)", role: "32-Elem Array", rx: 0.35, ry: 0.52, q_before: 142, q_after: 3, is_target: true },
+            { id: "obstruction", label: "0° Block", model: "Crane Reflector", role: "LoS Block", rx: 0.55, ry: 0.22, q_before: 0, q_after: 0, is_hazard: true },
+            { id: "ctu-97", label: "ctu-97 (Rx)", model: "MH-N366 (60G)", role: "Steered +15°", rx: 0.67, ry: 0.58, q_before: 8, q_after: 2, is_target: true },
+            { id: "ru-sec1", label: "5G-RU Sec1", model: "O-RU 7.2x", role: "Cell Sink", rx: 0.90, ry: 0.50, q_before: 0, q_after: 0 }
+          ],
+          links: [
+            { source: "du-agg", target: "ctu-96", band: "10GbE Fiber", cap_after: "10G", state_after: "HEALTHY" },
+            { source: "ctu-96", target: "obstruction", band: "0° Obstructed", cap_after: "BYPASSED", state_after: "BYPASSED" },
+            { source: "ctu-96", target: "ctu-97", band: "60.48GHz (+15° Lobe)", cap_after: "2.5G MCS12", state_after: "STEERED_LOCKED", is_primary: true },
+            { source: "ctu-97", target: "ru-sec1", band: "10GbE Fiber", cap_after: "10G", state_after: "HEALTHY" }
+          ],
+          streams: [
+            { id: "fwa_urllc", name: "URLLC Control (CoS 7)", cos: 7, color: "#00d4ff", path: ["du-agg", "ctu-96", "ctu-97", "ru-sec1"], rate_mbps: 180, delay_before_ms: 4.85, delay_after_ms: 0.31, drop_node: "ctu-96" },
+            { id: "tg_backhaul", name: "Terragraph Data (CoS 5)", cos: 5, color: "#10b981", path: ["du-agg", "ctu-96", "ctu-97", "ru-sec1"], rate_mbps: 1650, delay_before_ms: 9.4, delay_after_ms: 0.45, drop_node: "ctu-96" }
+          ],
+          events: [
+            { t: 0.10, type: "PHY_BLOCK", node: "ctu-96", detail: "0° Boresight blocked by crane (SINR 11.2 dB)" },
+            { t: 0.32, type: "BEAM_SCAN", node: "ctu-96", detail: "32-element phased array 64-beam sector scan" },
+            { t: 0.54, type: "BEAM_LOCK", node: "ctu-97", detail: "Locked at +15° azimuth: SINR 26.4 dB (2.5 Gbps)" }
+          ]
+        },
+        multiband_bond: {
+          nodes: [
+            { id: "dc-core", label: "Metro DC", model: "Core-Switch", role: "Traffic Source", rx: 0.10, ry: 0.50, q_before: 10, q_after: 2 },
+            { id: "hubA", label: "hubA (Tx)", model: "IP-50EX+50C", role: "L1 Splitter", rx: 0.36, ry: 0.50, q_before: 150, q_after: 4, is_target: true },
+            { id: "hubB", label: "hubB (Rx)", model: "IP-50EX+50C", role: "L1 Reassembler", rx: 0.68, ry: 0.50, q_before: 15, q_after: 3, is_target: true },
+            { id: "cell-cluster", label: "5G Cluster", model: "gNB-Cluster", role: "12.5G Sink", rx: 0.90, ry: 0.50, q_before: 0, q_after: 0 }
+          ],
+          links: [
+            { source: "dc-core", target: "hubA", band: "25GbE", cap_after: "25G", state_after: "HEALTHY" },
+            { source: "hubA", target: "hubB", band: "80GHz E-Band (10G)", cap_after: "10.0G 512QAM", state_after: "BONDED_L1", is_primary: true, parallel_offset: -18 },
+            { source: "hubA", target: "hubB", band: "18GHz MW Anchor (2.5G)", cap_after: "2.5G 4096QAM", state_after: "BONDED_L1", is_primary: true, parallel_offset: 18 },
+            { source: "hubB", target: "cell-cluster", band: "25GbE", cap_after: "25G", state_after: "HEALTHY" }
+          ],
+          streams: [
+            { id: "fh_cos7", name: "5G Fronthaul (CoS 7)", cos: 7, color: "#00d4ff", path: ["dc-core", "hubA", "hubB", "cell-cluster"], rate_mbps: 2400, delay_before_ms: 8.40, delay_after_ms: 0.28, drop_node: "hubA", carrier_lane: 1 },
+            { id: "embb_bulk", name: "eMBB 80G Bulk (CoS 5)", cos: 5, color: "#10b981", path: ["dc-core", "hubA", "hubB", "cell-cluster"], rate_mbps: 7800, delay_before_ms: 14.2, delay_after_ms: 0.34, drop_node: "hubA", carrier_lane: -1 }
+          ],
+          events: [
+            { t: 0.12, type: "SATURATION", node: "hubA", detail: "Single 18 GHz carrier (1G) saturated -> 4.2% drop" },
+            { t: 0.35, type: "MBH_BOND", node: "hubA", detail: "L1 super-group bonded: 80GHz (10G) + 18GHz (2.5G)" },
+            { t: 0.85, type: "SLA_VERIFY", node: "hubB", detail: "12.5 Gbps hitless pipe verified (0.28 ms, 0% loss)" }
+          ]
+        },
+        rain_fade: {
+          nodes: [
+            { id: "hubB", label: "hubB (Ring)", model: "IP-50FX", role: "Ring Ingress", rx: 0.10, ry: 0.50, q_before: 8, q_after: 2 },
+            { id: "hubC", label: "hubC (Tx)", model: "IP-20C (23G)", role: "ATPC +18dBm", rx: 0.36, ry: 0.50, q_before: 148, q_after: 5, is_target: true },
+            { id: "tailC", label: "tailC (Rx)", model: "IP-20C (23G)", role: "Floor 64QAM", rx: 0.68, ry: 0.50, q_before: 22, q_after: 4, is_target: true },
+            { id: "cell1", label: "cell1 (gNB)", model: "5G Macro", role: "Protected Sink", rx: 0.90, ry: 0.50, q_before: 0, q_after: 0 }
+          ],
+          links: [
+            { source: "hubB", target: "hubC", band: "18GHz Ring", cap_after: "2.1G", state_after: "HEALTHY" },
+            { source: "hubC", target: "tailC", band: "23GHz Rain Cell", cap_after: "500M 64QAM", state_after: "HARDENED_64QAM", is_primary: true, has_rain: true },
+            { source: "tailC", target: "cell1", band: "10GbE Fiber", cap_after: "10G", state_after: "HEALTHY" }
+          ],
+          streams: [
+            { id: "fh_cell1", name: "fh_cell1 (CoS 7 EF)", cos: 7, color: "#00d4ff", path: ["hubB", "hubC", "tailC", "cell1"], rate_mbps: 180, delay_before_ms: 11.42, delay_after_ms: 0.64, drop_node: "hubC" },
+            { id: "vid_cell1", name: "vid_cell1 (CoS 5 AF41)", cos: 5, color: "#10b981", path: ["hubB", "hubC", "tailC", "cell1"], rate_mbps: 260, delay_before_ms: 16.5, delay_after_ms: 0.72, drop_node: "hubC" }
+          ],
+          events: [
+            { t: 0.15, type: "WEATHER_CELL", node: "hubC", detail: "ITU-R P.838 storm cell (50.4 mm/h, 12 dB loss)" },
+            { t: 0.58, type: "ATPC_BOOST", node: "hubC", detail: "ATPC +18 dBm Tx boost & 64QAM floor locked" },
+            { t: 0.88, type: "SLA_VERIFY", node: "tailC", detail: "500 Mbps sustained in rain (0.64 ms, 0% loss)" }
+          ]
+        },
+        oran_fronthaul: {
+          nodes: [
+            { id: "oran-cu", label: "O-CU-UP", model: "Cloud-RAN", role: "F1-U Source", rx: 0.09, ry: 0.50, q_before: 5, q_after: 1 },
+            { id: "oran-du", label: "O-DU (BFP9)", model: "Split 7.2x", role: "16b->9b Comp", rx: 0.34, ry: 0.50, q_before: 135, q_after: 2, is_target: true },
+            { id: "ip50ex-fh", label: "IP-50EX (80G)", model: "IP-50EX", role: "80GHz E-Band", rx: 0.64, ry: 0.50, q_before: 95, q_after: 1, is_target: true },
+            { id: "oran-ru", label: "O-RU (64T64R)", model: "mMIMO RU", role: "T12 <=100us", rx: 0.90, ry: 0.50, q_before: 0, q_after: 0 }
+          ],
+          links: [
+            { source: "oran-cu", target: "oran-du", band: "25GbE F1-U", cap_after: "25G", state_after: "HEALTHY" },
+            { source: "oran-du", target: "ip50ex-fh", band: "eCPRI 7.2x BFP9", cap_after: "2.48G (2.9:1)", state_after: "COMPRESSED_BFP9", is_primary: true },
+            { source: "ip50ex-fh", target: "oran-ru", band: "80GHz E-Band FH", cap_after: "84 us PASS", state_after: "HEALTHY", is_primary: true }
+          ],
+          streams: [
+            { id: "ecpri_uplane", name: "eCPRI U-Plane IQ (CoS 7)", cos: 7, color: "#00d4ff", path: ["oran-cu", "oran-du", "ip50ex-fh", "oran-ru"], rate_mbps: 2480, delay_before_ms: 0.312, delay_after_ms: 0.084, drop_node: "oran-du" },
+            { id: "ecpri_cplane", name: "eCPRI C-Plane Beam", cos: 7, color: "#10b981", path: ["oran-du", "ip50ex-fh", "oran-ru"], rate_mbps: 320, delay_before_ms: 0.290, delay_after_ms: 0.068, drop_node: "oran-du" }
+          ],
+          events: [
+            { t: 0.10, type: "T12_BREACH", node: "oran-du", detail: "16-bit IQ (7.20 Gbps) -> 312 us (>100 us T12 breach)" },
+            { t: 0.30, type: "BFP9_ENABLE", node: "oran-du", detail: "O-RAN BFP9 2.9:1 compression enabled -> 2.48 Gbps" },
+            { t: 0.85, type: "SLA_VERIFY", node: "oran-ru", detail: "One-way eCPRI delay 84 us <= 100 us T12 PASS" }
+          ]
+        },
+        marl_healing: {
+          nodes: [
+            { id: "oran-cu1", label: "oran-cu1", model: "TFS Core", role: "Mesh Ingress", rx: 0.10, ry: 0.50, q_before: 40, q_after: 3 },
+            { id: "node-A", label: "node-A", model: "ROADM-A", role: "Cut Fiber", rx: 0.36, ry: 0.24, q_before: 150, q_after: 2, is_target: true },
+            { id: "node-B", label: "node-B", model: "ROADM-B", role: "Cut Peer", rx: 0.64, ry: 0.24, q_before: 0, q_after: 2, is_target: true },
+            { id: "node-D", label: "node-D", model: "IP-50FX", role: "Backup Hub", rx: 0.36, ry: 0.78, q_before: 5, q_after: 4, is_target: true },
+            { id: "ctu-96", label: "ctu-96 (60G)", model: "MH-T261", role: "MARL Bridge", rx: 0.64, ry: 0.78, q_before: 0, q_after: 5, is_target: true },
+            { id: "oran-du1", label: "oran-du1", model: "TFS Edge", role: "34-Flow Sink", rx: 0.90, ry: 0.50, q_before: 0, q_after: 2 }
+          ],
+          links: [
+            { source: "oran-cu1", target: "node-A", band: "10G Optical", cap_after: "10G", state_after: "HEALTHY" },
+            { source: "node-A", target: "node-B", band: "link-A-B (CUT)", cap_after: "FIBER CUT", state_after: "DOWN", is_cut: true },
+            { source: "oran-cu1", target: "node-D", band: "10G Ring", cap_after: "10G", state_after: "HEALTHY" },
+            { source: "node-D", target: "ctu-96", band: "60.48GHz Bridge", cap_after: "2.5G IGNITED", state_after: "MARL_IGNITED", is_primary: true },
+            { source: "ctu-96", target: "oran-du1", band: "10GbE Egress", cap_after: "2.5G Active", state_after: "MARL_IGNITED" }
+          ],
+          streams: [
+            { id: "mesh_urllc", name: "34 Mesh Flows (URLLC)", cos: 7, color: "#00d4ff", path: ["oran-cu1", "node-D", "ctu-96", "oran-du1"], rate_mbps: 950, delay_before_ms: 99.9, delay_after_ms: 0.78, drop_node: "node-A" },
+            { id: "mesh_sync", name: "TI-LFA Control Plane", cos: 6, color: "#10b981", path: ["oran-cu1", "node-D", "ctu-96", "oran-du1"], rate_mbps: 120, delay_before_ms: 99.9, delay_after_ms: 0.62, drop_node: "node-A" }
+          ],
+          events: [
+            { t: 0.12, type: "FIBER_CUT", node: "node-A", detail: "Optical LOS alarm on link-A-B (100% loss)" },
+            { t: 0.28, type: "MARL_IGNITE", node: "ctu-96", detail: "MARL agent ignites 60.48 GHz bridge (ctu-96)" },
+            { t: 0.85, type: "SLA_VERIFY", node: "oran-du1", detail: "34/34 mesh flows restored (0.78 ms, 0% loss)" }
+          ]
+        },
+        macsec_pqc: {
+          nodes: [
+            { id: "hubD", label: "hubD (Ring)", model: "IP-50FX", role: "Ring Hub", rx: 0.10, ry: 0.50, q_before: 10, q_after: 2 },
+            { id: "ehHub", label: "ehHub (SecY)", model: "EH-8010FX", role: "AES256+Kyber", rx: 0.38, ry: 0.50, q_before: 96, q_after: 2, is_target: true },
+            { id: "ehSpur", label: "ehSpur (SecY)", model: "EH-8010FX", role: "ICV Verifier", rx: 0.68, ry: 0.50, q_before: 14, q_after: 2, is_target: true },
+            { id: "sec-enclave", label: "Enclave", model: "Zero-Trust", role: "Protected Sink", rx: 0.91, ry: 0.50, q_before: 0, q_after: 0 }
+          ],
+          links: [
+            { source: "hubD", target: "ehHub", band: "10GbE Trunk", cap_after: "10G", state_after: "HEALTHY" },
+            { source: "ehHub", target: "ehSpur", band: "80GHz 802.1AE MACsec", cap_after: "2.5G AES-256-GCM", state_after: "MACSEC_ENCRYPTED", is_primary: true },
+            { source: "ehSpur", target: "sec-enclave", band: "10GbE Enclave", cap_after: "10G", state_after: "HEALTHY" }
+          ],
+          streams: [
+            { id: "eh_macsec", name: "AES-256-GCM Backhaul", cos: 7, color: "#00d4ff", path: ["hubD", "ehHub", "ehSpur", "sec-enclave"], rate_mbps: 1850, delay_before_ms: 4.15, delay_after_ms: 0.44, drop_node: "ehHub" },
+            { id: "pqc_mka", name: "ML-KEM-768 SAK Keying", cos: 6, color: "#c084fc", path: ["ehHub", "ehSpur"], rate_mbps: 12, delay_before_ms: 4.15, delay_after_ms: 0.44, drop_node: "ehHub" }
+          ],
+          events: [
+            { t: 0.30, type: "PQC_KEM", node: "ehHub", detail: "FIPS 203 ML-KEM-768 encapsulates 256-bit SAK" },
+            { t: 0.52, type: "HW_MACSEC", node: "ehHub", detail: "EH-8010FX hardware GCM-AES-256 line-rate active" },
+            { t: 0.85, type: "SLA_VERIFY", node: "ehSpur", detail: "2.5 Gbps encrypted at 0.44 ms (0 ICV errors)" }
+          ]
+        },
+        ptp_sync: {
+          nodes: [
+            { id: "prtc-gm", label: "GNSS PRTC-A", model: "Grandmaster", role: "Primary Clock", rx: 0.10, ry: 0.50, q_before: 0, q_after: 0 },
+            { id: "hubA-tbc", label: "hubA (T-BC)", model: "IP-50EX", role: "G.8275.1 T-BC", rx: 0.38, ry: 0.50, q_before: 128, q_after: 1, is_target: true },
+            { id: "hubB-tbc", label: "hubB (T-BC)", model: "IP-50FX", role: "SyncE QL-PRC", rx: 0.66, ry: 0.50, q_before: 64, q_after: 1, is_target: true },
+            { id: "gnb-tsc", label: "5G NR gNB", model: "T-TSC Radio", role: "Phase <=±150ns", rx: 0.90, ry: 0.50, q_before: 0, q_after: 0 }
+          ],
+          links: [
+            { source: "prtc-gm", target: "hubA-tbc", band: "10GbE SyncE+PTP", cap_after: "QL-PRC", state_after: "TBC_LOCKED" },
+            { source: "hubA-tbc", target: "hubB-tbc", band: "80/18GHz T-BC Hop", cap_after: "HW TS ±85ns", state_after: "TBC_LOCKED", is_primary: true },
+            { source: "hubB-tbc", target: "gnb-tsc", band: "10GbE Timing", cap_after: "PHASE_LOCKED", state_after: "TBC_LOCKED" }
+          ],
+          streams: [
+            { id: "ptp_sync_16hz", name: "G.8275.1 PTP Sync (16Hz)", cos: 7, color: "#00d4ff", path: ["prtc-gm", "hubA-tbc", "hubB-tbc", "gnb-tsc"], rate_mbps: 4.5, delay_before_ms: 4.82, delay_after_ms: 0.29, drop_node: "hubA-tbc" },
+            { id: "synce_esm", name: "G.8264 ESMC + User Plane", cos: 6, color: "#10b981", path: ["prtc-gm", "hubA-tbc", "hubB-tbc", "gnb-tsc"], rate_mbps: 1450, delay_before_ms: 4.82, delay_after_ms: 0.29, drop_node: "hubA-tbc" }
+          ],
+          events: [
+            { t: 0.12, type: "PDV_DRIFT", node: "hubA-tbc", detail: "Uncompensated queueing PDV drift ±4,820 ns" },
+            { t: 0.58, type: "TBC_ENABLE", node: "hubA-tbc", detail: "ITU-T G.8275.1 T-BC + SyncE QL-PRC locked" },
+            { t: 0.88, type: "SLA_VERIFY", node: "gnb-tsc", detail: "Phase error ±85 ns <= ±150 ns SLA mask PASS" }
+          ]
+        },
+        tsn_qos: {
+          nodes: [
+            { id: "STA0", label: "STA0/AP0", model: "WiFi AC_VO", role: "1ms TSN Sensor", rx: 0.09, ry: 0.28, q_before: 4, q_after: 1 },
+            { id: "STA1", label: "STA1/AP1", model: "WiFi AC_BE", role: "Bulk Video Cam", rx: 0.09, ry: 0.76, q_before: 42, q_after: 12 },
+            { id: "C0", label: "C0 (ctu-96)", model: "MH-T261 (60G)", role: "802.1Qbv TAS", rx: 0.34, ry: 0.52, q_before: 138, q_after: 1, is_target: true },
+            { id: "C1", label: "C1 (Peer)", model: "MH-T261 (60G)", role: "Hop 1 Demux", rx: 0.56, ry: 0.52, q_before: 24, q_after: 2, is_target: true },
+            { id: "C2", label: "C2/C3", model: "IP-50C (80G)", role: "10G E-Band", rx: 0.75, ry: 0.52, q_before: 12, q_after: 1 },
+            { id: "SINK", label: "TSN SINK", model: "Industrial PLC", role: "SLA <=1.5ms", rx: 0.91, ry: 0.52, q_before: 0, q_after: 0 }
+          ],
+          links: [
+            { source: "STA0", target: "C0", band: "5GHz AC_VO", cap_after: "68us Prio", state_after: "HEALTHY" },
+            { source: "STA1", target: "C0", band: "5GHz AC_BE", cap_after: "Shaped BE", state_after: "HEALTHY" },
+            { source: "C0", target: "C1", band: "60GHz V-Band", cap_after: "802.1Qbv Band0", state_after: "QBV_SCHEDULED", is_primary: true },
+            { source: "C1", target: "C2", band: "80GHz E-Band", cap_after: "10 Gbps", state_after: "HEALTHY" },
+            { source: "C2", target: "SINK", band: "10GbE Sink", cap_after: "10 Gbps", state_after: "HEALTHY" }
+          ],
+          streams: [
+            { id: "tsn_urllc", name: "TSN URLLC (CoS 7)", cos: 7, color: "#00d4ff", path: ["STA0", "C0", "C1", "C2", "SINK"], rate_mbps: 1.02, delay_before_ms: 6.83, delay_after_ms: 0.42, drop_node: "C0" },
+            { id: "be_video", name: "Bulk Video (CoS 0)", cos: 0, color: "#f59e0b", path: ["STA1", "C0", "C1", "C2", "SINK"], rate_mbps: 380, delay_before_ms: 18.4, delay_after_ms: 2.4, drop_node: "C0" }
+          ],
+          events: [
+            { t: 0.15, type: "SURGE_ONSET", node: "STA1", detail: "3.5x Bulk video surge floods C0 FIFO (138/150 pkts)" },
+            { t: 0.55, type: "QBV_COMMIT", node: "C0", detail: "IEEE 802.1Qbv TAS + 802.1Qbu Preemption active on C0" },
+            { t: 0.85, type: "SLA_VERIFY", node: "SINK", detail: "Band-0 Express 0-wait verified (0.42 ms, 0% drop)" }
+          ]
+        }
+      };
+      return DEFAULTS[uc] || DEFAULTS.tsn_qos;
+    }
+
+    function drawAnimatedScenarioTopologyStrip(ctx, x, y, w, h, t, mode, uc) {
+      const scen = getActiveScenarioData(uc || activeGoal.useCase || "tsn_qos");
+      const nodes = scen.nodes || [];
+      const links = scen.links || [];
+      const streams = scen.streams || [];
+      const events = scen.events || [];
+
+      roundRect(ctx, x, y, w, h, 12, "rgba(6, 13, 28, 0.96)", "rgba(0, 212, 255, 0.42)");
+
+      // Header Banner inside topology box
+      ctx.textAlign = "left";
+      ctx.font = "800 10px Inter";
+      ctx.fillStyle = "#00d4ff";
+      const modeTitle = mode === "tfs_commit"
+        ? `SIMULATED SCENARIO TOPOLOGY & LIVE SOUTHBOUND 2PC COMMIT (${(uc || '').toUpperCase()})`
+        : mode === "verified_twin"
+          ? `ACTUATED SCENARIO TOPOLOGY & LIVE DATA STREAMS (${(uc || '').toUpperCase()})`
+          : `SIMULATED SCENARIO TOPOLOGY, MULTI-HOP DATA STREAMS & DISCRETE EVENTS (${(uc || '').toUpperCase()})`;
+      ctx.fillText(modeTitle, x + 14, y + 18);
+
+      // Stream Legend on top-right of topology strip
+      let legX = x + w - 14;
+      ctx.textAlign = "right";
+      ctx.font = "700 8.5px 'JetBrains Mono'";
+      streams.slice().reverse().forEach(st => {
+        const lbl = `● ${st.name} (${st.delay_after_ms || 0.4}ms)`;
+        ctx.fillStyle = st.color || "#00d4ff";
+        ctx.fillText(lbl, legX, y + 18);
+        legX -= (ctx.measureText(lbl).width + 14);
+      });
+
+      const padX = 24, padTop = 30, padBot = 26;
+      const innerW = w - padX * 2;
+      const innerH = h - padTop - padBot;
+
+      const nodeMap = {};
+      nodes.forEach(n => {
+        nodeMap[n.id] = {
+          ...n,
+          px: x + padX + (n.rx || 0.5) * innerW,
+          py: y + padTop + (n.ry || 0.5) * innerH
+        };
+      });
+
+      // 1. Draw Links
+      links.forEach(lk => {
+        const n1 = nodeMap[lk.source];
+        const n2 = nodeMap[lk.target];
+        if (!n1 || !n2) return;
+        const offY = lk.parallel_offset ? (lk.parallel_offset * 0.55) : 0;
+        const y1 = n1.py + offY, y2 = n2.py + offY;
+
+        const isCut = lk.is_cut || lk.state_after === "DOWN" || lk.state_after === "BYPASSED";
+        ctx.strokeStyle = isCut ? "rgba(244, 63, 94, 0.65)" : (lk.is_primary ? "#10b981" : "rgba(56, 189, 248, 0.45)");
+        ctx.lineWidth = lk.is_primary ? 3.2 : 2.0;
+        if (isCut) ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(n1.px, y1);
+        ctx.lineTo(n2.px, y2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Link label badge
+        const mx = (n1.px + n2.px) / 2;
+        const my = (y1 + y2) / 2;
+        ctx.textAlign = "center";
+        ctx.font = "600 8px 'JetBrains Mono'";
+        ctx.fillStyle = isCut ? "#fda4af" : (lk.is_primary ? "#6ee7b7" : "#93c5fd");
+        ctx.fillText((lk.band || "").slice(0, 22), mx, my - 5);
+      });
+
+      // 2. Animate Multi-Hop Data Streams (Flows) along their exact scenario paths!
+      streams.forEach((st, sIdx) => {
+        const pathIds = st.path || [];
+        const segs = [];
+        for (let i = 0; i < pathIds.length - 1; i++) {
+          const a = nodeMap[pathIds[i]];
+          const b = nodeMap[pathIds[i + 1]];
+          if (a && b) segs.push([a, b]);
+        }
+        if (segs.length === 0) return;
+
+        const laneY = st.carrier_lane ? st.carrier_lane * 9 : (sIdx === 0 ? -4 : 5);
+        const pktCount = 5;
+        for (let k = 0; k < pktCount; k++) {
+          const prog = ((t * (1.15 - sIdx * 0.18) + k / pktCount) % 1.0) * segs.length;
+          const segIdx = Math.min(segs.length - 1, Math.floor(prog));
+          const alpha = prog - segIdx;
+          const [na, nb] = segs[segIdx];
+          const curX = na.px + (nb.px - na.px) * alpha;
+          const curY = na.py + (nb.py - na.py) * alpha + laneY;
+
+          ctx.fillStyle = st.color || "#00d4ff";
+          ctx.beginPath();
+          ctx.arc(curX, curY, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+
+        // Also show unmitigated drop/congestion particles at drop_node during Stage 3 comparison
+        if (mode === "split_sim" && st.drop_node && nodeMap[st.drop_node]) {
+          const dn = nodeMap[st.drop_node];
+          const dAlpha = (t * 1.4 + sIdx * 0.4) % 1.0;
+          const dx = dn.px - 8 + dAlpha * 16;
+          const dy = dn.py + 14 + dAlpha * 18;
+          ctx.fillStyle = `rgba(244, 63, 94, ${1 - dAlpha * 0.8})`;
+          ctx.beginPath();
+          ctx.arc(dx, dy, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // 3. Draw Nodes with Ceragon Model Badges & Queue Indicators
+      nodes.forEach(n => {
+        const pt = nodeMap[n.id];
+        if (!pt) return;
+        const r = n.is_target ? 15 : 12;
+        ctx.fillStyle = n.is_hazard ? "rgba(75, 14, 26, 0.95)" : (n.is_target ? "rgba(6, 48, 36, 0.96)" : "#0b152c");
+        ctx.strokeStyle = n.is_hazard ? "#f43f5e" : (n.is_target ? "#10b981" : "#00d4ff");
+        ctx.lineWidth = n.is_target ? 2.5 : 1.8;
+        ctx.beginPath();
+        ctx.arc(pt.px, pt.py, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.textAlign = "center";
+        ctx.font = "700 8px 'JetBrains Mono'";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText((n.label || n.id).slice(0, 12), pt.px, pt.py - r - 4);
+        ctx.font = "600 7.5px 'JetBrains Mono'";
+        ctx.fillStyle = n.is_target ? "#6ee7b7" : "#94a3b8";
+        ctx.fillText((n.model || "").slice(0, 13), pt.px, pt.py + r + 10);
+      });
+
+      // 4. Bottom Live Scenario Event Ticker & Active Node Callout
+      if (events.length > 0) {
+        const evIdx = Math.floor(t * 0.85) % events.length;
+        const activeEv = events[evIdx];
+        const evNode = nodeMap[activeEv.node];
+        if (evNode) {
+          ctx.strokeStyle = "#fde68a";
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.arc(evNode.px, evNode.py, 19 + Math.sin(t * 8) * 2.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        roundRect(ctx, x + 10, y + h - 22, w - 20, 18, 5, "rgba(15, 23, 42, 0.94)", "rgba(245, 158, 11, 0.45)");
+        ctx.textAlign = "left";
+        ctx.font = "700 8.5px 'JetBrains Mono'";
+        ctx.fillStyle = "#fde68a";
+        ctx.fillText(`⚡ EVENT [t=${Number(activeEv.t).toFixed(2)}s · ${activeEv.type}] ${activeEv.node}: ${(activeEv.detail || "").slice(0, 76)}`, x + 18, y + h - 10);
+      }
+    }
 
     function drawStage3(ctx, w, h, t) {
       ctx.clearRect(0, 0, w, h);
@@ -2063,8 +2427,18 @@
         30, 45
       );
 
-      // Left Main Physics & Topology Canvas Area (x: 18..730, y: 62..378)
-      roundRect(ctx, 18, 62, 712, h - 72, 14, "rgba(7, 13, 28, 0.94)", "rgba(0, 212, 255, 0.35)");
+      // Top Strip of Left Area (x: 18..730, y: 60..192): Animated Scenario Topology, Multi-Hop Data Streams & Events!
+      drawAnimatedScenarioTopologyStrip(ctx, 18, 60, 712, 132, t, "split_sim", uc);
+
+      // Bottom Strip of Left Area (x: 18..730, y: 198..378): Scenario Physics Deep-Dive Scope (Scaled cleanly)
+      roundRect(ctx, 18, 198, 712, h - 208, 14, "rgba(7, 13, 28, 0.94)", "rgba(0, 212, 255, 0.35)");
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(18, 198, 712, h - 208);
+      ctx.clip();
+      ctx.translate(18, 198);
+      ctx.scale(1.0, (h - 208) / (h - 72));
+      ctx.translate(-18, -62);
 
       if (sceneType === "phased_array_polar" || uc === "beam_steering") {
         drawSceneBeamSteeringPolar(ctx, 18, 62, 712, h - 72, t, bp);
@@ -2083,9 +2457,10 @@
       } else {
         drawSceneTsnGclAndTrace(ctx, 18, 62, 712, h - 72, t, bp);
       }
+      ctx.restore();
 
-      // Right Live NS-3 Results & Discrete Trace Panel (x: 742..1002, y: 62..378)
-      drawStage3LiveTelemetrySidebar(ctx, 742, 62, 260, h - 72, t, prof);
+      // Right Live NS-3 Results, Data Streams & Discrete Trace Panel (x: 742..1002, y: 60..378)
+      drawStage3LiveTelemetrySidebar(ctx, 742, 60, 260, h - 70, t, prof);
     }
 
     // ── SCENE 1: 60 GHz Phased-Array Polar Radar & SINR vs Azimuth Curve ──
@@ -2805,147 +3180,183 @@
       });
     }
 
-    // ── RIGHT TELEMETRY SIDEBAR FOR STAGE 3 (Driven by data3 Before/After Metrics) ──
+    // ── RIGHT TELEMETRY SIDEBAR FOR STAGE 3 (Driven by data3 Before/After Metrics, Data Streams & Events) ──
     function drawStage3LiveTelemetrySidebar(ctx, x, y, w, h, t, prof) {
+      const uc = activeGoal.useCase || "tsn_qos";
+      const scen = getActiveScenarioData(uc);
+      const streams = scen.streams || [];
+      const events = scen.events || [];
+
       roundRect(ctx, x, y, w, h, 14, "rgba(10, 18, 36, 0.96)", "rgba(16, 185, 129, 0.45)");
       ctx.textAlign = "left";
-      ctx.font = "800 10.5px Inter";
+      ctx.font = "800 10px Inter";
       ctx.fillStyle = "#10b981";
-      ctx.fillText("MEASURED NS-3 RESULTS", x + 14, y + 22);
+      ctx.fillText("NS-3 SCENARIO TELEMETRY & STREAMS", x + 14, y + 20);
 
       // Card 1: Before Mitigation (Red)
-      roundRect(ctx, x + 12, y + 34, w - 24, 68, 10, "rgba(48, 12, 24, 0.92)", "#f43f5e");
-      ctx.font = "700 9px Inter";
+      roundRect(ctx, x + 12, y + 30, w - 24, 56, 9, "rgba(48, 12, 24, 0.92)", "#f43f5e");
+      ctx.font = "700 8.5px Inter";
       ctx.fillStyle = "#fda4af";
-      ctx.fillText("✖ WITHOUT INTENT (BEFORE)", x + 22, y + 50);
-      ctx.font = "800 13px 'JetBrains Mono'";
+      ctx.fillText("✖ WITHOUT INTENT (BEFORE)", x + 20, y + 44);
+      ctx.font = "800 11.5px 'JetBrains Mono'";
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(prof.kpi_before || `${liveState.ns3UnmitigatedDelayMs} ms`, x + 22, y + 70);
-      ctx.font = "600 9.5px 'JetBrains Mono'";
+      ctx.fillText(prof.kpi_before || `${liveState.ns3UnmitigatedDelayMs} ms`, x + 20, y + 61);
+      ctx.font = "600 8.5px 'JetBrains Mono'";
       ctx.fillStyle = "#fb7185";
-      ctx.fillText(`Delay: ${liveState.ns3UnmitigatedDelayMs} ms | Loss: ${liveState.ns3UnmitigatedLossPct}%`, x + 22, y + 88);
+      ctx.fillText(`Delay: ${liveState.ns3UnmitigatedDelayMs} ms | Loss: ${liveState.ns3UnmitigatedLossPct}%`, x + 20, y + 76);
 
       // Card 2: After Mitigation (Green)
-      roundRect(ctx, x + 12, y + 112, w - 24, 72, 10, "rgba(8, 44, 32, 0.95)", "#10b981");
-      ctx.font = "700 9px Inter";
+      roundRect(ctx, x + 12, y + 94, w - 24, 58, 9, "rgba(8, 44, 32, 0.95)", "#10b981");
+      ctx.font = "700 8.5px Inter";
       ctx.fillStyle = "#6ee7b7";
-      ctx.fillText("✔ WITH INTENT APPLIED (AFTER)", x + 22, y + 128);
-      ctx.font = "800 13px 'JetBrains Mono'";
+      ctx.fillText("✔ WITH INTENT APPLIED (AFTER)", x + 20, y + 108);
+      ctx.font = "800 11.5px 'JetBrains Mono'";
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(prof.kpi_after || `${liveState.ns3MitigatedDelayMs} ms`, x + 22, y + 148);
-      ctx.font = "600 9.5px 'JetBrains Mono'";
+      ctx.fillText(prof.kpi_after || `${liveState.ns3MitigatedDelayMs} ms`, x + 20, y + 126);
+      ctx.font = "600 8.5px 'JetBrains Mono'";
       ctx.fillStyle = "#10b981";
-      ctx.fillText(`Delay: ${liveState.ns3MitigatedDelayMs} ms | Loss: ${liveState.ns3MitigatedLossPct}%`, x + 22, y + 168);
+      ctx.fillText(`Delay: ${liveState.ns3MitigatedDelayMs} ms | Loss: ${liveState.ns3MitigatedLossPct}%`, x + 20, y + 142);
 
-      // Card 3: Simulated FlowMonitor Counters from C++ Binary
-      roundRect(ctx, x + 12, y + 194, w - 24, 110, 10, "rgba(14, 24, 46, 0.94)", "rgba(0, 212, 255, 0.35)");
-      ctx.font = "700 9px Inter";
+      // Card 3: Simulated Data Streams (Flows) for this Scenario
+      roundRect(ctx, x + 12, y + 160, w - 24, 78, 9, "rgba(14, 24, 46, 0.94)", "rgba(0, 212, 255, 0.35)");
+      ctx.font = "700 8.5px Inter";
       ctx.fillStyle = "#00d4ff";
-      ctx.fillText("FLOWMONITOR C++ COUNTERS", x + 22, y + 212);
+      ctx.fillText(`ACTIVE DATA STREAMS (${streams.length} FLOWS)`, x + 20, y + 175);
 
-      const stats = [
-        [`Target Resource`, `${liveState.targetId}`],
-        [`URLLC Packets`, `${liveState.ns3TsnPackets.toLocaleString()} pkts`],
-        [`Bulk Burst Pkts`, `${liveState.ns3BePackets.toLocaleString()} pkts`],
-        [`C0 Queue Peak`, `${liveState.ns3QueueDepth} / 150 pkts`],
-        [`SSH Wall Time`, `${liveState.ns3WallMs} ms`]
-      ];
-      ctx.font = "600 9.5px 'JetBrains Mono'";
-      stats.forEach(([k, v], idx) => {
-        const sy = y + 230 + idx * 15;
-        ctx.fillStyle = "#94a3b8";
-        ctx.fillText(k, x + 22, sy);
+      streams.slice(0, 2).forEach((st, idx) => {
+        const sy = y + 193 + idx * 22;
+        ctx.font = "700 8.5px 'JetBrains Mono'";
+        ctx.fillStyle = st.color || "#00d4ff";
+        ctx.fillText(`● ${(st.name || st.id).slice(0, 20)}`, x + 20, sy);
         ctx.textAlign = "right";
         ctx.fillStyle = "#f8fafc";
-        ctx.fillText(v, x + w - 22, sy);
+        ctx.fillText(`${st.rate_mbps}M · ${st.delay_after_ms}ms`, x + w - 20, sy);
         ctx.textAlign = "left";
+      });
+
+      // Card 4: Scenario Discrete Event Feed
+      roundRect(ctx, x + 12, y + 244, w - 24, h - 254, 9, "rgba(5, 10, 22, 0.94)", "rgba(245, 158, 11, 0.35)");
+      ctx.font = "700 8.5px Inter";
+      ctx.fillStyle = "#fde68a";
+      ctx.fillText(`DISCRETE EVENT LOG (${events.length} EVENTS)`, x + 20, y + 258);
+
+      const activeEvIdx = events.length > 0 ? Math.floor(t * 0.85) % events.length : 0;
+      events.slice(0, 3).forEach((ev, idx) => {
+        const ey = y + 273 + idx * 14;
+        ctx.font = idx === activeEvIdx ? "700 7.8px 'JetBrains Mono'" : "500 7.8px 'JetBrains Mono'";
+        ctx.fillStyle = idx === activeEvIdx ? "#fde68a" : "#94a3b8";
+        ctx.fillText(`${idx === activeEvIdx ? "▶" : "·"} t=${Number(ev.t).toFixed(2)}s [${ev.type}] ${(ev.detail || "").slice(0, 22)}`, x + 18, ey);
       });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // STAGE 4 ON-THE-FLY GENERATOR:
-    // Dynamically renders the actual target devices from approveData.applied_config,
-    // their connected neighbors from topoData, and the committed config_rules
+    // Dynamically renders the actual simulated scenario topology, animates TFS (:8088)
+    // 2PC Southbound commits to the scenario's target devices, and animates data streams!
     // ═══════════════════════════════════════════════════════════════════════════
     function drawStage4(ctx, w, h, t) {
       ctx.clearRect(0, 0, w, h);
 
+      const uc = activeGoal.useCase || "tsn_qos";
+      const scen = getActiveScenarioData(uc);
+      const scenNodes = scen.nodes || [];
+      const scenLinks = scen.links || [];
+      const scenStreams = scen.streams || [];
+
       // Left Topology Commit Canvas (x: 18..655)
       roundRect(ctx, 18, 14, 638, h - 28, 14, "rgba(8, 15, 32, 0.94)", "rgba(0, 212, 255, 0.4)");
 
-      const tfsX = 337, tfsY = 58;
+      const tfsX = 337, tfsY = 54;
       const waveRadius = ((t * 175) % 440);
       ctx.strokeStyle = `rgba(0, 212, 255, ${Math.max(0, 1 - waveRadius / 440)})`;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
       ctx.arc(tfsX, tfsY, waveRadius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Build dynamic node list highlighting the actual target devices from Stage 4!
       const appliedCfgs = (liveState.appliedDeviceConfigs && liveState.appliedDeviceConfigs.length > 0)
         ? liveState.appliedDeviceConfigs
         : (liveState.previewDeviceConfigs && liveState.previewDeviceConfigs.length > 0)
           ? liveState.previewDeviceConfigs
           : [{ device_id: liveState.targetId, yang_module: "ietf-network-slice" }];
 
-      const targetIds = new Set(appliedCfgs.map(c => c.device_id));
-      if (liveState.targetId.includes("link-")) {
-        const parts = liveState.targetId.replace("link-", "").split("-");
-        parts.forEach(p => targetIds.add(`node-${p}`));
-      } else {
-        targetIds.add(liveState.targetId);
-      }
-
-      // Create dynamic node layout with actual target devices centered & highlighted
-      const targetArr = Array.from(targetIds).slice(0, 3);
-      const bgPeers = ["oran-cu1", "node-A", "node-B", "node-D", "node-E", "ceragon-mh-t261-ctu-96"]
-        .filter(id => !targetIds.has(id))
-        .slice(0, 6 - targetArr.length);
-      const allDisplayIds = [...targetArr, ...bgPeers];
-
-      const dynNodes = allDisplayIds.map((id, idx) => {
-        const isTarget = targetIds.has(id);
-        const angle = Math.PI * 0.15 + (idx / Math.max(1, allDisplayIds.length - 1)) * Math.PI * 0.7;
-        const rad = isTarget ? 185 : 245;
-        return {
-          id,
-          isTarget,
-          x: tfsX + Math.cos(angle) * rad * 1.15,
-          y: tfsY + 55 + Math.sin(angle) * rad * 0.88
+      // Map Scenario Topology Nodes into the Stage 4 Canvas (y: 120..340)
+      const nodeMap = {};
+      const dynNodes = scenNodes.map(n => {
+        const nx = 48 + (n.rx || 0.5) * 576;
+        const ny = 128 + (n.ry || 0.5) * 195;
+        const obj = {
+          ...n,
+          isTarget: Boolean(n.is_target),
+          x: nx,
+          y: ny
         };
+        nodeMap[n.id] = obj;
+        return obj;
       });
 
-      // Draw mesh links between displayed nodes
-      for (let i = 0; i < dynNodes.length; i++) {
-        for (let j = i + 1; j < dynNodes.length; j++) {
-          if (j - i <= 2 || (dynNodes[i].isTarget && dynNodes[j].isTarget)) {
-            const bothTarget = dynNodes[i].isTarget && dynNodes[j].isTarget;
-            ctx.strokeStyle = bothTarget ? "rgba(16, 185, 129, 0.8)" : "rgba(56, 189, 248, 0.2)";
-            ctx.lineWidth = bothTarget ? 3.5 : 1.5;
-            ctx.beginPath();
-            ctx.moveTo(dynNodes[i].x, dynNodes[i].y);
-            ctx.lineTo(dynNodes[j].x, dynNodes[j].y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw Southbound RESTCONF / gRPC Commit Streams from TFS Controller to Target Nodes
-      dynNodes.forEach((n, idx) => {
-        ctx.strokeStyle = n.isTarget ? "rgba(16, 185, 129, 0.55)" : "rgba(148, 163, 184, 0.15)";
-        ctx.setLineDash(n.isTarget ? [] : [4, 4]);
-        ctx.lineWidth = n.isTarget ? 2.5 : 1;
+      // 1. Draw Scenario Topology Links
+      scenLinks.forEach(lk => {
+        const n1 = nodeMap[lk.source], n2 = nodeMap[lk.target];
+        if (!n1 || !n2) return;
+        const offY = lk.parallel_offset ? lk.parallel_offset * 0.7 : 0;
+        const isCut = lk.is_cut || lk.state_after === "DOWN";
+        ctx.strokeStyle = isCut ? "rgba(244, 63, 94, 0.65)" : (lk.is_primary ? "#10b981" : "rgba(56, 189, 248, 0.4)");
+        ctx.lineWidth = lk.is_primary ? 3.5 : 2;
+        if (isCut) ctx.setLineDash([5, 4]);
         ctx.beginPath();
-        ctx.moveTo(tfsX, tfsY + 28);
-        ctx.lineTo(n.x, n.y);
+        ctx.moveTo(n1.x, n1.y + offY);
+        ctx.lineTo(n2.x, n2.y + offY);
         ctx.stroke();
         ctx.setLineDash([]);
 
+        const mx = (n1.x + n2.x) / 2, my = (n1.y + n2.y) / 2 + offY;
+        ctx.textAlign = "center";
+        ctx.font = "600 8px 'JetBrains Mono'";
+        ctx.fillStyle = isCut ? "#fda4af" : (lk.is_primary ? "#6ee7b7" : "#93c5fd");
+        ctx.fillText((lk.band || "").slice(0, 22), mx, my - 6);
+      });
+
+      // 2. Animate Scenario Data Streams flowing across the topology during Stage 4!
+      scenStreams.forEach((st, sIdx) => {
+        const pathIds = st.path || [];
+        const segs = [];
+        for (let i = 0; i < pathIds.length - 1; i++) {
+          const a = nodeMap[pathIds[i]], b = nodeMap[pathIds[i + 1]];
+          if (a && b) segs.push([a, b]);
+        }
+        if (segs.length === 0) return;
+        const laneY = st.carrier_lane ? st.carrier_lane * 11 : (sIdx === 0 ? -5 : 6);
+        for (let k = 0; k < 5; k++) {
+          const prog = ((t * (1.1 - sIdx * 0.15) + k / 5) % 1.0) * segs.length;
+          const segIdx = Math.min(segs.length - 1, Math.floor(prog));
+          const alpha = prog - segIdx;
+          const [na, nb] = segs[segIdx];
+          const curX = na.x + (nb.x - na.x) * alpha;
+          const curY = na.y + (nb.y - na.y) * alpha + laneY;
+          ctx.fillStyle = st.color || "#00d4ff";
+          ctx.beginPath();
+          ctx.arc(curX, curY, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // 3. Draw Southbound RESTCONF / gRPC 2PC Commit Streams from TFS Controller to Scenario Target Nodes
+      dynNodes.forEach((n, idx) => {
         if (n.isTarget) {
+          ctx.strokeStyle = "rgba(16, 185, 129, 0.55)";
+          ctx.setLineDash([4, 3]);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(tfsX, tfsY + 26);
+          ctx.lineTo(n.x, n.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
           for (let k = 0; k < 2; k++) {
-            const p = ((t * 0.9 + idx * 0.2 + k * 0.5) % 1);
+            const p = ((t * 0.95 + idx * 0.25 + k * 0.5) % 1);
             const px = tfsX + (n.x - tfsX) * p;
-            const py = (tfsY + 28) + (n.y - (tfsY + 28)) * p;
+            const py = (tfsY + 26) + (n.y - (tfsY + 26)) * p;
             ctx.fillStyle = "#10b981";
             ctx.beginPath();
             ctx.arc(px, py, 5, 0, Math.PI * 2);
@@ -2953,36 +3364,38 @@
           }
         }
 
-        ctx.fillStyle = n.isTarget ? "rgba(6, 48, 36, 0.96)" : "#0b152b";
-        ctx.strokeStyle = n.isTarget ? "#10b981" : "#475569";
-        ctx.lineWidth = n.isTarget ? 3.5 : 2;
+        ctx.fillStyle = n.is_hazard ? "rgba(75,14,26,0.95)" : (n.isTarget ? "rgba(6, 48, 36, 0.96)" : "#0b152b");
+        ctx.strokeStyle = n.is_hazard ? "#f43f5e" : (n.isTarget ? "#10b981" : "#38bdf8");
+        ctx.lineWidth = n.isTarget ? 3.2 : 2;
         ctx.beginPath();
-        ctx.arc(n.x, n.y, n.isTarget ? 28 : 20, 0, Math.PI * 2);
+        ctx.arc(n.x, n.y, n.isTarget ? 22 : 16, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         ctx.textAlign = "center";
-        ctx.font = n.isTarget ? "800 9.5px 'JetBrains Mono'" : "600 8.5px 'JetBrains Mono'";
+        ctx.font = n.isTarget ? "800 8.5px 'JetBrains Mono'" : "600 8px 'JetBrains Mono'";
         ctx.fillStyle = n.isTarget ? "#6ee7b7" : "#94a3b8";
-        ctx.fillText(n.isTarget ? "★ TARGET" : "PEER", n.x, n.y + 3);
-        ctx.fillStyle = n.isTarget ? "#ffffff" : "#cbd5e1";
-        ctx.fillText(n.id.slice(0, 18), n.x, n.y + (n.isTarget ? 42 : 33));
+        ctx.fillText(n.isTarget ? "★ 2PC" : "NODE", n.x, n.y + 3);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText((n.label || n.id).slice(0, 14), n.x, n.y - (n.isTarget ? 27 : 21));
+        ctx.fillStyle = "#93c5fd";
+        ctx.fillText((n.model || "").slice(0, 14), n.x, n.y + (n.isTarget ? 34 : 28));
       });
 
       // Top TFS Controller Banner
-      roundRect(ctx, tfsX - 220, 22, 440, 56, 14, "rgba(16, 24, 52, 0.96)", liveState.tfsRunning ? "#f59e0b" : "#00d4ff");
+      roundRect(ctx, tfsX - 220, 20, 440, 54, 14, "rgba(16, 24, 52, 0.96)", liveState.tfsRunning ? "#f59e0b" : "#00d4ff");
       ctx.textAlign = "center";
-      ctx.font = "800 12px Inter";
+      ctx.font = "800 11.5px Inter";
       ctx.fillStyle = liveState.tfsRunning ? "#fde68a" : "#00d4ff";
       ctx.fillText(
         liveState.tfsRunning
-          ? `⏳ TFS NBI (:8088): COMMITTING TO ${liveState.targetId}...`
-          : `✔ ETSI TeraFlowSDN (:8088) · ${liveState.tfsNodesCount} Nodes / ${liveState.tfsLinksCount} Links`,
-        tfsX, 44
+          ? `⏳ TFS NBI (:8088): 2PC COMMITTING TO ${liveState.targetId}...`
+          : `✔ ETSI TeraFlowSDN (:8088) · Scenario [${uc.toUpperCase()}] Committed`,
+        tfsX, 41
       );
       ctx.font = "600 9.5px 'JetBrains Mono'";
       ctx.fillStyle = "#10b981";
-      ctx.fillText(`Conflict Lease Token: ${liveState.conflictToken} · Target: ${liveState.targetId}`, tfsX, 64);
+      ctx.fillText(`Conflict Lease Token: ${liveState.conflictToken} · Target: ${liveState.targetId}`, tfsX, 60);
 
       // Right Column (x: 668..1002): Committed Config Rules & Conflict Token Inspector
       roundRect(ctx, 668, 14, 334, h - 28, 14, "rgba(10, 22, 38, 0.96)", "rgba(16, 185, 129, 0.5)");
@@ -3018,8 +3431,8 @@
 
     // ═══════════════════════════════════════════════════════════════════════════
     // STAGE 5 ON-THE-FLY GENERATOR:
-    // Dynamically renders Southbound Readback Datastore State, Actuated Link Twin,
-    // and Measured Before-vs-After Pipeline Impact Bar Chart
+    // Dynamically renders Southbound Readback Datastore State, the Actuated Scenario
+    // Topology with Live Data Streams & Events, and Measured Before-vs-After Impact
     // ═══════════════════════════════════════════════════════════════════════════
     function drawStage5(ctx, w, h, t) {
       ctx.clearRect(0, 0, w, h);
@@ -3068,78 +3481,17 @@
         ctx.fillText(`✔ ${String(item).slice(0, 35)}`, 42, rbY + 40 + i * 19);
       });
 
-      // Panel 2 (x: 344..684): Live Post-Actuation Physical Link Twin (Tailored to Use Case!)
+      // Panel 2 (x: 344..684): Full Actuated Scenario Topology, Live Multi-Hop Data Streams & Events!
       roundRect(ctx, 344, 14, 340, h - 28, 14, "rgba(10, 18, 38, 0.95)", "#00d4ff");
-      ctx.font = "800 11px Inter";
-      ctx.fillStyle = "#00d4ff";
-      ctx.fillText(`2. ACTUATED LINK TWIN (${liveState.targetId})`, 358, 38);
+      drawAnimatedScenarioTopologyStrip(ctx, 352, 22, 324, h - 118, t, "verified_twin", uc);
 
-      const midX = 514, midY = 185;
-      const devLeft = resolved[0] || "ctu-96";
-      const devRight = resolved[1] || (liveState.targetId === devLeft ? "Remote-Peer" : liveState.targetId);
-
-      // Draw Use-Case-Specific Active Link in Center Panel
-      if (uc === "beam_steering") {
-        const deg = bp.after_angle_deg != null ? bp.after_angle_deg : 15;
-        ctx.fillStyle = "rgba(16, 185, 129, 0.35)";
-        ctx.beginPath();
-        ctx.moveTo(410, midY + 15);
-        ctx.quadraticCurveTo(midX, midY - 65, 618, midY - 15);
-        ctx.lineTo(618, midY + 15);
-        ctx.closePath();
-        ctx.fill();
-        ctx.textAlign = "center";
-        ctx.font = "700 10px 'JetBrains Mono'";
-        ctx.fillStyle = "#6ee7b7";
-        ctx.fillText(`Steered ${deg >= 0 ? "+" : ""}${deg}° Azimuth · SINR ${bp.after_sinr_db || 26.4} dB`, midX, midY - 45);
-      } else if (uc === "multiband_bond") {
-        roundRect(ctx, 415, midY - 34, 198, 24, 6, "rgba(0, 212, 255, 0.28)", "#00d4ff");
-        roundRect(ctx, 415, midY + 6, 198, 24, 6, "rgba(16, 185, 129, 0.28)", "#10b981");
-        ctx.textAlign = "center";
-        ctx.font = "700 9px 'JetBrains Mono'";
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText("80 GHz E-Band (10.0 Gbps)", midX, midY - 18);
-        ctx.fillText("18 GHz MW (2.5 Gbps)", midX, midY + 22);
-      } else if (uc === "ptp_sync") {
-        ctx.strokeStyle = "#10b981";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        for (let px = 415; px <= 615; px += 4) {
-          const py = midY + Math.sin(px * 0.06 + t * 5) * 16;
-          if (px === 415) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-        ctx.stroke();
-        ctx.textAlign = "center";
-        ctx.font = "700 10px 'JetBrains Mono'";
-        ctx.fillStyle = "#6ee7b7";
-        ctx.fillText(`G.8275.1 Phase Locked: ±${bp.phase_error_after_ns || 85} ns`, midX, midY - 34);
-      } else {
-        roundRect(ctx, 415, midY - 22, 198, 44, 10, "rgba(16, 185, 129, 0.22)", "#10b981");
-        for (let i = 0; i < 5; i++) {
-          const px = 420 + ((t * 110 + i * 38) % 175);
-          roundRect(ctx, px, midY - 7, 20, 14, 4, "#00d4ff", "#ffffff");
-        }
-        ctx.textAlign = "center";
-        ctx.font = "700 10px 'JetBrains Mono'";
-        ctx.fillStyle = "#6ee7b7";
-        ctx.fillText(prof.kpi_after || activeGoal.freqLabel, midX, midY - 34);
-      }
-
-      roundRect(ctx, 356, midY - 40, 68, 80, 10, "rgba(12, 32, 46, 0.96)", "#10b981");
-      roundRect(ctx, 604, midY - 40, 68, 80, 10, "rgba(12, 32, 46, 0.96)", "#00d4ff");
+      roundRect(ctx, 354, h - 88, 320, 62, 10, "rgba(6, 38, 30, 0.94)", "#10b981");
       ctx.textAlign = "center";
-      ctx.font = "700 8.5px 'JetBrains Mono'";
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(devLeft.slice(0, 9), 390, midY + 4);
-      ctx.fillText(devRight.slice(0, 9), 638, midY + 4);
-
-      roundRect(ctx, 358, h - 92, 312, 62, 10, "rgba(6, 38, 30, 0.94)", "#10b981");
       ctx.font = "700 10px 'JetBrains Mono'";
       ctx.fillStyle = "#6ee7b7";
-      ctx.fillText(`✔ HW STATUS: ${liveState.hwStatus.slice(0, 36)}`, 514, h - 66);
+      ctx.fillText(`✔ HW STATUS: ${liveState.hwStatus.slice(0, 36)}`, 514, h - 64);
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(`Action: ${(prof.action || liveState.strategyName).slice(0, 34)}`, 514, h - 46);
+      ctx.fillText(`Action: ${(prof.action || liveState.strategyName).slice(0, 34)}`, 514, h - 44);
 
       // Panel 3 (x: 698..1002): Measured Before-vs-After Impact & Stage Timing Breakdown
       roundRect(ctx, 698, 14, 304, h - 28, 14, "rgba(12, 18, 38, 0.96)", "rgba(168, 85, 247, 0.5)");

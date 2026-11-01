@@ -680,6 +680,12 @@
         `;
       });
 
+      // Dynamic animated layers for weather, live multi-hop UDP data streams, and event callouts
+      html += `
+        <g id="metro-weather-layer"></g>
+        <g id="metro-streams-layer"></g>
+      `;
+
       // Draw nodes
       Object.entries(NODE_COORDS).forEach(([name, pt]) => {
         const isTg = ["pop", "cn1", "cn2"].includes(name);
@@ -694,6 +700,8 @@
           </g>
         `;
       });
+
+      html += `<g id="metro-events-layer"></g>`;
 
       svg.innerHTML = html;
       updateInspector(rain);
@@ -1032,6 +1040,181 @@
       }
     }
 
+    // Live 60-FPS Particle & Event Animation Engine for the 13-Node metro-ring.twin Topology
+    const METRO_STREAMS = [
+      {
+        name: "fh_cell1",
+        label: "EF CoS7 (180M)",
+        color: "#34d399",
+        path: ["dc", "hubA", "hubB", "hubC", "tailC", "cell1"],
+        offset: -5,
+        count: 6,
+        speed: 0.34
+      },
+      {
+        name: "vid_cell1",
+        label: "AF41 CoS5 (250M)",
+        color: "#38bdf8",
+        path: ["dc", "hubA", "hubB", "hubC", "tailC", "cell1"],
+        offset: 5,
+        count: 5,
+        speed: 0.25
+      },
+      {
+        name: "fwa_tg",
+        label: "60G TG (120M)",
+        color: "#fbbf24",
+        path: ["dc", "hubA", "hubD", "hubC", "hubB", "ehHub", "ehSpur", "pop", "cn1", "fwa1"],
+        altPathDuringEbandOutage: ["dc", "hubA", "hubB", "hubC", "tailC"],
+        tgLocalPath: ["pop", "cn1", "fwa1"],
+        offset: -4,
+        count: 4,
+        speed: 0.28
+      },
+      {
+        name: "eh_bulk",
+        label: "80G MACsec (300M)",
+        color: "#c084fc",
+        path: ["dc", "hubA", "hubB", "ehHub", "ehSpur"],
+        offset: 4,
+        count: 5,
+        speed: 0.30,
+        blockedOnEbandOutage: true
+      }
+    ];
+
+    function animateMetroRingStreams(now) {
+      const tAnim = (now || performance.now()) / 1000.0;
+      const weatherLayer = document.getElementById("metro-weather-layer");
+      const streamsLayer = document.getElementById("metro-streams-layer");
+      const eventsLayer = document.getElementById("metro-events-layer");
+
+      if (weatherLayer && streamsLayer && eventsLayer) {
+        const rain = getRainAtTime(currentSimTime);
+        const ebandOutage = rain >= 42.0;
+
+        // 1. Weather Layer: Falling rain streaks across the metro ring when rain > 2 mm/h
+        if (rain > 2.0) {
+          let wHtml = "";
+          const dropCount = Math.min(36, Math.max(8, Math.round(rain * 0.32)));
+          for (let i = 0; i < dropCount; i++) {
+            const rx = 120 + ((i * 47) % 540);
+            const ry = 45 + (((tAnim * 210) + i * 29) % 330);
+            wHtml += `<line x1="${rx}" y1="${ry}" x2="${rx - 7}" y2="${ry + 16}" stroke="#38bdf8" stroke-width="1.6" stroke-opacity="0.55" />`;
+          }
+          weatherLayer.innerHTML = wHtml;
+        } else {
+          weatherLayer.innerHTML = "";
+        }
+
+        // 2. Multi-Hop Data Streams Layer
+        let sHtml = "";
+        METRO_STREAMS.forEach((st, sIdx) => {
+          // Determine active path hops
+          let activePath = st.path;
+          if (st.name === "eh_bulk" && ebandOutage) {
+            // ehHub -> ehSpur is down in >=42 mm/h rain; packets reach ehHub and drop!
+            activePath = ["dc", "hubA", "hubB", "ehHub"];
+          } else if (st.name === "fwa_tg") {
+            activePath = st.tgLocalPath;
+          }
+
+          const segs = [];
+          for (let i = 0; i < activePath.length - 1; i++) {
+            const p1 = NODE_COORDS[activePath[i]];
+            const p2 = NODE_COORDS[activePath[i + 1]];
+            if (p1 && p2) segs.push([p1, p2]);
+          }
+          if (segs.length === 0) return;
+
+          for (let k = 0; k < st.count; k++) {
+            const prog = ((tAnim * st.speed + k / st.count + sIdx * 0.13) % 1.0) * segs.length;
+            const segIdx = Math.min(segs.length - 1, Math.floor(prog));
+            const segAlpha = prog - segIdx;
+            const [a, b] = segs[segIdx];
+            const px = a.x + (b.x - a.x) * segAlpha;
+            const py = a.y + (b.y - a.y) * segAlpha + (st.offset || 0);
+
+            sHtml += `
+              <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.8" fill="${st.color}" stroke="#ffffff" stroke-width="0.9" />
+            `;
+            if (k === 0) {
+              sHtml += `
+                <text x="${px.toFixed(1)}" y="${(py - 8).toFixed(1)}" text-anchor="middle" fill="${st.color}" font-size="9" font-family="monospace" font-weight="700">${st.name}</text>
+              `;
+            }
+          }
+
+          // If eh_bulk is blocked by 80 GHz rain outage at ehHub, render dropped packet particles!
+          if (st.name === "eh_bulk" && ebandOutage) {
+            const eh = NODE_COORDS.ehHub;
+            for (let d = 0; d < 3; d++) {
+              const dAlpha = ((tAnim * 1.4 + d * 0.33) % 1.0);
+              const dx = eh.x + 15 + dAlpha * 38;
+              const dy = eh.y + 12 + dAlpha * 42;
+              sHtml += `
+                <circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="4.5" fill="#ef4444" fill-opacity="${(1 - dAlpha * 0.75).toFixed(2)}" />
+              `;
+            }
+            sHtml += `
+              <text x="${eh.x + 42}" y="${eh.y + 42}" text-anchor="middle" fill="#f87171" font-size="9.5" font-family="monospace" font-weight="700">✖ 80G OUTAGE DROP</text>
+            `;
+          }
+        });
+        streamsLayer.innerHTML = sHtml;
+
+        // 3. Discrete Event Callout Badges on the Topology
+        let eHtml = "";
+        if (ebandOutage) {
+          // Callout 1: hubA -> hubB IP-50EX Multi-Band 18 GHz anchor keeping ring alive
+          eHtml += `
+            <g transform="translate(270, 62)">
+              <rect x="-112" y="-12" width="224" height="22" rx="6" fill="rgba(6,78,59,0.94)" stroke="#34d399" stroke-width="1.3" />
+              <text x="0" y="3" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-family="monospace" font-weight="700">🛡️ IP-50EX: 18GHz Anchor Keeps fh_cell1 UP</text>
+            </g>
+            <g transform="translate(568, 52)">
+              <rect x="-102" y="-12" width="204" height="22" rx="6" fill="rgba(127,29,29,0.94)" stroke="#ef4444" stroke-width="1.3" />
+              <text x="0" y="3" text-anchor="middle" fill="#fca5a5" font-size="9.5" font-family="monospace" font-weight="700">🚨 EH-8010FX: 80GHz Rain Outage</text>
+            </g>
+          `;
+        }
+        if (currentSimTime >= 7.0 && currentSimTime < 10.0) {
+          eHtml += `
+            <g transform="translate(270, 152)">
+              <rect x="-118" y="-12" width="236" height="22" rx="6" fill="rgba(120,53,15,0.95)" stroke="#fbbf24" stroke-width="1.4" />
+              <text x="0" y="3" text-anchor="middle" fill="#fde68a" font-size="9.5" font-family="monospace" font-weight="700">⚡ t=7.0s 1+1 HSB: Unit #0 FAIL → Unit #1</text>
+            </g>
+          `;
+        } else if (currentSimTime >= 10.0) {
+          eHtml += `
+            <g transform="translate(270, 152)">
+              <rect x="-110" y="-12" width="220" height="22" rx="6" fill="rgba(6,78,59,0.95)" stroke="#34d399" stroke-width="1.4" />
+              <text x="0" y="3" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-family="monospace" font-weight="700">✅ t=10.0s 1+1 HSB: Unit #0 Restored</text>
+            </g>
+          `;
+        }
+        if (currentSimTime >= 8.0) {
+          eHtml += `
+            <g transform="translate(745, 192)">
+              <rect x="-98" y="-12" width="196" height="22" rx="6" fill="rgba(120,53,15,0.95)" stroke="#fbbf24" stroke-width="1.3" />
+              <text x="0" y="3" text-anchor="middle" fill="#fde68a" font-size="9.5" font-family="monospace" font-weight="700">🌬️ t=8.0s: 2.0° Sway (MCS12→MCS9)</text>
+            </g>
+          `;
+        }
+        if (currentSimTime >= 9.0) {
+          eHtml += `
+            <g transform="translate(445, 385)">
+              <rect x="-112" y="-12" width="224" height="22" rx="6" fill="rgba(6,78,59,0.95)" stroke="#34d399" stroke-width="1.3" />
+              <text x="0" y="3" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-family="monospace" font-weight="700">🛡️ t=9.0s Intent: 64QAM Floor Locked</text>
+            </g>
+          `;
+        }
+        eventsLayer.innerHTML = eHtml;
+      }
+
+      requestAnimationFrame(animateMetroRingStreams);
+    }
+
     // Initialize all views on load
     renderTopologySvg();
     renderFlowsTable();
@@ -1039,6 +1222,7 @@
     renderYangTable();
     renderSbiPayload();
     selectExample("TEST_SUITE");
+    requestAnimationFrame(animateMetroRingStreams);
   </script>
 </body>
 </html>
