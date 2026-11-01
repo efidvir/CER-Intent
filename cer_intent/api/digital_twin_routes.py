@@ -134,7 +134,7 @@ def _check_ns3_remote() -> Dict[str, Any]:
     start = time.time()
     cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=2", NS3_HOST, NS3_PATH, "show", "version"]
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=3.0)
+        res = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=3.0)
         latency = round((time.time() - start) * 1000, 2)
         if res.returncode == 0:
             version_str = res.stdout.strip().split("\n")[0]
@@ -172,6 +172,11 @@ def get_system_status():
     return jsonify({
         "status": "OPERATIONAL",
         "timestamp": time.time(),
+        "deployment": {
+            "active_profile": "cross-repo-live",
+            "mode": "TFS (:8088) + NS-3.45 contrib/ceragon (36 Models / 84 YANGs)",
+            "is_standalone": False,
+        },
         "cross_repo_architecture": {
             "intent_engine": {"name": "CER-Intent", "port": 5000, "status": "ONLINE"},
             "tfs_controller": tfs_status,
@@ -181,6 +186,38 @@ def get_system_status():
         },
         "active_shadow_state": _latest_twin_state
     })
+
+
+@dt_bp.route("/simulate-tsn", methods=["POST", "OPTIONS"])
+def simulate_tsn_discrete():
+    """Runs the discrete-event NS-3.45 TSN & Ceragon simulation for the NetAnim Animator."""
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
+    body = request.get_json(silent=True) or {}
+    sim_time = float(body.get("sim_time", 2.5))
+    perturbation = body.get("perturbation", "traffic_surge")
+    enable_tsn_qos = bool(body.get("enable_tsn_qos", False))
+    surge_multiplier = float(body.get("surge_multiplier", 3.5))
+    rain_loss_db = float(body.get("rain_loss_db", 19.93 if perturbation == "rain_degradation" else 0.0))
+
+    runner = TSNSimulationRunner(host=NS3_SSH_HOST, ns3_dir=NS3_DIR)
+
+    def _run():
+        return runner.run_tsn_simulation(
+            sim_time=sim_time,
+            perturbation=perturbation,
+            enable_tsn_qos=enable_tsn_qos,
+            surge_multiplier=surge_multiplier,
+            rain_loss_db=rain_loss_db,
+            use_remote=USE_REMOTE_NS3,
+        )
+
+    try:
+        from eventlet import tpool
+        res = tpool.execute(_run)
+    except Exception:
+        res = _run()
+    return jsonify(res)
 
 
 @dt_bp.route("/scenarios", methods=["GET"])
@@ -1260,32 +1297,129 @@ def ceragon_twin_topology():
         return jsonify({"error": str(e)}), 500
 
 
-@dt_bp.route("/ceragon/run", methods=["POST"])
+@dt_bp.route("/ceragon/run", methods=["POST", "OPTIONS"])
 def ceragon_twin_run():
     """
     Run the Ceragon functional twin on the ns-3 host.
 
     Body (all optional):
-      topology_text : explicit .twin text (otherwise generated from CER-Intent state)
-      sim_time      : seconds (default 10)
+      preset        : "metro-ring" (13-node 5-family reference ring) or "tfs-state"
+      topology_text : explicit .twin text (otherwise generated from preset / CER-Intent state)
+      sim_time      : seconds (default 5.0)
       rain          : [start_s, duration_s, peak_mm_h]
       flows         : ["name,src,dst,rate,dscp", ...]
       events        : ["<t> <a> <b> <action> [value]", ...]
       auto_flows    : number of auto-generated tail flows (default 2)
     """
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
     body = request.get_json(silent=True) or {}
     runner = _ceragon_runner()
     try:
-        sim_time = float(body.get("sim_time", 10.0))
+        sim_time = float(body.get("sim_time", 5.0))
+        preset = body.get("preset", "metro-ring")
         if body.get("topology_text"):
             text = body["topology_text"]
+        elif preset == "metro-ring":
+            from pathlib import Path
+            metro_path = Path(__file__).resolve().parents[2] / "ns3_ceragon" / "contrib" / "ceragon" / "examples" / "topologies" / "metro-ring.twin"
+            text = metro_path.read_text(encoding="utf-8")
+            if body.get("rain") and len(body["rain"]) == 3:
+                import re
+                r = body["rain"]
+                text = re.sub(r"^rain\s+.*$", f"rain {r[0]} {r[1]} {r[2]}", text, flags=re.M)
         else:
             text = runner.build_twin_text(rain=body.get("rain"), flows=body.get("flows"),
                                           events=body.get("events"),
                                           auto_flows=int(body.get("auto_flows", 2)))
-        report = runner.run(text, sim_time=sim_time)
+        report = runner.run(text, sim_time=sim_time, telemetry_interval=0.25)
         report["twin_topology"] = text
         return jsonify(report)
     except Exception as e:
         logger.error(f"Ceragon twin run failed: {e}")
         return jsonify({"error": str(e)}), 502
+
+
+@dt_bp.route("/ceragon/run-example", methods=["POST", "OPTIONS"])
+def ceragon_twin_run_example():
+    """Run one of the compiled C++20 Ceragon NS-3.45 examples or test suite live on cersrv-029."""
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
+    body = request.get_json(silent=True) or {}
+    example_key = body.get("example", "EX_MULTIBAND")
+    runner = _ceragon_runner()
+    cmd_map = {
+        "TEST_SUITE": "cd /home/efid/ns3-ceragon-ci && TMPDIR=/home/efid/.ceragon_tmp ./test.py -s ceragon -v --no-build",
+        "EX_PORTFOLIO": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-portfolio-twin-default",
+        "EX_MULTIBAND": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-multiband-rain-default --trafficMbps=80",
+        "EX_TSN": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-tsn-fronthaul-default --mode=fifo && LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-tsn-fronthaul-default --mode=tsn",
+        "EX_TERRAGRAPH": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-terragraph-mesh-default",
+        "EX_PROTECTION": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-protection-switchover-default",
+    }
+    remote_cmd = cmd_map.get(example_key, cmd_map["EX_MULTIBAND"])
+    started = time.time()
+    try:
+        proc = runner._ssh(remote_cmd, None, timeout=60)
+        raw_out = (proc.stdout or "") + ("\n" + proc.stderr if proc.stderr else "")
+        clean_out = raw_out.split("===CERAGON_TWIN_METRICS_START===")[0].strip() or raw_out.strip()
+        return jsonify({
+            "example": example_key,
+            "returncode": proc.returncode,
+            "wall_clock_ms": round((time.time() - started) * 1000, 1),
+            "host": runner.host,
+            "output": clean_out,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+
+@dt_bp.route("/ceragon/showcase", methods=["GET"])
+def ceragon_showcase_data():
+    """Return the complete Ceragon 36-model portfolio, 84 YANG schemas, 12 domains, and NS-3 twin results."""
+    from pathlib import Path
+    showcase_path = Path(__file__).resolve().parents[2] / "data" / "ceragon_showcase_data.json"
+    if showcase_path.exists():
+        data = json.loads(showcase_path.read_text(encoding="utf-8"))
+        return jsonify(data)
+    return jsonify({"error": "ceragon_showcase_data.json not found"}), 404
+
+
+@dt_bp.route("/ceragon/compile-rule", methods=["POST", "OPTIONS"])
+def ceragon_compile_rule():
+    """Compile any of the 12 southbound control domains for any of the 36 Ceragon models into RESTCONF/NETCONF operations."""
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
+    body = request.get_json(silent=True) or {}
+    model = body.get("model", "IP-50FX")
+    rules = body.get("rules", [{"resource_key": "/radio/carrier[id=1]", "resource_value": {"tx_frequency_mhz": 82000, "channel_bandwidth_mhz": 500, "tx_power_dbm": 16.0}}])
+    try:
+        from ceragon_tfs_adapter.portfolio import resolve_model, check_config_support
+        from ceragon_tfs_adapter.schemas import get_schemas_for_family
+        spec = resolve_model(model) or resolve_model("IP-50FX")
+        yang_mods = get_schemas_for_family(spec.family)
+        ops = []
+        for r in rules:
+            rkey = r.get("resource_key", "/radio/carrier[id=1]")
+            rval = r.get("resource_value", {})
+            if spec.api_flavor == "siklu_tg":
+                base_path = "/restconf/ds/ietf-datastores:candidate/tg-radio-TerraGraph:terragraph-radio"
+            elif spec.api_flavor == "siklu_eh":
+                base_path = "/restconf/ds/ietf-datastores:candidate/siklu-radio-bridge:radio-bridge"
+            else:
+                base_path = "/restconf/data/core-model-1-4:network-control-domain=live/control-construct=ceragon-node"
+            ops.append({
+                "method": "PATCH",
+                "path": f"{base_path}{rkey}",
+                "dialect": spec.api_flavor,
+                "payload": rval,
+            })
+        return jsonify({
+            "model": spec.model,
+            "family": spec.family,
+            "dialect": spec.api_flavor,
+            "yang_modules": list(yang_mods),
+            "operations_count": len(ops),
+            "operations": ops,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

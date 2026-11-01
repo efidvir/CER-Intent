@@ -79,18 +79,21 @@
           </div>
         </div>
 
-        <!-- 4 Primary Navigation Tabs -->
-        <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
-          <button id="tab-btn-sim" onclick="switchMainTab('simulation')" class="tab-btn active px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all flex items-center gap-2">
+        <!-- 5 Primary Navigation Tabs -->
+        <div class="flex flex-wrap items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+          <button id="tab-btn-sim" onclick="switchMainTab('simulation')" class="tab-btn active px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all flex items-center gap-1.5">
             <span>🎮</span> NS-3 Discrete Animator
           </button>
-          <button id="tab-btn-tfs" onclick="switchMainTab('tfs-internals')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-2">
+          <button id="tab-btn-ceragon" onclick="switchMainTab('ceragon-portfolio')" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all text-cyan-300 hover:text-white flex items-center gap-1.5">
+            <span>🛰️</span> Ceragon Portfolio Twin (36 Models)
+          </button>
+          <button id="tab-btn-tfs" onclick="switchMainTab('tfs-internals')" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-1.5">
             <span>⚙️</span> TFS Microservices &amp; Diff
           </button>
-          <button id="tab-btn-loop" onclick="switchMainTab('closed-loop')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-2">
+          <button id="tab-btn-loop" onclick="switchMainTab('closed-loop')" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-1.5">
             <span>🔁</span> 5-Stage Closed Loop
           </button>
-          <button id="tab-btn-d31" onclick="switchMainTab('d31-transport')" class="tab-btn px-3.5 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-2">
+          <button id="tab-btn-d31" onclick="switchMainTab('d31-transport')" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all text-slate-400 hover:text-white flex items-center gap-1.5">
             <span>📜</span> D3.1 Transport &amp; RFC 9543
           </button>
         </div>
@@ -985,6 +988,15 @@
 
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 5: CERAGON PORTFOLIO FUNCTIONAL TWIN (NS-3 contrib/ceragon)       -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-ceragon-portfolio" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-cyan-500/40 rounded-2xl overflow-hidden shadow-lg" style="height: 840px;">
+        <iframe src="/ceragon-twin.html" class="w-full h-full border-0" title="Ceragon Portfolio Functional Twin (36 Models, 84 YANGs, NS-3 contrib/ceragon)"></iframe>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -1023,10 +1035,16 @@
       document.getElementById('view-tfs-internals').classList.add('hidden');
       document.getElementById('view-closed-loop').classList.add('hidden');
       document.getElementById('view-d31-transport').classList.add('hidden');
+      const cerView = document.getElementById('view-ceragon-portfolio');
+      if (cerView) cerView.classList.add('hidden');
 
       if (tab === 'simulation') {
         document.getElementById('tab-btn-sim').classList.add('active');
         document.getElementById('view-simulation').classList.remove('hidden');
+      } else if (tab === 'ceragon-portfolio') {
+        const cb = document.getElementById('tab-btn-ceragon');
+        if (cb) cb.classList.add('active');
+        if (cerView) cerView.classList.remove('hidden');
       } else if (tab === 'tfs-internals') {
         document.getElementById('tab-btn-tfs').classList.add('active');
         document.getElementById('view-tfs-internals').classList.remove('hidden');

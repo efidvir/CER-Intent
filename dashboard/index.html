@@ -29,10 +29,10 @@
         </button>
         <button class="main-nav-btn" id="nav-btn-ceragon" onclick="switchDashboardView('ceragon')">
           <span class="live-dot-pulse"></span>
-          <span>📡 Physical Ceragon MH-T261</span>
+          <span>📡 Ceragon Portfolio &amp; Hardware (36 Models)</span>
         </button>
         <button class="main-nav-btn" id="nav-btn-tfs" onclick="switchDashboardView('tfs')">
-          <span>⚡ TFS Controller &amp; SBI</span>
+          <span>⚡ TFS Controller &amp; SBI (84 YANGs)</span>
         </button>
         <button class="main-nav-btn" id="nav-btn-dt" onclick="switchDashboardView('digital-twin')">
           <span class="live-dot-pulse" style="background:#c084fc;box-shadow:0 0 10px #c084fc"></span>
@@ -51,6 +51,7 @@
       </div>
     </div>
     <div class="header-right">
+      <a class="btn btn-primary" href="/ceragon-twin.html" style="text-decoration:none;background:linear-gradient(135deg,#10b981,#0284c7);color:#ffffff;font-weight:700">🛰️ Ceragon Portfolio &amp; NS-3.45 Twin (36 Models)</a>
       <a class="btn btn-primary" href="/flow.html" style="text-decoration:none;background:linear-gradient(135deg,#00d4ff,#a855f7);color:#020617;font-weight:700">🎬 Animated Step-by-Step Flow</a>
       <button class="btn btn-ghost" onclick="openSkillsCatalogModal()" title="Browse 17 AI Architect Skills &amp; 14 YANG Translation Mappings" style="border:1px solid rgba(0,212,255,0.35);color:#00d4ff">🧠 Skills &amp; Mappings (17)</button>
       <button class="btn btn-ghost" id="btn-clear-intents" title="Clear all intents">🗑 Clear</button>
@@ -73,10 +74,10 @@
           <div class="ceragon-header-icon">⬡</div>
           <div>
             <div class="ceragon-title-row">
-              <span class="ceragon-device-name">Ceragon MH-T261 (ctu-96)</span>
-              <span class="hw-badge"><span class="live-dot-pulse"></span> PHYSICAL HARDWARE</span>
+              <span class="ceragon-device-name">Ceragon Wireless Portfolio (36 Models / 5 Families) &amp; Live MH-T261 (ctu-96)</span>
+              <span class="hw-badge"><span class="live-dot-pulse"></span> PHYSICAL + NS-3 TWINNED</span>
             </div>
-            <div class="ceragon-device-sub">Connected through ETSI TeraFlowSDN Northbound REST NBI (:8088)</div>
+            <div class="ceragon-device-sub">84 Bundled YANG 1.1 Schemas (0 Missing Imports) · 12 Southbound Control Domains · Connected via ETSI TeraFlowSDN (:8088)</div>
           </div>
         </div>
 
@@ -89,13 +90,16 @@
       <!-- Tabs Navigation -->
       <div class="ceragon-nav-tabs">
         <button class="ceragon-subtab active" id="cer-tab-btn-telemetry" onclick="switchCeragonSubTab('telemetry')">
-          📡 Live Monitoring &amp; Telemetry
+          📡 Live Monitoring &amp; Telemetry (MH-T261)
+        </button>
+        <button class="ceragon-subtab" id="cer-tab-btn-portfolio" onclick="switchCeragonSubTab('portfolio')">
+          📦 Full 36-Model Portfolio &amp; NS-3 Sweep (5 Families)
         </button>
         <button class="ceragon-subtab" id="cer-tab-btn-capabilities" onclick="switchCeragonSubTab('capabilities')">
-          ⚙ Hardware Capabilities in TFS
+          ⚙ Hardware Capabilities &amp; 84 YANG 1.1 Schemas
         </button>
         <button class="ceragon-subtab" id="cer-tab-btn-config" onclick="switchCeragonSubTab('config')">
-          🚀 TFS Configuration Execution
+          🚀 12-Domain Southbound Control &amp; TFS Execution
         </button>
       </div>
 
@@ -186,18 +190,59 @@
         </div>
       </div>
 
-      <!-- Tab 2: Hardware Capabilities in TFS -->
+      <!-- Tab 1b: Full 36-Model Portfolio & NS-3 Storm Sweep -->
+      <div id="cer-tab-portfolio" class="ceragon-tab-content hidden">
+        <div class="ceragon-panel-box" style="margin-bottom:1rem">
+          <div class="ceragon-box-header" style="flex-wrap:wrap;gap:8px">
+            <div>
+              <span class="ceragon-box-title" style="color:#00d4ff">Full 36-Model Ceragon Hardware Portfolio &amp; NS-3.45 Storm Sweep (0 vs 60 mm/h Rain)</span>
+              <div style="font-size:0.74rem;color:var(--text-secondary);margin-top:2px">
+                Every model is synchronized between <code style="color:#00d4ff">ceragon_tfs_adapter/portfolio.py</code> (TFS SBI) and <code style="color:#10b981">ns3_ceragon/contrib/ceragon/model/ceragon-device-db.cc</code> (NS-3.45 C++20 Twin).
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="chip chip-active" id="port-fam-ALL" onclick="filterPortfolioFamily('ALL')">All (36)</button>
+              <button class="chip" id="port-fam-IP-20" onclick="filterPortfolioFamily('IP-20')">IP-20 (16)</button>
+              <button class="chip" id="port-fam-IP-50" onclick="filterPortfolioFamily('IP-50')">IP-50 (6)</button>
+              <button class="chip" id="port-fam-IP-100" onclick="filterPortfolioFamily('IP-100')">IP-100 (2)</button>
+              <button class="chip" id="port-fam-EtherHaul" onclick="filterPortfolioFamily('EtherHaul')">EtherHaul (7)</button>
+              <button class="chip" id="port-fam-MultiHaul" onclick="filterPortfolioFamily('MultiHaul')">MultiHaul TG (5)</button>
+            </div>
+          </div>
+          <div style="max-height:460px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+            <table class="tfs-device-table" style="width:100%">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Family &amp; Form Factor</th>
+                  <th>SBI Dialect</th>
+                  <th>RF Bands (GHz)</th>
+                  <th>Max PHY</th>
+                  <th>NS-3 Clear-Sky (0 mm/h)</th>
+                  <th>NS-3 Rain Storm (60 mm/h)</th>
+                  <th>Hardware Features</th>
+                </tr>
+              </thead>
+              <tbody id="cer-portfolio-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:1.5rem;color:#00d4ff">Loading 36-model portfolio &amp; NS-3 storm sweep...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Hardware Capabilities in TFS & 84 YANG Schemas -->
       <div id="cer-tab-capabilities" class="ceragon-tab-content hidden">
         <div class="ceragon-panel-box" style="margin-bottom:1.2rem">
           <div class="ceragon-box-header">
-            <span class="ceragon-box-title" style="color:#ffa726">Hardware Inventory &amp; Capability Rules</span>
+            <span class="ceragon-box-title" style="color:#ffa726">Hardware Inventory &amp; Capability Rules (Physical Node + 36-Model Fleet)</span>
             <span class="ceragon-box-badge">/device/capabilities</span>
           </div>
           <div class="ceragon-metrics-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:0">
             <div class="metric-card">
               <div class="metric-label">Vendor &amp; Model</div>
               <div class="metric-value" style="font-size:1.05rem;color:var(--text-primary)">Ceragon / Siklu MH-T261</div>
-              <div class="metric-sub">MultiHaul TG Terragraph Terminal Unit</div>
+              <div class="metric-sub">MultiHaul TG Terragraph + 35 Fleet Models</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Serial Number &amp; Hardware Rev</div>
@@ -205,9 +250,9 @@
               <div class="metric-sub">Factory Provisioned Identifier</div>
             </div>
             <div class="metric-card">
-              <div class="metric-label">Firmware &amp; Software Version</div>
-              <div class="metric-value" style="font-size:1.05rem;color:#ab47bc;font-family:monospace">3.4.0-4377-5faacf06a</div>
-              <div class="metric-sub">Clixon RESTCONF / Terragraph Engine</div>
+              <div class="metric-label">Bundled YANG 1.1 Catalog</div>
+              <div class="metric-value" style="font-size:1.05rem;color:#ab47bc;font-family:monospace">84 YANG Modules (0 Missing)</div>
+              <div class="metric-sub">56 CeraOS/ONF · 10 Siklu EH · 18 Siklu TG</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Management Endpoint</div>
@@ -224,50 +269,146 @@
           </div>
         </div>
 
-        <div style="padding:1rem 1.2rem;border-radius:var(--radius);background:rgba(255,255,255,0.02);border:1px solid var(--border);font-size:0.8rem">
-          <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px">Bundled YANG Schemas (RFC 6022 / RFC 8040)</div>
-          <div style="color:var(--text-secondary)">
-            All 51 YANG data models extracted directly from this device have been bundled into the <code style="color:#00d4ff">ceragon-tfs-adapter</code> Python package and wheel distribution.
+        <div class="ceragon-panel-box">
+          <div class="ceragon-box-header" style="flex-wrap:wrap;gap:8px">
+            <div>
+              <span class="ceragon-box-title" style="color:#10b981">Complete 84 Offline YANG 1.1 Schema Registry (RFC 6022 / RFC 7950 / RFC 8040 / ONF TR-532)</span>
+              <div style="font-size:0.74rem;color:var(--text-secondary);margin-top:2px">
+                All 84 YANG modules are bundled inside <code style="color:#00d4ff">ceragon_tfs_adapter/yang/</code> with 0 missing imports, 58 RPC operations, and 5 notifications.
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <input id="cer-yang-search" type="text" placeholder="Search 84 YANG modules..." oninput="renderCeragonYangTable()" style="background:#020617;border:1px solid var(--border);color:var(--text-primary);padding:4px 10px;border-radius:6px;font-size:0.75rem;font-family:monospace">
+              <button class="chip chip-active" id="yang-dial-ALL" onclick="filterCeragonYangDialect('ALL')">All (84)</button>
+              <button class="chip" id="yang-dial-ceraos" onclick="filterCeragonYangDialect('ceraos')">CeraOS / ONF / IEEE / IETF (56)</button>
+              <button class="chip" id="yang-dial-siklu_eh" onclick="filterCeragonYangDialect('siklu_eh')">Siklu EH (10)</button>
+              <button class="chip" id="yang-dial-siklu_tg" onclick="filterCeragonYangDialect('siklu_tg')">Siklu TG (18)</button>
+            </div>
+          </div>
+          <div style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+            <table class="tfs-device-table" style="width:100%">
+              <thead>
+                <tr>
+                  <th>YANG 1.1 Module</th>
+                  <th>Dialect</th>
+                  <th>Revision</th>
+                  <th>Prefix</th>
+                  <th>Imports</th>
+                  <th>RPCs</th>
+                  <th>Notifications</th>
+                  <th>Size</th>
+                </tr>
+              </thead>
+              <tbody id="cer-yang-tbody">
+                <tr><td colspan="8" style="text-align:center;padding:1.2rem;color:#00d4ff">Loading 84 YANG 1.1 schemas...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- Tab 3: TFS Configuration Execution -->
+      <!-- Tab 3: TFS Configuration Execution (12 Control Domains) -->
       <div id="cer-tab-config" class="ceragon-tab-content hidden">
-        <div style="margin-bottom:1.2rem">
-          <div style="font-size:0.95rem;font-weight:600;color:var(--text-primary)">Trigger Configuration Mutating via TeraFlowSDN</div>
+        <div style="margin-bottom:1rem">
+          <div style="font-size:0.95rem;font-weight:600;color:var(--text-primary)">12-Domain Southbound Control &amp; TeraFlowSDN Actuation</div>
           <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px">
-            Select an operational intent below. The request is processed by the AI Architect, validated against active policies, converted to TFS SetConfig rules, and dispatched via RESTCONF to the physical node.
+            Click any of the 12 southbound control domains below to compile model-specific RFC 8040 RESTCONF / RFC 6241 NETCONF payloads via <code style="color:#00d4ff">ceragon_tfs_adapter</code> and dispatch via TeraFlowSDN (:8088).
           </div>
         </div>
 
-        <!-- 3 Quick Action Buttons -->
-        <div class="ceragon-action-cards">
-          <button class="action-card-btn" onclick="executeCeragonTFSAction('tune_radio', 'Tune radio frequency to 60.48 GHz with ATPC enabled', '60.48 GHz')">
-            <div class="action-card-top">
-              <span class="action-card-title" style="color:#00d4ff">📻 Tune Radio</span>
-              <span class="action-card-badge">TFS SET →</span>
-            </div>
-            <div class="action-card-val">60.48 GHz + ATPC</div>
-            <div class="action-card-desc">Updates channel &amp; radio params in candidate datastore</div>
+        <!-- Model Selector for Southbound Rule Compilation -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:0.75rem 1rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.22);border-radius:8px;margin-bottom:1rem">
+          <label style="font-size:0.78rem;font-weight:600;color:#00d4ff">Target Ceragon Hardware Model:</label>
+          <select id="cer-compile-model" style="background:#020617;border:1px solid var(--border);color:#e8f0fe;padding:5px 10px;border-radius:6px;font-family:monospace;font-size:0.78rem">
+            <option value="MH-T261">MH-T261 (MultiHaul TG 60 GHz — Physical ctu-96)</option>
+            <option value="IP-50E">IP-50E (80 GHz E-Band 20 Gbps)</option>
+            <option value="IP-50EX">IP-50EX (80 GHz E-Band Extended Tx)</option>
+            <option value="IP-50FX">IP-50FX (Disaggregated Multi-Band Router)</option>
+            <option value="IP-50C">IP-50C (Dual-Core 4 Gbps Microwave)</option>
+            <option value="IP-100E">IP-100E (Dual-Carrier 40 Gbps E-Band)</option>
+            <option value="IP-100C">IP-100C (Quad-Carrier 10 Gbps Microwave)</option>
+            <option value="IP-20C">IP-20C (Dual-Core 2 Gbps XPIC)</option>
+            <option value="IP-20C-HP">IP-20C-HP (High-Power +33 dBm Trunk)</option>
+            <option value="IP-20N">IP-20N (2RU 10-Slot Metro Aggregation)</option>
+            <option value="IP-20A">IP-20A (10+2 Trunk Aggregation)</option>
+            <option value="EH-8010FX">EH-8010FX (Siklu 10 Gbps E-Band)</option>
+            <option value="MH-N366">MH-N366 (Terragraph 360° 4-Sector Distribution)</option>
+          </select>
+          <span style="font-size:0.74rem;color:var(--text-secondary)">Dialect auto-resolved: <code style="color:#10b981">ceraos</code> (ONF TR-532) · <code style="color:#ffa726">siklu_eh</code> · <code style="color:#c084fc">siklu_tg</code></span>
+        </div>
+
+        <!-- 12 Southbound Control Domain Cards -->
+        <div class="ceragon-action-cards" style="grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));gap:0.75rem;margin-bottom:1rem">
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('radio', 'Tune radio frequency to 60.48 GHz with ATPC enabled', '60.48 GHz', '/radio/carrier[id=1]', {tx_frequency_mhz:60480,channel_bandwidth_mhz:2160,tx_power_dbm:14.0,atpc_enabled:true})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#00d4ff">1. 📻 Radio &amp; ATPC</span><span class="action-card-badge">/radio →</span></div>
+            <div class="action-card-val">Carrier Freq + ATPC</div>
+            <div class="action-card-desc">ONF TR-532 air-interface &amp; Siklu radio-common</div>
           </button>
 
-          <button class="action-card-btn" onclick="executeCeragonTFSAction('vlan_slice', 'Provision 1 Gbps capacity slice-uran-6g with guaranteed QoS', '1.0 Gbps / VLAN 200')">
-            <div class="action-card-top">
-              <span class="action-card-title" style="color:#ab47bc">⚡ VLAN Slicing</span>
-              <span class="action-card-badge">TFS SET →</span>
-            </div>
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('acm', 'Harden modulation floor to 64QAM for rain fade protection', '64QAM–4096QAM', '/radio/acm', {acm_enabled:true,min_modulation:'64QAM',max_modulation:'2048QAM',profile:'adaptive'})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#ffa726">2. 🌧 Hitless ACM Floor</span><span class="action-card-badge">/radio/acm →</span></div>
+            <div class="action-card-val">64QAM–4096QAM Profile</div>
+            <div class="action-card-desc">Clamps minimum MCS under ITU-R P.838 rain storms</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('multiband', 'Bond 80 GHz E-Band and 18 GHz microwave for 12.5 Gbps hitless Multi-Band', '80+18 GHz L1', '/multiband/group[id=mb-1]', {primary_carrier:'eband-80ghz',secondary_carrier:'mw-18ghz',bonding_mode:'l1-hitless',min_guaranteed_mbps:2000})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#10b981">3. 🔗 L1 Multi-Band</span><span class="action-card-badge">/multiband →</span></div>
+            <div class="action-card-val">80 GHz + 18 GHz Bond</div>
+            <div class="action-card-desc">ceragon-multiband-bonding &amp; Siklu E-Band extend</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('protection', 'Enable 1+1 Hot-Standby protection with sub-50ms switchover', '1+1 HSB (<50ms)', '/protection/group[id=hsb-1]', {mode:'1+1-hsb',revertive:true,wait_to_restore_sec:60,trigger_ber_threshold:'1e-6'})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#f43f5e">4. 🛡 1+1 HSB / 2+0 XPIC</span><span class="action-card-badge">/protection →</span></div>
+            <div class="action-card-val">Sub-50ms Switchover</div>
+            <div class="action-card-desc">ceragon-protection &amp; ONF wire-interface diversity</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('xpic', 'Enable dual-polarization XPIC cross-pol cancellation (>28 dB)', 'XPIC 28 dB', '/radio/xpic', {xpic_enabled:true,polarization_pair:'V+H',cancellation_depth_db:28.0})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#38bdf8">5. 📡 XPIC &amp; 4x4 MIMO</span><span class="action-card-badge">/radio/xpic →</span></div>
+            <div class="action-card-val">Co-Channel V+H Cancel</div>
+            <div class="action-card-desc">ceragon-radio-xpic &amp; LoS 4x4 spatial multiplexing</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('beamforming', 'Steer 60 GHz phased-array beam to +15 deg azimuth', '+15° Azimuth', '/radio/beamforming', {azimuth_deg:15.0,elevation_deg:0.0,beam_index:12,auto_beam_tracking:true})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#c084fc">6. 🎯 60 GHz Beamforming</span><span class="action-card-badge">/beamforming →</span></div>
+            <div class="action-card-val">32-Elem Phased Array</div>
+            <div class="action-card-desc">tg-radio-TerraGraph ±45° electronic beam steering</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('qos', 'Enable IEEE 802.1Qbv TSN Time-Aware Shaper with 250 us cycle', '802.1Qbv 250µs', '/qos/scheduler', {mode:'802.1Qbv-tas',cycle_time_us:250,express_queues:[6,7],frame_preemption_8021qbu:true})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#a855f7">7. ⏱ 802.1Qbv TSN &amp; QoS</span><span class="action-card-badge">/qos →</span></div>
+            <div class="action-card-val">TAS + 802.1Qbu Preempt</div>
+            <div class="action-card-desc">ieee802-dot1q-sched &amp; 8-queue H-QoS WRED/shaper</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('slice', 'Provision 1 Gbps capacity slice-uran-6g with guaranteed QoS', '1.0 Gbps / VLAN 200', '/interfaces/interface[name=eth1]/vlan', {vlan_id:200,slice_id:'slice-uran-6g',cir_mbps:1000,eir_mbps:200})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#ab47bc">8. ⚡ L2 Bridge &amp; Slicing</span><span class="action-card-badge">/interfaces →</span></div>
             <div class="action-card-val">Slice URAN-6G (VLAN 200)</div>
-            <div class="action-card-desc">Creates dot1q user bridge and QoS reservation</div>
+            <div class="action-card-desc">ieee802-dot1q-bridge &amp; RFC 9543 network slice</div>
           </button>
 
-          <button class="action-card-btn" onclick="executeCeragonTFSAction('rain_fade', 'Harden modulation floor to 64QAM for rain fade protection', '64QAM–2048QAM')">
-            <div class="action-card-top">
-              <span class="action-card-title" style="color:#ffa726">🌧 Rain Adaptation</span>
-              <span class="action-card-badge">TFS SET →</span>
-            </div>
-            <div class="action-card-val">ACM Floor Hardening</div>
-            <div class="action-card-desc">Sets min 64QAM under weather-induced signal attenuation</div>
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('sync', 'Configure ITU-T G.8275.1 PTP Telecom Boundary Clock and SyncE', 'G.8275.1 T-BC', '/sync/ptp', {profile:'G.8275.1',clock_type:'T-BC',domain:24,synce_enabled:true,ssm_ql:'QL-PRC'})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#2dd4bf">9. 🕰 SyncE &amp; G.8275.1 PTP</span><span class="action-card-badge">/sync →</span></div>
+            <div class="action-card-val">T-BC / T-TC + SyncE</div>
+            <div class="action-card-desc">ieee1588-ptp &amp; ceragon-sync phase lock (&lt;50 ns)</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('security', 'Enable IEEE 802.1AE MACsec AES-GCM-256 line-rate encryption', 'AES-GCM-256', '/security/macsec', {enabled:true,cipher_suite:'GCM-AES-256',confidentiality_offset:0,replay_protect:true})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#f59e0b">10. 🔐 AES-256 MACsec</span><span class="action-card-badge">/security →</span></div>
+            <div class="action-card-val">802.1AE GCM-AES-256</div>
+            <div class="action-card-desc">ceragon-macsec &amp; Siklu L1/L2 payload encryption</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('oran_xhaul', 'Enable O-RAN Split 7.2x eCPRI BFP9 IQ compression', 'BFP9 2.9:1', '/radio/header-compression', {ecpri_aware:true,bfp_bits:9,l2_l4_header_compression:true})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#ec4899">11. 📡 O-RAN eCPRI Split 7.2x</span><span class="action-card-badge">/oran →</span></div>
+            <div class="action-card-val">BFP9 IQ + Header Comp</div>
+            <div class="action-card-desc">Sub-100µs fronthaul transport &amp; header compression</div>
+          </button>
+
+          <button class="action-card-btn" onclick="executeCeragonDomainAction('power', 'Enable green eco-sleep on secondary carrier during off-peak', 'Eco-Sleep 28W', '/power/green-mode', {eco_mode:'dynamic-carrier-sleep',offpeak_standby:true,target_power_w:28.5})">
+            <div class="action-card-top"><span class="action-card-title" style="color:#4ade80">12. 🌱 Green Carrier Sleep</span><span class="action-card-badge">/power →</span></div>
+            <div class="action-card-val">Dynamic Carrier Standby</div>
+            <div class="action-card-desc">instantaneous-device-energy-tid &amp; carrier sleep</div>
           </button>
         </div>
 
@@ -276,14 +417,14 @@
           <div class="ceragon-console-header">
             <span style="display:flex;align-items:center;gap:6px;color:#10b981;font-weight:600">
               <span class="live-dot-pulse"></span>
-              TFS Execution Pipeline
+              TFS &amp; Ceragon Southbound Execution Pipeline (RESTCONF / NETCONF Compiler + Live Dispatch)
             </span>
             <span id="cer-exec-status" style="color:#00d4ff">IDLE · Ready for command</span>
           </div>
-          <div id="cer-console-logs" class="ceragon-console-logs">
-            <div style="color:#7a91a8">[System] Initialized connection to TeraFlowSDN Northbound REST at :8088.</div>
-            <div style="color:#7a91a8">[System] Target device: ceragon-mh-t261-ctu-96 (f676623c-1a65-54bd-b1e8-279c8a6d8a1c).</div>
-            <div style="color:#10b981">[Verified] Last Intent: slice-uran-6g APPLIED via TeraFlowAdapter.</div>
+          <div id="cer-console-logs" class="ceragon-console-logs" style="max-height:260px">
+            <div style="color:#7a91a8">[System] Initialized connection to TeraFlowSDN Northbound REST at :8088 &amp; Ceragon 84-YANG Compiler.</div>
+            <div style="color:#7a91a8">[System] Target device: ceragon-mh-t261-ctu-96 (f676623c-1a65-54bd-b1e8-279c8a6d8a1c) + 36-model fleet.</div>
+            <div style="color:#10b981">[Verified] Select any of the 36 Ceragon models and click any of the 12 domain cards above to compile &amp; execute.</div>
           </div>
         </div>
       </div>
@@ -485,13 +626,13 @@
         </div>
         <div class="tfs-stat-card">
           <div class="tfs-stat-title">Southbound Control Engine</div>
-          <div class="tfs-stat-value" style="font-size:1.15rem;color:#ab47bc">CeragonDriver (ID: 22)</div>
-          <div class="tfs-stat-sub">RFC 8040 RESTCONF Candidate 2-Phase Commit</div>
+          <div class="tfs-stat-value" style="font-size:1.15rem;color:#ab47bc">CeragonDriver (36 Models)</div>
+          <div class="tfs-stat-sub">12 Domains · CeraOS / Siklu EH / Siklu TG 2PC</div>
         </div>
         <div class="tfs-stat-card">
-          <div class="tfs-stat-title">Bundled YANG Models</div>
-          <div class="tfs-stat-value" style="color:#ffa726">51 Extracted Schemas</div>
-          <div class="tfs-stat-sub">Physical hardware definitions &amp; NMDA datastores</div>
+          <div class="tfs-stat-title">Bundled YANG 1.1 Models</div>
+          <div class="tfs-stat-value" style="color:#ffa726">84 Validated Schemas</div>
+          <div class="tfs-stat-sub">0 Missing Imports · 58 RPCs · 5 Notifications</div>
         </div>
       </div>
 
@@ -635,21 +776,29 @@
       </div>
 
       <!-- Sub-Tabs Navigation for Digital Twin -->
-      <div class="ceragon-nav-tabs" style="margin: 0.75rem 1.5rem 0.75rem; display: flex; gap: 0.5rem; align-items: center;">
+      <div class="ceragon-nav-tabs" style="margin: 0.75rem 1.5rem 0.75rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
         <button class="ceragon-subtab active" id="dt-subtab-netanim" onclick="switchDtSubView('netanim')">
           🎮 NetAnim Discrete Player &amp; Datastore Diff
+        </button>
+        <button class="ceragon-subtab" id="dt-subtab-ceragon" onclick="switchDtSubView('ceragon')">
+          🛰️ Ceragon Portfolio Twin (NS-3 contrib/ceragon · 36 Models &amp; Metro Ring)
         </button>
         <button class="ceragon-subtab" id="dt-subtab-macro" onclick="switchDtSubView('macro')">
           🗺️ Macro Architecture &amp; Closed-Loop Engine
         </button>
-        <a href="http://localhost:9200/" target="_blank" class="btn btn-ghost" style="margin-left: auto; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 212, 255, 0.3); color: #00d4ff;">
-          <span>↗ Open Standalone (:9200)</span>
+        <a href="/digital_twin.html" target="_blank" class="btn btn-ghost" style="margin-left: auto; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(0, 212, 255, 0.3); color: #00d4ff;">
+          <span>↗ Open Full Digital Twin</span>
         </a>
       </div>
 
       <!-- Subview 1: Interactive NetAnim & TFS Datastore Diff Player -->
       <div id="dt-subview-netanim" style="padding: 0 1.25rem 1.25rem;">
         <iframe src="/digital_twin.html" style="width: 100%; height: 980px; border: 1px solid rgba(192, 132, 252, 0.25); border-radius: 14px; background: #020617;" allowfullscreen></iframe>
+      </div>
+
+      <!-- Subview 1b: Ceragon Portfolio Functional Twin (NS-3 contrib/ceragon) -->
+      <div id="dt-subview-ceragon" class="hidden" style="padding: 0 1.25rem 1.25rem;">
+        <iframe src="/ceragon-twin.html" style="width: 100%; height: 980px; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 14px; background: #020617;" allowfullscreen></iframe>
       </div>
 
       <!-- Subview 2: Macro Architecture & 5-Stage Stepper -->
@@ -1112,18 +1261,16 @@
     </div>
   </div>
 
-  <script src="/app.js?v=2.2"></script>
+  <script src="/app.js?v=2.3"></script>
   <script>
     function switchDtSubView(subView) {
-      const isNetanim = subView === 'netanim';
-      const elNetanim = document.getElementById('dt-subview-netanim');
-      const elMacro = document.getElementById('dt-subview-macro');
-      const btnNetanim = document.getElementById('dt-subtab-netanim');
-      const btnMacro = document.getElementById('dt-subtab-macro');
-      if (elNetanim) elNetanim.classList.toggle('hidden', !isNetanim);
-      if (elMacro) elMacro.classList.toggle('hidden', isNetanim);
-      if (btnNetanim) btnNetanim.classList.toggle('active', isNetanim);
-      if (btnMacro) btnMacro.classList.toggle('active', !isNetanim);
+      const views = ['netanim', 'ceragon', 'macro'];
+      views.forEach(v => {
+        const el = document.getElementById('dt-subview-' + v);
+        const btn = document.getElementById('dt-subtab-' + v);
+        if (el) el.classList.toggle('hidden', v !== subView);
+        if (btn) btn.classList.toggle('active', v === subView);
+      });
     }
   </script>
 </body>

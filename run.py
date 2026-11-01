@@ -6,7 +6,7 @@ the telemetry simulator, and the closed-loop reconciler.
 """
 try:
     import eventlet
-    eventlet.monkey_patch()
+    eventlet.monkey_patch(os=False, subprocess=False)
 except Exception:
     pass
 
@@ -14,6 +14,8 @@ import os
 import sys
 import threading
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "ceragon_tfs_adapter"))
 
 from dotenv import load_dotenv
 

@@ -1118,13 +1118,23 @@ function populateTFSDeviceTable(filterType = "all") {
     if (filterType === "simulated" && isPhysical) return;
 
     const tr = document.createElement("tr");
+    const m = node.model || "Universal";
+    const isSikluTg = m.includes("MH-");
+    const isSikluEh = m.includes("EH-");
+    const isIp50 = m.includes("IP-50");
+    const isIp20 = m.includes("IP-20");
+    const isCeragon = isPhysical || isSikluTg || isSikluEh || isIp50 || isIp20;
 
-    const engineHtml = isPhysical
-      ? `<span class="badge-physical">RFC 8040 RESTCONF (2PC)</span>`
-      : `<span class="badge-simulated">TFS Emulated Driver</span>`;
+    let engineHtml = `<span class="badge-simulated">TFS Emulated Driver</span>`;
+    if (isPhysical) {
+      engineHtml = `<span class="badge-physical">CeragonDriver · Siklu TG RESTCONF (2PC)</span>`;
+    } else if (isCeragon) {
+      const dialectLabel = isSikluEh ? "Siklu EH NETCONF" : "CeraOS TR-532 RESTCONF";
+      engineHtml = `<span class="badge-simulated" style="border-color:rgba(0,212,255,0.35);color:#00d4ff">CeragonDriver · ${dialectLabel} (NS-3 Twin)</span>`;
+    }
 
-    const typeHtml = isPhysical
-      ? `<span style="color:#34d399;font-weight:600">ceragon-wireless</span>`
+    const typeHtml = isCeragon
+      ? `<span style="color:#34d399;font-weight:600">ceragon-${isSikluTg ? 'tg' : isIp50 ? 'ip50' : 'ip20'}</span>`
       : `<span style="color:#7a91a8">emu-packet-router</span>`;
 
     const modelColor = MODEL_COLORS[node.model] || "#00d4ff";
@@ -1167,8 +1177,103 @@ function inspectNodeInModal(nodeId) {
   showNodeModal(node);
 }
 
+let _cerShowcaseCache = null;
+let _cerPortFamFilter = "ALL";
+let _cerYangDialFilter = "ALL";
+
+async function ensureCeragonShowcaseLoaded() {
+  if (_cerShowcaseCache) return _cerShowcaseCache;
+  try {
+    const res = await fetch(`${API}/api/v1/digital-twin/ceragon/showcase`);
+    if (res.ok) {
+      _cerShowcaseCache = await res.json();
+      renderCeragonPortfolioTable();
+      renderCeragonYangTable();
+    }
+  } catch (e) {
+    console.warn("Showcase fetch failed:", e);
+  }
+  return _cerShowcaseCache;
+}
+
+function filterPortfolioFamily(fam) {
+  _cerPortFamFilter = fam;
+  ["ALL", "IP-20", "IP-50", "IP-100", "EtherHaul", "MultiHaul"].forEach(f => {
+    document.getElementById("port-fam-" + f)?.classList.toggle("chip-active", f === fam);
+  });
+  renderCeragonPortfolioTable();
+}
+
+function renderCeragonPortfolioTable() {
+  const tbody = document.getElementById("cer-portfolio-tbody");
+  if (!tbody || !_cerShowcaseCache || !_cerShowcaseCache.portfolio) return;
+  const rows = _cerShowcaseCache.portfolio.filter(p => {
+    if (_cerPortFamFilter === "ALL") return true;
+    return (p.family || "").includes(_cerPortFamFilter);
+  });
+  tbody.innerHTML = rows.map(p => {
+    const dialBadge = p.dialect === "ceraos"
+      ? `<span style="color:#00d4ff;font-family:monospace;font-size:0.72rem">ceraos (TR-532)</span>`
+      : p.dialect === "siklu_eh"
+      ? `<span style="color:#ffa726;font-family:monospace;font-size:0.72rem">siklu_eh (NETCONF)</span>`
+      : `<span style="color:#c084fc;font-family:monospace;font-size:0.72rem">siklu_tg (RESTCONF)</span>`;
+    const feats = (p.capabilities || []).slice(0, 5).map(c =>
+      `<span style="display:inline-block;padding:1px 5px;margin:1px;border-radius:4px;background:rgba(255,255,255,0.05);font-size:0.65rem;font-family:monospace">${c}</span>`
+    ).join("");
+    return `
+      <tr>
+        <td><strong style="color:#00d4ff;font-family:monospace">${p.model}</strong></td>
+        <td>
+          <div style="font-weight:600;color:var(--text-primary);font-size:0.78rem">${p.family}</div>
+          <div style="font-size:0.68rem;color:var(--text-muted)">${p.form_factor} · ${p.carriers}x carrier</div>
+        </td>
+        <td>${dialBadge}</td>
+        <td style="font-family:monospace;font-size:0.73rem;color:#e8f0fe">${(p.bands_ghz || []).join(", ")} GHz</td>
+        <td><strong style="color:#10b981;font-family:monospace">${p.max_capacity_gbps} Gbps</strong></td>
+        <td style="font-family:monospace;font-size:0.73rem;color:#34d399">${p.ns3_clear_mod || "2048QAM"} · <b>${p.ns3_clear_mbps || (p.max_capacity_gbps*1000)} Mbps</b> (${p.ns3_clear_snr_db || 34.0} dB)</td>
+        <td style="font-family:monospace;font-size:0.73rem;color:#ffa726">${p.ns3_rain60_mod || "64QAM"} · <b>${p.ns3_rain60_mbps || "500"} Mbps</b> (${p.ns3_rain60_snr_db || 18.0} dB)</td>
+        <td>${feats}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function filterCeragonYangDialect(dial) {
+  _cerYangDialFilter = dial;
+  ["ALL", "ceraos", "siklu_eh", "siklu_tg"].forEach(d => {
+    document.getElementById("yang-dial-" + d)?.classList.toggle("chip-active", d === dial);
+  });
+  renderCeragonYangTable();
+}
+
+function renderCeragonYangTable() {
+  const tbody = document.getElementById("cer-yang-tbody");
+  if (!tbody || !_cerShowcaseCache || !_cerShowcaseCache.yangs) return;
+  const q = (document.getElementById("cer-yang-search")?.value || "").toLowerCase().trim();
+  const rows = _cerShowcaseCache.yangs.filter(y => {
+    if (_cerYangDialFilter !== "ALL" && y.dialect !== _cerYangDialFilter) return false;
+    if (q && !(y.name.toLowerCase().includes(q) || (y.namespace || "").toLowerCase().includes(q))) return false;
+    return true;
+  });
+  tbody.innerHTML = rows.map(y => `
+    <tr>
+      <td>
+        <strong style="color:#00d4ff;font-family:monospace;font-size:0.76rem">${y.name}</strong>
+        <div style="font-size:0.66rem;color:var(--text-muted);font-family:monospace">${y.namespace || ""}</div>
+      </td>
+      <td><span style="font-family:monospace;font-size:0.72rem;color:${y.dialect === 'ceraos' ? '#00d4ff' : y.dialect === 'siklu_eh' ? '#ffa726' : '#c084fc'}">${y.dialect}</span></td>
+      <td style="font-family:monospace;font-size:0.72rem">${y.revision || "2024-01-01"}</td>
+      <td style="font-family:monospace;font-size:0.72rem;color:#10b981">${y.prefix || "-"}</td>
+      <td style="font-family:monospace;font-size:0.7rem;color:var(--text-secondary)">${(y.imports || []).length} (${(y.imports || []).slice(0, 2).join(", ")})</td>
+      <td style="font-family:monospace;font-size:0.72rem;color:${(y.rpcs || []).length ? '#ffa726' : 'var(--text-muted)'}">${(y.rpcs || []).length}</td>
+      <td style="font-family:monospace;font-size:0.72rem;color:${(y.notifications || []).length ? '#c084fc' : 'var(--text-muted)'}">${(y.notifications || []).length}</td>
+      <td style="font-family:monospace;font-size:0.7rem;color:var(--text-muted)">${(y.size_bytes / 1024).toFixed(1)} KB</td>
+    </tr>
+  `).join("");
+}
+
 function switchCeragonSubTab(tabName) {
-  ["telemetry", "capabilities", "config"].forEach(t => {
+  ["telemetry", "portfolio", "capabilities", "config"].forEach(t => {
     const pane = document.getElementById("cer-tab-" + t);
     const btn = document.getElementById("cer-tab-btn-" + t);
     if (t === tabName) {
@@ -1179,6 +1284,9 @@ function switchCeragonSubTab(tabName) {
       btn?.classList.remove("active");
     }
   });
+  if (tabName === "portfolio" || tabName === "capabilities") {
+    ensureCeragonShowcaseLoaded();
+  }
 }
 
 function appendCeragonConsole(msg, type = "info") {
@@ -1204,6 +1312,50 @@ function appendCeragonConsole(msg, type = "info") {
   }
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
+}
+
+async function executeCeragonDomainAction(domain, description, targetValue, resourceKey, resourceValue) {
+  const modelSel = document.getElementById("cer-compile-model");
+  const model = modelSel ? modelSel.value : "MH-T261";
+  const statusEl = document.getElementById("cer-exec-status");
+  if (statusEl) {
+    statusEl.textContent = `COMPILING [${domain.toUpperCase()}] FOR ${model}...`;
+    statusEl.style.color = "#ffa726";
+  }
+
+  appendCeragonConsole(`Compiling Southbound Domain [${domain.toUpperCase()}] for Ceragon ${model}: ${resourceKey}`, "step");
+
+  try {
+    const compRes = await fetch(`${API}/api/v1/digital-twin/ceragon/compile-rule`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        rules: [{ resource_key: resourceKey, resource_value: resourceValue }]
+      })
+    });
+    const compData = await compRes.json();
+    if (compRes.ok && compData.operations && compData.operations.length > 0) {
+      const op = compData.operations[0];
+      appendCeragonConsole(
+        `Resolved Model: <b>${compData.model}</b> (${compData.family}) · Dialect: <code style="color:#00d4ff">${compData.dialect}</code> · YANGs: ${compData.yang_modules.slice(0, 3).join(", ")}`,
+        "step"
+      );
+      appendCeragonConsole(
+        `Compiled Southbound Operation: <b style="color:#ffa726">${op.method} ${op.path}</b>`,
+        "step"
+      );
+      appendCeragonConsole(
+        `Payload: <code style="color:#e8f0fe">${JSON.stringify(op.payload)}</code>`,
+        "info"
+      );
+    }
+  } catch (e) {
+    appendCeragonConsole(`Compiler note: ${e.message}`, "warn");
+  }
+
+  // Also execute the end-to-end TFS intent actuation
+  await executeCeragonTFSAction(domain === "acm" ? "rain_fade" : domain === "slice" ? "vlan_slice" : "tune_radio", description, targetValue);
 }
 
 async function executeCeragonTFSAction(type, description, targetValue) {

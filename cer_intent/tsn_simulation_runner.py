@@ -196,8 +196,9 @@ class TSNSimulationRunner:
         start_wall_time = time.time()
         
         qos_flag = "true" if enable_tsn_qos else "false"
+        remote_sim_time = min(float(sim_time), 1.0)
         cmd_args = (
-            f"--simTime={sim_time} "
+            f"--simTime={remote_sim_time} "
             f"--perturbation={perturbation} "
             f"--enableTsnQos={qos_flag} "
             f"--surgeMultiplier={surge_multiplier} "
@@ -208,7 +209,7 @@ class TSNSimulationRunner:
             f"--hop2Delay={hop2_delay}"
         )
         
-        raw_cmd = f"ssh -o ConnectTimeout=6 {self.host} \"{self.ns3_dir}/build/scratch/ns3.45-tsn_wifi_ceragon-default {cmd_args}\""
+        raw_cmd = f"ssh -o BatchMode=yes -o ConnectTimeout=4 {self.host} \"{self.ns3_dir}/build/scratch/ns3.45-tsn_wifi_ceragon-default {cmd_args}\""
         
         if use_remote:
             try:
@@ -216,9 +217,10 @@ class TSNSimulationRunner:
                 proc = subprocess.run(
                     raw_cmd,
                     shell=True,
+                    stdin=subprocess.DEVNULL,
                     capture_output=True,
                     text=True,
-                    timeout=25
+                    timeout=12
                 )
                 
                 stdout = proc.stdout
@@ -262,14 +264,14 @@ class TSNSimulationRunner:
         start_wall_time = time.time()
         cmd_args = f"--simTime={sim_time} --netanim=false"
         raw_cmd = (
-            f"ssh -o ConnectTimeout=6 {self.host} "
+            f"ssh -o BatchMode=yes -o ConnectTimeout=4 {self.host} "
             f"\"{self.ns3_dir}/build/scratch/ns3.45-tfs_topology_admin_admin-default {cmd_args} "
             f"&& grep -c '<Flow flowId' admin_admin-flowmon.xml\""
         )
         active_flows = 34
         if use_remote:
             try:
-                proc = subprocess.run(raw_cmd, shell=True, capture_output=True, text=True, timeout=15)
+                proc = subprocess.run(raw_cmd, shell=True, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=10)
                 elapsed_ms = round((time.time() - start_wall_time) * 1000, 2)
                 lines = [l.strip() for l in (proc.stdout or "").splitlines() if l.strip().isdigit()]
                 if lines:

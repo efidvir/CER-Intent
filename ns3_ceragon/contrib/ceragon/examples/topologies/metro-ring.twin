@@ -42,10 +42,10 @@ slice hubA hubB 5 1Gbps dscp=34,36 weight=4
 tsn hubC tailC 500 250 express_mask=0x80
 
 # services
-flow fronthaul dc cell1 400Mbps dscp=46 start=0.5
-flow video     dc cell1 700Mbps dscp=34 start=0.5
-flow fwa       dc fwa1  400Mbps dscp=0  start=0.5
-flow bulk      dc ehSpur 2Gbps  dscp=0  start=1.0
+flow fronthaul dc cell1 8Mbps   dscp=46 start=0.5
+flow video     dc cell1 12Mbps  dscp=34 start=0.5
+flow fwa       dc fwa1  8Mbps   dscp=0  start=0.5
+flow bulk      dc ehSpur 15Mbps dscp=0  start=1.0
 
 # weather: storm crossing the ring
 rain 3 6 110

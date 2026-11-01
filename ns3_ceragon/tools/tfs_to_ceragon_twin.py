@@ -206,8 +206,8 @@ def convert(topo: Dict[str, Any],
             dsts = sorted([n for n, (m, f, r) in info.items() if f is not None and degree.get(n, 0) == 1])
         for i, dst in enumerate(dsts[:auto_flows]):
             if src and dst != src:
-                flow_lines.append(f"urllc{i},{src},{dst},50Mbps,46")
-                flow_lines.append(f"embb{i},{src},{dst},300Mbps,0")
+                flow_lines.append(f"urllc{i},{src},{dst},15Mbps,46")
+                flow_lines.append(f"embb{i},{src},{dst},45Mbps,0")
     for f in flow_lines:
         parts = [x.strip() for x in f.split(",")]
         if len(parts) >= 4:

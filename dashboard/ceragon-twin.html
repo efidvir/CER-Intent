@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ceragon Networks Functional Digital Twin — Full-Stack Command Center</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .hidden { display: none !important; }
+    body {
+      background-color: var(--background, #070b14);
+      color: var(--foreground, #f8fafc);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .card-surface {
+      background-color: var(--card, #0f172a);
+      color: var(--foreground, #f8fafc);
+      border: 1px solid var(--border, #1e293b);
+    }
+    .sub-box {
+      background-color: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border, #1e293b);
+    }
+    .muted-text {
+      color: var(--muted-foreground, #94a3b8);
+    }
+    .tab-btn {
+      background-color: var(--secondary, #1e293b);
+      color: var(--secondary-foreground, #cbd5e1);
+      border: 1px solid var(--border, #334155);
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background-color: var(--primary, #0284c7);
+      color: var(--primary-foreground, #ffffff);
+      border-color: var(--primary, #0284c7);
+    }
+    .pulse-flow {
+      stroke-dasharray: 8 5;
+      animation: dashFlow 1.1s linear infinite;
+    }
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -26; }
+    }
+    pre, code {
+      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-6">
+  <div class="max-w-7xl mx-auto space-y-4">
+    <!-- Top Header Banner -->
+    <header class="card-surface rounded-xl p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div>
+        <div class="flex flex-wrap items-center gap-2 mb-1.5">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            ● LIVE VERIFIED ON NS-3.45 (efid@cersrv-029)
+          </span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30">
+            3 GITHUB REPOS SYNCHRONIZED
+          </span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            ITU-R P.525 / P.676 / P.838 / P.530 + IEEE 802.1Qbv + 802.11ay
+          </span>
+          <a href="/?view=expert" target="_top" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30 transition">🎛 Expert Dashboard</a>
+          <a href="/flow.html" target="_top" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition">🎬 5-Stage Pipeline</a>
+          <a href="/digital_twin.html" target="_top" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition">🔮 Digital Twin</a>
+        </div>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight">
+          Ceragon Networks Portfolio — End-to-End TFS ↔ NS-3.45 Functional Digital Twin
+        </h1>
+        <p class="text-sm muted-text mt-1">
+          Interactive Command Center for the 36-model hardware catalog, 84 YANG 1.1 schemas, 12-domain bidirectional SBI driver, and C++20 NS-3.45 <code class="px-1.5 py-0.5 rounded bg-black/30">contrib/ceragon</code> emulation module.
+        </p>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
+        <div class="sub-box rounded-lg px-3.5 py-2 text-center">
+          <div class="text-lg font-bold text-emerald-400">36 / 5</div>
+          <div class="text-xs muted-text">Models / Families</div>
+        </div>
+        <div class="sub-box rounded-lg px-3.5 py-2 text-center">
+          <div class="text-lg font-bold text-sky-400">84 YANG</div>
+          <div class="text-xs muted-text">0 Missing Imports</div>
+        </div>
+        <div class="sub-box rounded-lg px-3.5 py-2 text-center">
+          <div class="text-lg font-bold text-purple-400">12 Domains</div>
+          <div class="text-xs muted-text">Control + Telemetry</div>
+        </div>
+        <div class="sub-box rounded-lg px-3.5 py-2 text-center">
+          <div class="text-lg font-bold text-amber-400">79 / 79</div>
+          <div class="text-xs muted-text">C++ &amp; Pytest PASS</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Live Status Toast Banner -->
+    <div id="live-status-banner" class="hidden rounded-xl p-3.5 border border-emerald-500/40 bg-emerald-950/50 text-emerald-200 text-xs flex flex-wrap items-center justify-between gap-2">
+      <span id="live-status-text" class="font-mono font-semibold"></span>
+      <button onclick="document.getElementById('live-status-banner').classList.add('hidden')" class="px-2 py-0.5 rounded bg-emerald-800/60 hover:bg-emerald-700 text-xs">Dismiss</button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex flex-wrap gap-2 border-b pb-3" style="border-color: var(--border, #1e293b);">
+      <button onclick="switchTab('topology')" id="tab-btn-topology" class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium transition">
+        1. Interactive NS-3 Topology &amp; Storm Simulator
+      </button>
+      <button onclick="switchTab('portfolio')" id="tab-btn-portfolio" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition">
+        2. 36-Model Portfolio &amp; NS-3 Storm Sweep
+      </button>
+      <button onclick="switchTab('yang')" id="tab-btn-yang" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition">
+        3. 84 YANG Schemas &amp; 12-Domain SBI Inspector
+      </button>
+      <button onclick="switchTab('examples')" id="tab-btn-examples" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition">
+        4. Live C++ Test Suite &amp; 6 Example Outputs
+      </button>
+      <button onclick="switchTab('repos')" id="tab-btn-repos" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition">
+        5. 3-Repository Architecture &amp; Git Commits
+      </button>
+    </nav>
+
+    <!-- TAB 1: TOPOLOGY & RAIN SIMULATOR -->
+    <section id="tab-topology" class="space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Left 2 Columns: SVG Canvas + Scrubber -->
+        <div class="lg:col-span-2 card-surface rounded-xl p-4 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-base font-bold">Metro Ring + 5G TSN Tail + 80 GHz MACsec Spur + 60 GHz Terragraph (<code class="text-xs text-sky-400">metro-ring.twin</code>)</h2>
+              <p class="text-xs muted-text">Click any radio hop on the map or scrub time (<code class="text-xs">t = 0..11s</code>) to inspect ACM, 1+1 HSB failover (<code class="text-xs">t=7s</code>), 60 GHz pole sway (<code class="text-xs">t=8s</code>), and QoS queues.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="togglePlaySim()" id="btn-play-sim" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition cursor-pointer">
+                ▶ Auto-Play Timeline (0..11s)
+              </button>
+              <button onclick="runLiveOnServer()" id="btn-live-run" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white hover:bg-sky-500 transition cursor-pointer">
+                ⚡ Run Live on NS-3 (cersrv-029)
+              </button>
+            </div>
+          </div>
+
+          <!-- Interactive Timeline & Rain Controls -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg sub-box">
+            <div>
+              <div class="flex justify-between text-xs font-medium mb-1">
+                <span>Simulation Time (<code id="lbl-sim-time" class="text-sky-400 font-bold">t = 1.00 s</code>)</span>
+                <span id="lbl-sim-phase" class="text-emerald-400 font-semibold">Clear Sky (0.0 mm/h)</span>
+              </div>
+              <input id="slider-time" type="range" min="0" max="11" step="0.25" value="1.0" oninput="onTimeScrub(this.value)" class="w-full accent-sky-500 cursor-pointer" />
+              <div class="flex justify-between text-xs muted-text mt-1">
+                <span>0s Clear</span>
+                <span>3–9s Storm (110mm/h)</span>
+                <span>7s HSB Fail</span>
+                <span>8s Sway</span>
+                <span>10s Restore</span>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs font-medium mb-1">
+                <span>Override Rain Rate (<code id="lbl-rain-rate" class="text-amber-400 font-bold">0.0 mm/h</code>)</span>
+                <span class="muted-text">ITU-R P.838-3 + P.530-18</span>
+              </div>
+              <input id="slider-rain" type="range" min="0" max="120" step="1" value="0" oninput="onRainOverride(this.value)" class="w-full accent-amber-500 cursor-pointer" />
+              <div class="flex justify-between text-xs muted-text mt-1">
+                <span>0 mm/h</span>
+                <span>35 mm/h (Heavy)</span>
+                <span>75 mm/h (Tropical)</span>
+                <span>110 mm/h (Peak)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SVG Network Topology Canvas -->
+          <div class="relative rounded-xl overflow-hidden bg-slate-950 border" style="border-color: var(--border, #1e293b);">
+            <svg id="topology-svg" viewBox="0 0 880 430" class="w-full h-auto select-none"></svg>
+          </div>
+
+          <!-- Legend -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs muted-text pt-1">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-1 bg-emerald-400 inline-block rounded"></span> IP-50EX Multi-Band (80+18 GHz, 1+1 HSB)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-1 bg-sky-400 inline-block rounded"></span> IP-50FX / IP-20C (18/23 GHz XPIC + TSN)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-1 bg-purple-400 inline-block rounded"></span> EH-8010FX (80 GHz MACsec)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-1 bg-amber-400 inline-block rounded"></span> MultiHaul TG (60 GHz 802.11ay)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-slate-400 inline-block"></span> Optical Fiber Wire</span>
+            </div>
+            <span id="live-exec-badge" class="text-xs font-mono text-emerald-400">Engine: ns3.45-ceragon-twin-default (efid@cersrv-029)</span>
+          </div>
+        </div>
+
+        <!-- Right Column: Selected Link Deep Inspector -->
+        <div class="card-surface rounded-xl p-4 flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between border-b pb-2.5" style="border-color: var(--border, #1e293b);">
+              <div>
+                <div class="text-xs muted-text uppercase tracking-wider font-semibold">Selected Radio Link Inspector</div>
+                <h3 id="insp-link-name" class="text-lg font-bold text-sky-400">hubA → hubB</h3>
+              </div>
+              <span id="insp-model-badge" class="px-2.5 py-1 rounded-md text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                IP-50EX (IP-50)
+              </span>
+            </div>
+
+            <!-- Key KPIs Grid -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div class="p-2.5 rounded-lg sub-box">
+                <div class="text-xs muted-text">Instant Capacity</div>
+                <div id="insp-capacity" class="text-base font-bold text-emerald-400">12,103.7 Mbps</div>
+                <div id="insp-avail" class="text-xs muted-text">Avail: 100.00%</div>
+              </div>
+              <div class="p-2.5 rounded-lg sub-box">
+                <div class="text-xs muted-text">Hop &amp; API Flavor</div>
+                <div id="insp-hop" class="text-base font-bold">2.800 km</div>
+                <div id="insp-flavor" class="text-xs muted-text">SBI Flavor: ceraos</div>
+              </div>
+              <div class="p-2.5 rounded-lg sub-box">
+                <div class="text-xs muted-text">Protection / Unit</div>
+                <div id="insp-prot" class="text-sm font-bold text-amber-300">1+1-HSB (Unit #0)</div>
+                <div id="insp-sw" class="text-xs muted-text">Switchovers: 0</div>
+              </div>
+              <div class="p-2.5 rounded-lg sub-box">
+                <div class="text-xs muted-text">Power / Sync / Sec</div>
+                <div id="insp-power" class="text-sm font-bold">61.3 W</div>
+                <div id="insp-sync" class="text-xs muted-text">G.8275.1 | MACsec OFF</div>
+              </div>
+            </div>
+
+            <!-- Per-Carrier State Table -->
+            <div>
+              <div class="text-xs font-semibold uppercase tracking-wider muted-text mb-1.5">Radio Carriers (PHY + ITU-R Channel)</div>
+              <div id="insp-carriers" class="space-y-2"></div>
+            </div>
+
+            <!-- 8-CoS QoS & TSN Gate Counter Bar -->
+            <div>
+              <div class="flex justify-between text-xs font-semibold uppercase tracking-wider muted-text mb-1">
+                <span>8-CoS Traffic Manager &amp; 802.1Qbv Gate</span>
+                <span id="insp-qos-summary" class="font-mono text-emerald-400">Drops: 0</span>
+              </div>
+              <div id="insp-cos-bars" class="grid grid-cols-8 gap-1 pt-1"></div>
+            </div>
+          </div>
+
+          <!-- Event Log Scrubber Box -->
+          <div class="border-t pt-3" style="border-color: var(--border, #1e293b);">
+            <div class="text-xs font-semibold uppercase tracking-wider muted-text mb-1.5">Discrete-Event Timeline Log</div>
+            <div id="insp-timeline-log" class="h-36 overflow-y-auto rounded-lg bg-slate-950 p-2.5 font-mono text-xs space-y-1 border" style="border-color: var(--border, #1e293b);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- End-to-End FlowMonitor Table -->
+      <div class="card-surface rounded-xl p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="text-sm font-bold uppercase tracking-wider">NS-3 FlowMonitor — End-to-End Multi-Service UDP Flows (<code class="text-xs text-sky-400">metro-ring.twin</code>)</h3>
+            <p class="text-xs muted-text">Real packet-level telemetry across 5G fronthaul (EF DSCP 46 → <code class="text-xs">cell1</code>), video slice (AF41 DSCP 34 → <code class="text-xs">cell1</code>), 60 GHz FWA (<code class="text-xs">fwa1</code>), and 80 GHz E-Band bulk (<code class="text-xs">ehSpur</code>).</p>
+          </div>
+          <span class="text-xs font-mono muted-text">16 Directional Radio Links | 5 Optical Wires | 13 Nodes</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b muted-text" style="border-color: var(--border, #1e293b);">
+                <th class="py-2 px-3">Flow Name</th>
+                <th class="py-2 px-3">Source → Destination</th>
+                <th class="py-2 px-3">DSCP / CoS</th>
+                <th class="py-2 px-3">Offered Rate</th>
+                <th class="py-2 px-3">NS-3 Throughput</th>
+                <th class="py-2 px-3">TX / RX Packets</th>
+                <th class="py-2 px-3">Loss %</th>
+                <th class="py-2 px-3">Mean Delay</th>
+                <th class="py-2 px-3">Mean Jitter</th>
+              </tr>
+            </thead>
+            <tbody id="flows-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: 36-MODEL PORTFOLIO & NS-3 SWEEP -->
+    <section id="tab-portfolio" class="hidden space-y-4">
+      <div class="card-surface rounded-xl p-4 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold">Complete 36-Model Ceragon Hardware Catalog &amp; Live NS-3 Storm Sweep (60 mm/h)</h2>
+            <p class="text-xs muted-text">Every model is twinned in both the TFS SBI Driver (<code class="px-1 rounded bg-black/30">portfolio.py</code>) and the NS-3 C++ catalog (<code class="px-1 rounded bg-black/30">ceragon-device-db.cc</code>).</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="filter-family" onchange="renderPortfolioTable()" class="px-3 py-1.5 rounded-lg text-xs sub-box text-white">
+              <option value="ALL">All 5 Families (36 entries)</option>
+              <option value="IP-20">IP-20 (FibeAir CeraOS)</option>
+              <option value="IP-50">IP-50 (Disaggregated MW / E-Band / MBH)</option>
+              <option value="IP-100">IP-100 (25 Gbps Dual-Carrier E-Band / D-Band)</option>
+              <option value="EtherHaul">EtherHaul (Siklu 60/70/80 GHz)</option>
+              <option value="MultiHaul TG">MultiHaul TG (60 GHz 802.11ay Terragraph)</option>
+            </select>
+            <input id="search-portfolio" type="text" oninput="renderPortfolioTable()" placeholder="Search model, band, feature (e.g. XPIC, TSN, 80GHz)..." class="px-3 py-1.5 rounded-lg text-xs sub-box text-white w-64" />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b muted-text" style="border-color: var(--border, #1e293b);">
+                <th class="py-2 px-2.5">Model</th>
+                <th class="py-2 px-2.5">Family / Flavor</th>
+                <th class="py-2 px-2.5">RF Bands</th>
+                <th class="py-2 px-2.5">Carriers &amp; Max Mod</th>
+                <th class="py-2 px-2.5">Max Spec</th>
+                <th class="py-2 px-2.5">NS-3 Hop</th>
+                <th class="py-2 px-2.5">NS-3 Clear ACM &amp; Rate</th>
+                <th class="py-2 px-2.5">NS-3 Rain (60mm/h) ACM &amp; Rate</th>
+                <th class="py-2 px-2.5">Clear SINR</th>
+                <th class="py-2 px-2.5">Power</th>
+                <th class="py-2 px-2.5">Hardware Features</th>
+              </tr>
+            </thead>
+            <tbody id="portfolio-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 84 YANG SCHEMAS & 12-DOMAIN SBI INSPECTOR -->
+    <section id="tab-yang" class="hidden space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Left 7 Columns: 84 YANG Schema Browser -->
+        <div class="lg:col-span-7 card-surface rounded-xl p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-bold">84 Offline YANG 1.1 Schema Registry (100% Import Closure)</h2>
+              <p class="text-xs muted-text">Siklu TG (18 modules) • Siklu EtherHaul (10 modules) • Ceragon CeraOS + ONF TR-532 + IEEE/IETF (56 modules)</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="search-yang" type="text" oninput="renderYangTable()" placeholder="Filter 84 YANG modules..." class="px-3 py-1.5 rounded-lg text-xs sub-box text-white w-52" />
+            </div>
+          </div>
+
+          <div class="max-h-[460px] overflow-y-auto rounded-lg border" style="border-color: var(--border, #1e293b);">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="sticky top-0 bg-slate-900">
+                <tr class="border-b muted-text" style="border-color: var(--border, #1e293b);">
+                  <th class="py-2 px-3">YANG Module / Submodule</th>
+                  <th class="py-2 px-3">Kind</th>
+                  <th class="py-2 px-3">Prefix</th>
+                  <th class="py-2 px-3">Revision</th>
+                  <th class="py-2 px-3">Imports</th>
+                  <th class="py-2 px-3">RPCs / Notifs</th>
+                </tr>
+              </thead>
+              <tbody id="yang-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right 5 Columns: 12-Domain Bidirectional Control & Telemetry Simulator -->
+        <div class="lg:col-span-5 card-surface rounded-xl p-4 space-y-3 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div>
+              <h2 class="text-base font-bold">12-Domain Bidirectional SBI Payload Inspector</h2>
+              <p class="text-xs muted-text">Inspect how <code class="px-1 rounded bg-black/30">CeragonDriver</code> + <code class="px-1 rounded bg-black/30">CeragonClient</code> translate TFS config rules into dialect-aware SBI writes and stream KPIs back.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs muted-text block mb-1">Select Functional Domain (12)</label>
+                <select id="sel-sbi-domain" onchange="renderSbiPayload()" class="w-full px-3 py-1.5 rounded-lg text-xs sub-box text-white">
+                  <option value="radio">1. radio (RF, TxPower, ACM, ATPC)</option>
+                  <option value="carriers">2. carriers (Multi-Carrier / Super-Channel)</option>
+                  <option value="xpic">3. xpic (Cross-Polarization Interference Canc.)</option>
+                  <option value="mimo">4. mimo (2x2 / 4x4 LoS MIMO Matrix)</option>
+                  <option value="protection">5. protection (1+1 HSB / 2+0 / N+1 Switchover)</option>
+                  <option value="multiband">6. multiband (80 GHz + MW Super-Group + L1LA)</option>
+                  <option value="qos">7. qos (8-CoS WRR + IEEE 802.1Qbv TSN GCL)</option>
+                  <option value="interfaces">8. interfaces (L2 EVPN / L3 / LAG / Jumbos)</option>
+                  <option value="sync">9. sync (SyncE ESMC + IEEE 1588v2 G.8275.1)</option>
+                  <option value="security">10. security (IEEE 802.1AE MACsec AES-GCM-256)</option>
+                  <option value="power">11. power (Green Mode Carrier Sleep &amp; PoE)</option>
+                  <option value="beamforming">12. beamforming (60 GHz 802.11ay Sector Scan)</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs muted-text block mb-1">Select Device API Dialect (3)</label>
+                <select id="sel-sbi-flavor" onchange="renderSbiPayload()" class="w-full px-3 py-1.5 rounded-lg text-xs sub-box text-white">
+                  <option value="ceraos">ceraos (ONF TR-532 + Ceragon Radio Augment)</option>
+                  <option value="siklu_eh">siklu_eh (Siklu EtherHaul 60/70/80 GHz YANG)</option>
+                  <option value="siklu_tg">siklu_tg (Siklu MultiHaul TG 802.11ay YANG)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs font-semibold text-sky-400 mb-1">Outbound Control (TFS SetConfig → Device RESTCONF/NETCONF/JSON-RPC)</div>
+              <pre id="sbi-outbound-pre" class="p-3 rounded-lg bg-slate-950 border text-xs overflow-x-auto max-h-48 text-sky-200" style="border-color: var(--border, #1e293b);"></pre>
+            </div>
+
+            <div>
+              <div class="text-xs font-semibold text-emerald-400 mb-1">Inbound Telemetry Stream (Device / NS-3 Twin → TFS KPI Collector)</div>
+              <pre id="sbi-inbound-pre" class="p-3 rounded-lg bg-slate-950 border text-xs overflow-x-auto max-h-48 text-emerald-200" style="border-color: var(--border, #1e293b);"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: LIVE C++ TEST SUITE & 6 EXAMPLE OUTPUTS -->
+    <section id="tab-examples" class="hidden space-y-4">
+      <div class="card-surface rounded-xl p-4 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-bold">Live NS-3.45 C++20 Execution Logs (<code class="text-xs text-sky-400">efid@cersrv-029:/home/efid/ns3-dev</code>)</h2>
+            <p class="text-xs muted-text">Select any C++ test suite or example binary below, or click <strong>Re-Run Live on cersrv-029</strong> to execute the compiled C++20 binary over SSH in real time.</p>
+          </div>
+          <button onclick="runSelectedExampleLive()" id="btn-run-example-live" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white hover:bg-sky-500 transition cursor-pointer">
+            ⚡ Re-Run Selected Binary Live on cersrv-029
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="selectExample('TEST_SUITE')" id="ex-btn-TEST_SUITE" class="ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white cursor-pointer">
+            ✓ C++ Test Suite (11/11 PASS)
+          </button>
+          <button onclick="selectExample('EX_PORTFOLIO')" id="ex-btn-EX_PORTFOLIO" class="ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold sub-box cursor-pointer">
+            1. ceragon-portfolio-twin
+          </button>
+          <button onclick="selectExample('EX_MULTIBAND')" id="ex-btn-EX_MULTIBAND" class="ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold sub-box cursor-pointer">
+            2. ceragon-multiband-rain
+          </button>
+          <button onclick="selectExample('EX_TSN')" id="ex-btn-EX_TSN" class="ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold sub-box cursor-pointer">
+            3. ceragon-tsn-fronthaul
+          </button>
+          <button onclick="selectExample('EX_TERRAGRAPH')" id="ex-btn-EX_TERRAGRAPH" class="ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold sub-box cursor-pointer">
+            4. ceragon-terragraph-mesh
+          </button>
+          <button onclick="selectExample('EX_PROTECTION')" id="ex-btn-EX_PROTECTION" class="ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold sub-box cursor-pointer">
+            5. ceragon-protection-switchover
+          </button>
+          <button onclick="selectExample('TWIN_DSL')" id="ex-btn-TWIN_DSL" class="ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold sub-box cursor-pointer">
+            6. metro-ring.twin &amp; TFS Exporter
+          </button>
+        </div>
+
+        <pre id="example-console-pre" class="p-4 rounded-xl bg-slate-950 border text-xs overflow-x-auto max-h-[520px] leading-relaxed text-emerald-300" style="border-color: var(--border, #1e293b);"></pre>
+      </div>
+    </section>
+
+    <!-- TAB 5: 3-REPOSITORY ARCHITECTURE & GIT COMMITS -->
+    <section id="tab-repos" class="hidden space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Repo 1: teraflowsdn -->
+        <div class="card-surface rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">Layer 1: TFS ↔ Ceragon Devices</span>
+            <span class="text-xs font-mono text-emerald-400">commit 6f1ba734e</span>
+          </div>
+          <h3 class="text-base font-bold">github.com/efidvir/teraflowsdn</h3>
+          <p class="text-xs muted-text">Southbound TeraFlowSDN Device Driver for all 36 Ceragon models across 5 hardware families, 84 offline YANG 1.1 modules, and 12 bidirectional control/telemetry domains.</p>
+          <ul class="text-xs space-y-1.5 font-mono sub-box p-3 rounded-lg">
+            <li>• src/device/service/drivers/ceragon/CeragonDriver.py</li>
+            <li>• src/device/service/drivers/ceragon/client.py</li>
+            <li>• src/device/service/drivers/ceragon/portfolio.py (36 models)</li>
+            <li>• src/device/service/drivers/ceragon/templates.py (12 domains)</li>
+            <li>• src/device/service/drivers/ceragon/schemas/yang/*.yang (84)</li>
+            <li>• src/device/tests/test_driver_ceragon.py (10/10 PASS)</li>
+            <li>• docs/CERAGON_DRIVER_SPECIFICATION.md</li>
+          </ul>
+        </div>
+
+        <!-- Repo 2: tfs-ns3-digital-twin -->
+        <div class="card-surface rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">Layer 2: TFS ↔ NS-3.45 Twin</span>
+            <span class="text-xs font-mono text-emerald-400">commit 344900c</span>
+          </div>
+          <h3 class="text-base font-bold">github.com/efidvir/tfs-ns3-digital-twin</h3>
+          <p class="text-xs muted-text">C++20 NS-3.45 <code class="px-1 rounded bg-black/30">contrib/ceragon</code> emulation module + TFS-to-NS-3 <code class="px-1 rounded bg-black/30">.twin</code> topology exporter, runner, and REST DTI endpoints.</p>
+          <ul class="text-xs space-y-1.5 font-mono sub-box p-3 rounded-lg">
+            <li>• ns3_ceragon/contrib/ceragon/model/* (14 C++20 files)</li>
+            <li>• ns3_ceragon/contrib/ceragon/helper/* (4 C++20 files)</li>
+            <li>• ns3_ceragon/contrib/ceragon/examples/* (6 C++ scenarios)</li>
+            <li>• ns3_ceragon/contrib/ceragon/test/* (11/11 C++ tests PASS)</li>
+            <li>• src/tfs_to_ceragon_twin.py &amp; ceragon_ns3_twin_runner.py</li>
+            <li>• src/tfs_digital_twin_api.py (/api/v1/dti/ceragon/*)</li>
+            <li>• tests/test_ceragon_ns3_twin.py (3/3 PASS)</li>
+          </ul>
+        </div>
+
+        <!-- Repo 3: CER-Intent -->
+        <div class="card-surface rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Layer 3: Intent Orchestrator</span>
+            <span class="text-xs font-mono text-emerald-400">commit 379f6e9</span>
+          </div>
+          <h3 class="text-base font-bold">github.com/efidvir/CER-Intent</h3>
+          <p class="text-xs muted-text">Top-level Intent Architect &amp; closed-loop assurance platform orchestrating TeraFlowSDN SBI drivers and validating intents in the NS-3.45 Ceragon Digital Twin before live commit.</p>
+          <ul class="text-xs space-y-1.5 font-mono sub-box p-3 rounded-lg">
+            <li>• cer_intent/ceragon_ns3_twin_runner.py</li>
+            <li>• cer_intent/api/digital_twin_routes.py (/api/v1/digital-twin/ceragon/*)</li>
+            <li>• ceragon_tfs_adapter/* (Full adapter + 84 YANGs)</li>
+            <li>• ns3_ceragon/* (Complete NS-3.45 module &amp; deploy script)</li>
+            <li>• tests/test_ceragon_ns3_twin.py (55/55 pytest PASS)</li>
+            <li>• docs/CERAGON_NS3_FUNCTIONAL_TWIN_GUIDE.md</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    window.SHOWCASE_DATA = {"portfolio":[{"model":"IP-20C","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":2.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":5.0,"ns3_clear_mbps":2000.0,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"16QAM+32QAM","ns3_sinr_db":44.979,"ns3_avail":1.0,"ns3_power_w":55.28},{"model":"IP-20C-HP","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":2.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"High-power variant of IP-20C.","ns3_hop_km":5.0,"ns3_clear_mbps":2000.0,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":1139.478,"ns3_rain_mod":"64QAM+128QAM","ns3_sinr_db":51.104,"ns3_avail":1.0,"ns3_power_w":74.0},{"model":"IP-20S","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":1.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":5.0,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"4096QAM","ns3_rain_mbps":350.609,"ns3_rain_mod":"16QAM","ns3_sinr_db":45.578,"ns3_avail":1.0,"ns3_power_w":40.14},{"model":"IP-20E","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":2.5,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"256QAM","channel_bandwidths_mhz":[250,500,750,1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","multiband","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":2500.0,"ns3_clear_mod":"256QAM","ns3_rain_mbps":0.0,"ns3_rain_mod":"OUTAGE","ns3_sinr_db":41.754,"ns3_avail":0.88,"ns3_power_w":45.626},{"model":"IP-20V","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.0,"topology":"ptp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"256QAM","channel_bandwidths_mhz":[50,100,250,500],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":0.5,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"256QAM","ns3_rain_mbps":1000.0,"ns3_rain_mod":"64QAM","ns3_sinr_db":31.46,"ns3_avail":1.0,"ns3_power_w":23.04},{"model":"IP-20N","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":10.0,"topology":"nodal","duplex":"FDD","form_factor":"split-mount","radio_carriers":4,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy","routing"],"api_verified":false,"is_family_fallback":false,"notes":"Modular nodal IDU; radio carriers depend on installed RMCs.","ns3_hop_km":5.0,"ns3_clear_mbps":2103.652,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"16QAM+32QAM","ns3_sinr_db":45.0,"ns3_avail":1.0,"ns3_power_w":55.28},{"model":"IP-20A","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0},{"name":"MW-LH","min_ghz":4.0,"max_ghz":13.0}],"max_capacity_gbps":10.0,"topology":"nodal","duplex":"FDD","form_factor":"split-mount","radio_carriers":4,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","sync","security","routing"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":5.0,"ns3_clear_mbps":2103.652,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"16QAM+32QAM","ns3_sinr_db":45.45,"ns3_avail":1.0,"ns3_power_w":55.28},{"model":"IP-20A-LH","family":"IP-20","product_line":"FibeAir IP-20 Evolution LH","api_flavor":"ceraos","bands":[{"name":"MW-LH","min_ghz":4.0,"max_ghz":13.0}],"max_capacity_gbps":10.0,"topology":"ptp","duplex":"FDD","form_factor":"split-mount","radio_carriers":8,"max_modulation":"2048QAM","channel_bandwidths_mhz":[28,30,40,56,60,80],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"Long-haul trunk (space/frequency diversity).","ns3_hop_km":30.0,"ns3_clear_mbps":1377.391,"ns3_clear_mod":"2048QAM+2048QAM","ns3_rain_mbps":1377.391,"ns3_rain_mod":"2048QAM+2048QAM","ns3_sinr_db":56.302,"ns3_avail":1.0,"ns3_power_w":89.0},{"model":"IP-20G","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":2.0,"topology":"nodal","duplex":"FDD","form_factor":"split-mount","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":5.0,"ns3_clear_mbps":2000.0,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"16QAM+32QAM","ns3_sinr_db":44.804,"ns3_avail":1.0,"ns3_power_w":55.28},{"model":"IP-20GX","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":4.0,"topology":"nodal","duplex":"FDD","form_factor":"split-mount","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":5.0,"ns3_clear_mbps":2103.652,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"16QAM+32QAM","ns3_sinr_db":45.185,"ns3_avail":1.0,"ns3_power_w":55.28},{"model":"IP-50C","family":"IP-50","product_line":"IP-50","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":2.5,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[28,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":5.0,"ns3_clear_mbps":2103.652,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"16QAM+32QAM","ns3_sinr_db":45.01,"ns3_avail":1.0,"ns3_power_w":60.28},{"model":"IP-50CX","family":"IP-50","product_line":"IP-50","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":5.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[28,56,80,112,224],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":5.0,"ns3_clear_mbps":4207.304,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":1227.13,"ns3_rain_mod":"QPSK+32QAM","ns3_sinr_db":41.975,"ns3_avail":1.0,"ns3_power_w":60.28},{"model":"IP-50E","family":"IP-50","product_line":"IP-50","api_flavor":"ceraos","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":10.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"512QAM","channel_bandwidths_mhz":[250,500,750,1000,1500,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":10000.0,"ns3_clear_mod":"512QAM","ns3_rain_mbps":0.0,"ns3_rain_mod":"OUTAGE","ns3_sinr_db":41.8,"ns3_avail":0.877,"ns3_power_w":45.626},{"model":"IP-50EX","family":"IP-50","product_line":"IP-50","api_flavor":"ceraos","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0},{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":20.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"512QAM","channel_bandwidths_mhz":[250,500,1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"E-band with integrated multiband (MW anchor) capability.","ns3_hop_km":2.0,"ns3_clear_mbps":15138.783,"ns3_clear_mod":"512QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"OUTAGE+512QAM","ns3_sinr_db":42.264,"ns3_avail":1.0,"ns3_power_w":61.253},{"model":"IP-50EXA","family":"IP-50","product_line":"IP-50","api_flavor":"ceraos","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0},{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":20.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"512QAM","channel_bandwidths_mhz":[250,500,1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":15138.783,"ns3_clear_mod":"512QAM+4096QAM","ns3_rain_mbps":701.217,"ns3_rain_mod":"OUTAGE+256QAM","ns3_sinr_db":41.841,"ns3_avail":1.0,"ns3_power_w":61.253},{"model":"IP-50FX","family":"IP-50","product_line":"IP-50","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":25.0,"topology":"nodal","duplex":"FDD","form_factor":"indoor-nodal","radio_carriers":4,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy","routing"],"api_verified":false,"is_family_fallback":false,"notes":"Disaggregated cell-site gateway / nodal unit.","ns3_hop_km":5.0,"ns3_clear_mbps":2103.652,"ns3_clear_mod":"4096QAM+4096QAM","ns3_rain_mbps":788.87,"ns3_rain_mod":"16QAM+32QAM","ns3_sinr_db":44.709,"ns3_avail":1.0,"ns3_power_w":60.28},{"model":"IP-100E","family":"IP-100","product_line":"IP-100","api_flavor":"ceraos","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":25.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"1024QAM","channel_bandwidths_mhz":[500,1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":false,"notes":"Dual-carrier E-band; nominal capacity, validate vs datasheet.","ns3_hop_km":2.0,"ns3_clear_mbps":25000.0,"ns3_clear_mod":"1024QAM+1024QAM","ns3_rain_mbps":0.0,"ns3_rain_mod":"OUTAGE+OUTAGE","ns3_sinr_db":42.699,"ns3_avail":0.893,"ns3_power_w":76.577},{"model":"EH-614TX","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.0,"topology":"ptp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[250,500],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":0.5,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"64QAM","ns3_rain_mbps":1000.0,"ns3_rain_mod":"64QAM","ns3_sinr_db":31.506,"ns3_avail":1.0,"ns3_power_w":35.04},{"model":"EH-710TX","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":1.0,"topology":"ptp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[250,500],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"64QAM","ns3_rain_mbps":195.652,"ns3_rain_mod":"BPSK","ns3_sinr_db":47.097,"ns3_avail":1.0,"ns3_power_w":45.626},{"model":"EH-1200TX","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":1.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[250,500],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"64QAM","ns3_rain_mbps":391.304,"ns3_rain_mod":"BPSK","ns3_sinr_db":48.207,"ns3_avail":1.0,"ns3_power_w":45.626},{"model":"EH-1200FX","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":1.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[250,500],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"64QAM","ns3_rain_mbps":391.304,"ns3_rain_mod":"BPSK","ns3_sinr_db":48.256,"ns3_avail":1.0,"ns3_power_w":45.626},{"model":"EH-2500FX","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":2.5,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[250,500],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":2347.826,"ns3_clear_mod":"64QAM","ns3_rain_mbps":391.304,"ns3_rain_mod":"BPSK","ns3_sinr_db":48.216,"ns3_avail":1.0,"ns3_power_w":45.626},{"model":"EH-8010FX","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":10.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[500,1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":9391.304,"ns3_clear_mod":"64QAM","ns3_rain_mbps":0.0,"ns3_rain_mod":"OUTAGE","ns3_sinr_db":42.157,"ns3_avail":0.91,"ns3_power_w":45.626},{"model":"EH-8020FX","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":20.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":2.0,"ns3_clear_mbps":9391.304,"ns3_clear_mod":"64QAM","ns3_rain_mbps":0.0,"ns3_rain_mod":"OUTAGE","ns3_sinr_db":41.432,"ns3_avail":0.913,"ns3_power_w":45.626},{"model":"MH-T261","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.0,"topology":"ptmp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":true,"is_family_fallback":false,"notes":"Terminal unit; RESTCONF candidate DS verified in lab (192.168.1.225).","ns3_hop_km":0.2,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"MCS11","ns3_rain_mbps":1000.0,"ns3_rain_mod":"MCS9","ns3_sinr_db":18.857,"ns3_avail":1.0,"ns3_power_w":17.395},{"model":"MH-T260","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.0,"topology":"ptmp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":0.2,"ns3_clear_mbps":1000.0,"ns3_clear_mod":"MCS11","ns3_rain_mbps":1000.0,"ns3_rain_mod":"MCS9","ns3_sinr_db":18.901,"ns3_avail":1.0,"ns3_power_w":17.395},{"model":"MH-T265","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.8,"topology":"ptmp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":0.2,"ns3_clear_mbps":1540.0,"ns3_clear_mod":"MCS11","ns3_rain_mbps":1001.0,"ns3_rain_mod":"MCS9","ns3_sinr_db":18.862,"ns3_avail":1.0,"ns3_power_w":17.395},{"model":"MH-T280","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.8,"topology":"ptmp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":0.2,"ns3_clear_mbps":1540.0,"ns3_clear_mod":"MCS11","ns3_rain_mbps":1001.0,"ns3_rain_mod":"MCS9","ns3_sinr_db":18.56,"ns3_avail":1.0,"ns3_power_w":17.395},{"model":"MH-N265","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.8,"topology":"mesh","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"Distribution node, 90-degree sector.","ns3_hop_km":0.2,"ns3_clear_mbps":1800.0,"ns3_clear_mod":"MCS12","ns3_rain_mbps":1800.0,"ns3_rain_mod":"MCS12","ns3_sinr_db":24.856,"ns3_avail":1.0,"ns3_power_w":17.395},{"model":"MH-N366","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":7.2,"topology":"mesh","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":4,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"360-degree, 4-sector distribution node.","ns3_hop_km":0.2,"ns3_clear_mbps":1848.0,"ns3_clear_mod":"MCS12","ns3_rain_mbps":1848.0,"ns3_rain_mod":"MCS12","ns3_sinr_db":25.3,"ns3_avail":1.0,"ns3_power_w":40.395},{"model":"MH-N367","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":7.2,"topology":"mesh","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":4,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":false,"is_family_fallback":false,"notes":"","ns3_hop_km":0.2,"ns3_clear_mbps":1848.0,"ns3_clear_mod":"MCS12","ns3_rain_mbps":1848.0,"ns3_rain_mod":"MCS12","ns3_sinr_db":24.654,"ns3_avail":1.0,"ns3_power_w":40.395},{"model":"IP-20","family":"IP-20","product_line":"FibeAir IP-20","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":2.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[7,14,28,40,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":true,"notes":"Family fallback: unlisted FibeAir IP-20 variant.","ns3_hop_km":null,"ns3_clear_mbps":null,"ns3_clear_mod":null,"ns3_rain_mbps":null,"ns3_rain_mod":null,"ns3_sinr_db":null,"ns3_avail":null,"ns3_power_w":null},{"model":"IP-50","family":"IP-50","product_line":"IP-50","api_flavor":"ceraos","bands":[{"name":"MW","min_ghz":6.0,"max_ghz":42.0}],"max_capacity_gbps":2.5,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"4096QAM","channel_bandwidths_mhz":[28,56,80,112],"features":["radio_tuning","acm","slice","qos","protection","telemetry","xpic","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":true,"notes":"Family fallback: unlisted IP-50 variant.","ns3_hop_km":null,"ns3_clear_mbps":null,"ns3_clear_mod":null,"ns3_rain_mbps":null,"ns3_rain_mod":null,"ns3_sinr_db":null,"ns3_avail":null,"ns3_power_w":null},{"model":"IP-100","family":"IP-100","product_line":"IP-100","api_flavor":"ceraos","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":25.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":2,"max_modulation":"1024QAM","channel_bandwidths_mhz":[500,1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","multicarrier","multiband","sync","security","energy"],"api_verified":false,"is_family_fallback":true,"notes":"Family fallback: unlisted IP-100 variant.","ns3_hop_km":null,"ns3_clear_mbps":null,"ns3_clear_mod":null,"ns3_rain_mbps":null,"ns3_rain_mod":null,"ns3_sinr_db":null,"ns3_avail":null,"ns3_power_w":null},{"model":"EtherHaul","family":"EtherHaul","product_line":"EtherHaul","api_flavor":"siklu_eh","bands":[{"name":"E-band","min_ghz":71.0,"max_ghz":86.0}],"max_capacity_gbps":10.0,"topology":"ptp","duplex":"FDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"64QAM","channel_bandwidths_mhz":[500,1000,2000],"features":["radio_tuning","acm","slice","qos","protection","telemetry","sync","security"],"api_verified":false,"is_family_fallback":true,"notes":"Family fallback: unlisted EtherHaul variant.","ns3_hop_km":null,"ns3_clear_mbps":null,"ns3_clear_mod":null,"ns3_rain_mbps":null,"ns3_rain_mod":null,"ns3_sinr_db":null,"ns3_avail":null,"ns3_power_w":null},{"model":"MultiHaul-TG","family":"MultiHaul TG","product_line":"MultiHaul TG","api_flavor":"siklu_tg","bands":[{"name":"V-band","min_ghz":57.0,"max_ghz":71.0}],"max_capacity_gbps":1.0,"topology":"ptmp","duplex":"TDD","form_factor":"all-outdoor","radio_carriers":1,"max_modulation":"16QAM","channel_bandwidths_mhz":[2160],"features":["radio_tuning","acm","slice","qos","protection","telemetry","beamforming","mesh","sync","security"],"api_verified":false,"is_family_fallback":true,"notes":"Family fallback: unlisted MultiHaul TG node.","ns3_hop_km":null,"ns3_clear_mbps":null,"ns3_clear_mod":null,"ns3_rain_mbps":null,"ns3_rain_mod":null,"ns3_sinr_db":null,"ns3_avail":null,"ns3_power_w":null}],"yang_closure":{"closure_complete":true,"total_schemas":84,"total_rpcs":58,"total_notifications":5,"missing_dependencies":{},"unbalanced_modules":[]},"yang_by_family":{"siklu_tg":73,"siklu_eh":71,"ceraos":54},"yang_schemas":[{"name":"IANAifType-MIB","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:smiv2:IANAifType-MIB","prefix":"ianaiftype-mib","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"SNMPv2-TC","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:smiv2:SNMPv2-TC","prefix":"snmpv2-tc","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"ceragon-common-types","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/common-types","prefix":"cer-types","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ceragon-macsec","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/macsec","prefix":"cer-sec","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ceragon-multiband","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/multiband","prefix":"cer-mb","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ceragon-oran-xhaul","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/oran-xhaul","prefix":"cer-oran","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ceragon-pm-telemetry","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/pm-telemetry","prefix":"cer-pm","revision":"","imports_count":2,"rpcs":["get-pm-bins","get-events"],"notifications":["telemetry-push-update"]},{"name":"ceragon-protection","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/protection","prefix":"cer-prot","revision":"","imports_count":1,"rpcs":["trigger-protection-switch"],"notifications":["protection-switchover-event"]},{"name":"ceragon-qos","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/qos","prefix":"cer-qos","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ceragon-radio-link","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/radio-link","prefix":"cer-radio","revision":"","imports_count":2,"rpcs":[],"notifications":["radio-link-state-change"]},{"name":"ceragon-slice","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/slice","prefix":"cer-slice","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ceragon-sync","kind":"module","namespace":"http://ceragon.com/ns/yang/ceraos/sync","prefix":"cer-sync","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"clixon-autocli","kind":"module","namespace":"http://clicon.org/autocli","prefix":"autocli","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"clixon-lib","kind":"module","namespace":"http://clicon.org/lib","prefix":"cl","revision":"","imports_count":2,"rpcs":["debug","ping","stats","restart-plugin","process-control"],"notifications":[]},{"name":"clixon-snmp","kind":"module","namespace":"http://clicon.org/snmp","prefix":"cx-snmp","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"iana-hardware","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:iana-hardware","prefix":"ianahw","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"iana-if-type","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:iana-if-type","prefix":"ianaift","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ieee802-dot1ae-macsec","kind":"module","namespace":"urn:ieee:std:802.1AE:yang:ieee802-dot1ae-macsec","prefix":"macsec","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"ieee802-dot1q-cfm","kind":"module","namespace":"urn:ieee:std:802.1Q:yang:ieee802-dot1q-cfm","prefix":"dot1q-cfm","revision":"","imports_count":6,"rpcs":[],"notifications":[]},{"name":"ieee802-dot1q-cfm-deviations","kind":"module","namespace":"http://siklu.com/yang/tg/cfm-deviations","prefix":"dot1q-cfm-deviations","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ieee802-dot1q-cfm-types","kind":"module","namespace":"urn:ieee:std:802.1Q:yang:ieee802-dot1q-cfm-types","prefix":"cfm-types","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ieee802-dot1q-sched","kind":"module","namespace":"urn:ieee:std:802.1Q:yang:ieee802-dot1q-sched","prefix":"sched","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"ieee802-dot1q-types","kind":"module","namespace":null,"prefix":"dot1q-types","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ieee802-types","kind":"module","namespace":null,"prefix":"ieee","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-datastores","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-datastores","prefix":"ds","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-hardware","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-hardware","prefix":"hw","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"ietf-inet-types","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-inet-types","prefix":"inet","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-interfaces","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-interfaces","prefix":"if","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-ip","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-ip","prefix":"ip","revision":"","imports_count":3,"rpcs":[],"notifications":[]},{"name":"ietf-list-pagination","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-list-pagination","prefix":"lpg","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"ietf-list-pagination-nc","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-list-pagination-nc","prefix":"lpgnc","revision":"","imports_count":3,"rpcs":[],"notifications":[]},{"name":"ietf-microwave-radio-link","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-microwave-radio-link","prefix":"mrl","revision":"","imports_count":3,"rpcs":[],"notifications":[]},{"name":"ietf-microwave-types","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-microwave-types","prefix":"mw-types","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-netconf","kind":"module","namespace":"urn:ietf:params:xml:ns:netconf:base:1.0","prefix":"nc","revision":"","imports_count":1,"rpcs":["get-config","edit-config","copy-config","delete-config","lock","unlock","get","close-session","kill-session","commit","discard-changes","cancel-commit","validate"],"notifications":[]},{"name":"ietf-netconf-acm","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-netconf-acm","prefix":"nacm","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-netconf-monitoring","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring","prefix":"ncm","revision":"","imports_count":2,"rpcs":["get-schema"],"notifications":[]},{"name":"ietf-netconf-nmda","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-netconf-nmda","prefix":"ncds","revision":"","imports_count":6,"rpcs":["get-data","edit-data"],"notifications":[]},{"name":"ietf-netconf-with-defaults","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults","prefix":"ncwd","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-origin","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-origin","prefix":"or","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-ptp","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-ptp","prefix":"ptp","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-restconf","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-restconf","prefix":"rc","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-snmp","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-snmp","prefix":"snmp","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-common","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-community","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-engine","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-notification","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-proxy","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-ssh","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-target","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-tls","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-tsm","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-usm","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"ietf-snmp-vacm","kind":"submodule","namespace":null,"prefix":"snmp","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-system","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-system","prefix":"sys","revision":"","imports_count":2,"rpcs":["set-current-datetime","system-restart"],"notifications":[]},{"name":"ietf-x509-cert-to-name","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-x509-cert-to-name","prefix":"x509c2n","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"ietf-yang-library","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-yang-library","prefix":"yanglib","revision":"","imports_count":4,"rpcs":[],"notifications":["yang-library-update","yang-library-change"]},{"name":"ietf-yang-metadata","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-yang-metadata","prefix":"md","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-yang-smiv2","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-yang-smiv2","prefix":"smiv2","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"ietf-yang-types","kind":"module","namespace":"urn:ietf:params:xml:ns:yang:ietf-yang-types","prefix":"yang","revision":"","imports_count":0,"rpcs":[],"notifications":[]},{"name":"radio-bridge-eh-radio","kind":"module","namespace":"http://siklu.com/yang/eh/radio","prefix":"rb-eh-radio","revision":"","imports_count":2,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-acm","kind":"module","namespace":"http://siklu.com/yang/tg/acm","prefix":"rb-tg-acm","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-bond","kind":"module","namespace":"http://siklu.com/yang/tg/bond","prefix":"rb-tg-bnd","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-cfm","kind":"module","namespace":"http://siklu.com/yang/tg/cfm","prefix":"rb-tg-cfm","revision":"","imports_count":0,"rpcs":["clear-all-ccm-counters"],"notifications":[]},{"name":"radio-bridge-tg-database-version","kind":"module","namespace":"http://siklu.com/yang/tg/database-version","prefix":"rb-tg-db-ver","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-events","kind":"module","namespace":"http://siklu.com/yang/tg/events","prefix":"events","revision":"","imports_count":0,"rpcs":["get-events"],"notifications":[]},{"name":"radio-bridge-tg-gps","kind":"module","namespace":"http://siklu.com/yang/tg/gps","prefix":"rb-tg-gps","revision":"","imports_count":1,"rpcs":["factory-reset"],"notifications":[]},{"name":"radio-bridge-tg-gui","kind":"module","namespace":"http://siklu.com/yang/tg/gui","prefix":"rb-tg-gui","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-interfaces","kind":"module","namespace":"http://siklu.com/yang/tg/interfaces","prefix":"rb-tg-if","revision":"","imports_count":7,"rpcs":["clear-all-interfaces-statistics"],"notifications":[]},{"name":"radio-bridge-tg-inventory","kind":"module","namespace":"http://siklu.com/yang/tg/inventory","prefix":"rb-tg-inv","revision":"","imports_count":3,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-ip","kind":"module","namespace":"http://siklu.com/yang/tg/ip","prefix":"rb-tg-ip","revision":"","imports_count":2,"rpcs":["get-device-ipv6-address"],"notifications":[]},{"name":"radio-bridge-tg-logging","kind":"module","namespace":"http://siklu.com/yang/tg/logging","prefix":"rb-tg-log","revision":"","imports_count":1,"rpcs":["debug-dump-class-info-into-log","debug-set-log-config","add-debug-log"],"notifications":[]},{"name":"radio-bridge-tg-ping","kind":"module","namespace":"http://siklu.com/yang/tg/ping","prefix":"rb-tg-ping","revision":"","imports_count":1,"rpcs":["start-ping","get-replies","cancel-ping"],"notifications":[]},{"name":"radio-bridge-tg-pm","kind":"module","namespace":"http://siklu.com/yang/tg/pm","prefix":"rb-tg-pm","revision":"","imports_count":1,"rpcs":["get-pm-items","get-pm-item-info"],"notifications":[]},{"name":"radio-bridge-tg-radio-common","kind":"module","namespace":"http://siklu.com/yang/tg/radio","prefix":"rb-tg-radio","revision":"","imports_count":5,"rpcs":["clear-all-fw-counters"],"notifications":[]},{"name":"radio-bridge-tg-radio-dn","kind":"module","namespace":"http://siklu.com/yang/tg/radio/dn","prefix":"rb-tg-radio-dn","revision":"","imports_count":6,"rpcs":["start-topo-scan"],"notifications":[]},{"name":"radio-bridge-tg-rollback","kind":"module","namespace":"http://siklu.com/yang/tg/rollback","prefix":"rb-tg-rollback","revision":"","imports_count":0,"rpcs":["set-rollback-timeout","stop-rollback","rollback-keep-alive"],"notifications":[]},{"name":"radio-bridge-tg-snmp","kind":"module","namespace":"http://siklu.com/yang/tg/snmp","prefix":"rb-tg-snmp","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-software-upgrade","kind":"module","namespace":"http://siklu.com/yang/tg/software-upgrade","prefix":"rb-tg-sw-up","revision":"","imports_count":1,"rpcs":["download-and-flash-software-upgrade-file","download-software-upgrade-file","activate-upgraded-software","cancel-activate-upgraded-software","accept-upgraded-software"],"notifications":[]},{"name":"radio-bridge-tg-spider-attenuation-control","kind":"module","namespace":"http://siklu.com/yang/tg/spider/attenuation","prefix":"rb-tg-spider-attenuation","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-system","kind":"module","namespace":"http://siklu.com/yang/tg/system","prefix":"rb-tg-sys","revision":"","imports_count":8,"rpcs":["set-system-time","set-system-date","reset","factory-reset","run-cli-commands","add-script","create-tech-file","get-default-configurations"],"notifications":[]},{"name":"radio-bridge-tg-tunnel","kind":"module","namespace":"http://siklu.com/yang/tg/tunnel","prefix":"rb-tg-tunnel","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-types","kind":"module","namespace":"http://siklu.com/yang/tg/types","prefix":"rb-tg-types","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-user-bridge","kind":"module","namespace":"http://siklu.com/yang/tg/user-bridge","prefix":"tg-u-bridge","revision":"","imports_count":1,"rpcs":[],"notifications":[]},{"name":"radio-bridge-tg-user-management","kind":"module","namespace":"http://siklu.com/yang/tg/user-management","prefix":"rb-tg-um","revision":"","imports_count":1,"rpcs":["crypt-password"],"notifications":[]}],"ns3_examples":{"TEST_SUITE":"PASS ceragon 19.260 s\n  PASS Portfolio catalog, vendor-string resolution and capability gating 0.000 s\n  PASS ACM profile tables, hysteresis and BER model 0.000 s\n  PASS ITU-R P.525, P.676, P.838, P.530 propagation 0.000 s\n  PASS IP-20C XPIC capacity in clear sky and rain 0.001 s\n  PASS End-to-end UDP over EH-8010FX and QoS queue disc 3.205 s\n  PASS IP-50EX Multi-Band: E-band fades, MW anchor keeps the link up 0.000 s\n  PASS 1+1 HSB switchover vs unprotected radio failure 0.000 s\n  PASS MultiHaul TG beamforming: pole sway, beam tracking, topology scan 0.000 s\n  PASS IEEE 802.1Qbv gate control list and DSCP classification 0.000 s\n  PASS Green carrier sleep, ATPC and PTP time error with holdover 0.001 s\n  PASS Topology-file twin: build, flows, rain event, report 16.044 s","EX_PORTFOLIO":"Ceragon portfolio functional twin  (storm peak 60.0 mm/h)\nModel      Family       Hop(km)  Clear ACM               Clear Mb/s Rain ACM                Rain Mb/s  SINR dB  Avail   Power W\nIP-20C     IP-20        5.0      4096QAM+4096QAM         2000.0     16QAM+32QAM             788.9      45.0     100.0   55.3\nIP-20C-HP  IP-20        5.0      4096QAM+4096QAM         2000.0     64QAM+128QAM            1139.5     51.1     100.0   74.0\nIP-20S     IP-20        5.0      4096QAM                 1000.0     16QAM                   350.6      45.6     100.0   40.1\nIP-20E     IP-20        2.0      256QAM                  2500.0     OUTAGE                  0.0        41.8     88.0    45.6\nIP-20V     IP-20        0.5      256QAM                  1000.0     64QAM                   1000.0     31.5     100.0   23.0\nIP-20N     IP-20        5.0      4096QAM+4096QAM         2103.7     16QAM+32QAM             788.9      45.0     100.0   55.3\nIP-20A     IP-20        5.0      4096QAM+4096QAM         2103.7     16QAM+32QAM             788.9      45.5     100.0   55.3\nIP-20A-LH  IP-20        30.0     2048QAM+2048QAM         1377.4     2048QAM+2048QAM         1377.4     56.3     100.0   89.0\nIP-20G     IP-20        5.0      4096QAM+4096QAM         2000.0     16QAM+32QAM             788.9      44.8     100.0   55.3\nIP-20GX    IP-20        5.0      4096QAM+4096QAM         2103.7     16QAM+32QAM             788.9      45.2     100.0   55.3\nIP-50C     IP-50        5.0      4096QAM+4096QAM         2103.7     16QAM+32QAM             788.9      45.0     100.0   60.3\nIP-50CX    IP-50        5.0      4096QAM+4096QAM         4207.3     QPSK+32QAM              1227.1     42.0     100.0   60.3\nIP-50E     IP-50        2.0      512QAM                  10000.0    OUTAGE                  0.0        41.8     87.7    45.6\nIP-50EX    IP-50        2.0      512QAM+4096QAM          15138.8    OUTAGE+512QAM           788.9      42.3     100.0   61.3\nIP-50EXA   IP-50        2.0      512QAM+4096QAM          15138.8    OUTAGE+256QAM           701.2      41.8     100.0   61.3\nIP-50FX    IP-50        5.0      4096QAM+4096QAM         2103.7     16QAM+32QAM             788.9      44.7     100.0   60.3\nIP-100E    IP-100       2.0      1024QAM+1024QAM         25000.0    OUTAGE+OUTAGE           0.0        42.7     89.3    76.6\nEH-614TX   EtherHaul    0.5      64QAM                   1000.0     64QAM                   1000.0     31.5     100.0   35.0\nEH-710TX   EtherHaul    2.0      64QAM                   1000.0     BPSK                    195.7      47.1     100.0   45.6\nEH-1200TX  EtherHaul    2.0      64QAM                   1000.0     BPSK                    391.3      48.2     100.0   45.6\nEH-1200FX  EtherHaul    2.0      64QAM                   1000.0     BPSK                    391.3      48.3     100.0   45.6\nEH-2500FX  EtherHaul    2.0      64QAM                   2347.8     BPSK                    391.3      48.2     100.0   45.6\nEH-8010FX  EtherHaul    2.0      64QAM                   9391.3     OUTAGE                  0.0        42.2     91.0    45.6\nEH-8020FX  EtherHaul    2.0      64QAM                   9391.3     OUTAGE                  0.0        41.4     91.3    45.6\nMH-T261    MultiHaul TG 0.2      MCS11                   1000.0     MCS9                    1000.0     18.9     100.0   17.4\nMH-T260    MultiHaul TG 0.2      MCS11                   1000.0     MCS9                    1000.0     18.9     100.0   17.4\nMH-T265    MultiHaul TG 0.2      MCS11                   1540.0     MCS9                    1001.0     18.9     100.0   17.4\nMH-T280    MultiHaul TG 0.2      MCS11                   1540.0     MCS9                    1001.0     18.6     100.0   17.4\nMH-N265    MultiHaul TG 0.2      MCS12                   1800.0     MCS12                   1800.0     24.9     100.0   17.4\nMH-N366    MultiHaul TG 0.2      MCS12                   1848.0     MCS12                   1848.0     25.3     100.0   40.4\nMH-N367    MultiHaul TG 0.2      MCS12                   1848.0     MCS12                   1848.0     24.7     100.0   40.4","EX_MULTIBAND":"time    rain | IP-50EX cap/thr Mb/s, ACM          | EH-8010FX cap/thr Mb/s, ACM       \n  0.25    0.00 |  15051.13     0.00 512QAM+2048QAM   |   9391.30     0.00 64QAM           \n  0.50    0.00 |  15051.13     0.00 512QAM+2048QAM   |   9391.30     0.00 64QAM           \n  0.75    0.00 |  15051.13  1999.83 512QAM+2048QAM   |   9391.30  1999.78 64QAM           \n  1.00    0.00 |  15051.13  2000.01 512QAM+2048QAM   |   9391.30  2000.01 64QAM           \n  1.25    2.04 |  15051.13  1999.96 512QAM+2048QAM   |   9391.30  1999.96 64QAM           \n  1.50    8.04 |  11920.70  1997.32 128QAM+2048QAM   |   9391.30  2000.01 64QAM           \n  1.75   17.57 |   7137.39  1997.68 16QAM+1024QAM    |   6260.87  1999.24 16QAM           \n  2.00   30.00 |    788.87  1652.09 OUTAGE+512QAM    |   1565.22  1883.71 BPSK            \n  2.25   44.47 |    613.57   681.09 OUTAGE+128QAM    |      0.00    60.79 OUTAGE          \n  2.50   60.00 |    525.91   582.49 OUTAGE+64QAM     |      0.00     0.00 OUTAGE          \n  2.75   75.53 |    438.26   470.18 OUTAGE+32QAM     |      0.00     0.00 OUTAGE          \n  3.00   90.00 |    350.61   364.49 OUTAGE+16QAM     |      0.00     0.00 OUTAGE          \n  3.25  102.43 |    262.96   269.02 OUTAGE+8PSK      |      0.00     0.00 OUTAGE          \n  3.50  111.96 |    175.30   200.79 OUTAGE+QPSK      |      0.00     0.00 OUTAGE          \n  3.75  117.96 |    175.30   170.37 OUTAGE+QPSK      |      0.00     0.00 OUTAGE          \n  4.00  120.00 |      0.00    74.59 OUTAGE+OUTAGE    |      0.00     0.00 OUTAGE          \n  4.25  117.96 |      0.00     0.00 OUTAGE+OUTAGE    |      0.00     0.00 OUTAGE          \n  4.50  111.96 |    175.30   149.86 OUTAGE+QPSK      |      0.00     0.00 OUTAGE          \n  4.75  102.43 |    175.30   170.42 OUTAGE+QPSK      |      0.00     0.00 OUTAGE          \n  5.00   90.00 |    262.96   252.18 OUTAGE+8PSK      |      0.00     0.00 OUTAGE          \n  5.25   75.53 |    438.26   351.10 OUTAGE+32QAM     |      0.00     0.00 OUTAGE          \n  5.50   60.00 |    525.91   449.93 OUTAGE+64QAM     |      0.00     0.00 OUTAGE          \n  5.75   44.47 |    613.57   559.01 OUTAGE+128QAM    |      0.00     0.00 OUTAGE          \n  6.00   30.00 |    701.22   661.20 OUTAGE+256QAM    |      0.00     0.00 OUTAGE          \n  6.25   17.57 |   5572.17  1435.93 8PSK+1024QAM     |   4695.65  1651.60 8PSK            \n  6.50    8.04 |  10355.48  1999.96 64QAM+2048QAM    |   9391.30  1999.78 64QAM           \n  6.75    2.04 |  15051.13  1999.87 512QAM+2048QAM   |   9391.30  2000.01 64QAM           \n  7.00    0.00 |  15051.13  2000.01 512QAM+2048QAM   |   9391.30  2000.01 64QAM           \n  7.25    0.00 |  15051.13  2000.01 512QAM+2048QAM   |   9391.30  2000.01 64QAM           \n  7.50    0.00 |  15051.13  2000.01 512QAM+2048QAM   |   9391.30  2000.01 64QAM           \n  7.75    0.00 |  15051.13  2000.01 512QAM+2048QAM   |   9391.30  2000.01 64QAM           \n\nOutage time: IP-50EX=0.42s  EH-8010FX=4.02s","EX_TSN":"Mode=tsn  hop=IP-50FX  radio capacity=2103.652 Mb/s  fronthaul=666.019 Mb/s  budget=100.000 us  PTP TE=16.120 ns\n  fronthaul(EF)   thr=  681.538 Mb/s  mean delay=   72.004 us  loss=0.003 %  [within O-RAN budget]\n  best-effort     thr= 1027.997 Mb/s  mean delay= 7818.016 us  loss=37.009 %\n  CoS7 dequeued=173442  gate-blocked events=387300\n\n\nMode=tsn  hop=IP-50FX  radio capacity=2103.652 Mb/s  fronthaul=666.019 Mb/s  budget=100.000 us  PTP TE=16.120 ns\n  fronthaul(EF)   thr=  681.538 Mb/s  mean delay=   72.004 us  loss=0.003 %  [within O-RAN budget]\n  best-effort     thr= 1027.997 Mb/s  mean delay= 7818.016 us  loss=37.009 %\n  CoS7 dequeued=173442  gate-blocked events=387300","EX_TERRAGRAPH":"MultiHaul TG 60 GHz IEEE 802.11ay Terragraph Street-Level Mesh (8.0s simulation)\nLink         Model     Dist(km)  Clear(Mbps)  Min(Mbps)  Avg(Mbps)  Avail    Modulation  RSL(dBm)  SINR(dB)  Pwr(W)\npop->dnA     MH-N366   0.190     1848.0       0.0        1380.2     75.00  % MCS12       -46.3     25.4      40.4\ndnA->pop     MH-N366   0.190     1848.0       0.0        1380.2     75.00  % MCS12       -46.5     25.2      40.4\npop->dnB     MH-N366   0.190     1848.0       1848.0     1848.0     100.00 % MCS12       -46.6     25.0      40.4\ndnB->pop     MH-N366   0.190     1848.0       1848.0     1848.0     100.00 % MCS12       -46.5     25.2      40.4\ndnA->dnB     MH-N366   0.120     1848.0       1848.0     1848.0     100.00 % MCS12       -41.5     30.1      40.4\ndnB->dnA     MH-N366   0.120     1848.0       1848.0     1848.0     100.00 % MCS12       -41.7     30.0      40.4\ndnA->cn1     MH-N366   0.151     1848.0       1848.0     1848.0     100.00 % MCS12       -47.1     24.6      40.4\ncn1->dnA     MH-T261   0.151     1000.0       1000.0     1000.0     100.00 % MCS12       -47.0     24.6      17.4\ndnB->cn2     MH-N366   0.151     1848.0       1848.0     1848.0     100.00 % MCS12       -46.7     24.9      40.4\ncn2->dnB     MH-T265   0.151     1800.0       1800.0     1800.0     100.00 % MCS12       -47.2     24.5      17.4\ndnA->cn3     MH-N366   0.190     1848.0       1848.0     1848.0     100.00 % MCS12       -49.3     22.3      40.4\ncn3->dnA     MH-T261   0.190     1000.0       1000.0     1000.0     100.00 % MCS12       -49.1     22.5      17.4\ndnB->cn3     MH-N366   0.190     1848.0       1848.0     1848.0     100.00 % MCS12       -50.2     21.4      40.4\ncn3->dnB     MH-T261   0.190     1000.0       1000.0     1000.0     100.00 % MCS12       -48.5     23.1      17.4\n\nFlows:\n  fwa    core->cn3 DSCP=18 offered=500Mbps throughput=508.61Mbps loss=0.273% delay=0.321ms\n  cctv   core->cn1 DSCP=0  offered=400Mbps throughput=406.89Mbps loss=0.273% delay=0.362ms\n  voice  core->cn2 DSCP=46 offered=20Mbps throughput=20.40Mbps loss=0.000% delay=0.320ms\n\nBeamforming & Pole-Sway Timeline:\n  t=2.00s [control] pop->dnA pole-sway 1.5\n  t=3.50s [acm] pop->dnA carrier 0 MCS12 -> OUTAGE\n  t=3.50s [link] pop->dnA DOWN\n  t=3.50s [acm] dnA->pop carrier 0 MCS12 -> OUTAGE\n  t=3.50s [link] dnA->pop DOWN\n  t=3.50s [control] pop->dnA pole-sway 25\n  t=3.52s [routing] global routes recomputed\n  t=5.00s [control] pop->dnA topo-scan\n  t=5.50s [acm] pop->dnA carrier 0 OUTAGE -> MCS12\n  t=5.50s [link] pop->dnA UP\n  t=5.50s [acm] dnA->pop carrier 0 OUTAGE -> MCS12\n  t=5.50s [link] dnA->pop UP\n  t=5.52s [routing] global routes recomputed","EX_PROTECTION":"Protection twin (IP-20C, 8 km, main radio unit fails at 2 s, repaired at 4 s)\n  1+0       lost=  89358 pkts  outage=2.000 s  switchovers=0  active unit=0  ACM changes=317\n  1+1 HSB   lost=   2381 pkts  outage=0.050 s  switchovers=1  active unit=1  ACM changes=492\n  1+1 SD    lost=    118 pkts  outage=0.000 s  switchovers=1  active unit=1  ACM changes=338"},"live_twin_run":{"engine":"ns-3 ceragon functional twin","sim_time_s":11.0,"peak_rain_mmh":110.0,"nodes":[{"name":"dc","model":"host","family":"host","x":-50.0,"y":0.0},{"name":"hubA","model":"site","family":"host","x":0.0,"y":0.0},{"name":"hubB","model":"site","family":"host","x":2800.0,"y":0.0},{"name":"hubC","model":"site","family":"host","x":2800.0,"y":4000.0},{"name":"hubD","model":"site","family":"host","x":0.0,"y":4000.0},{"name":"tailC","model":"IP-20C","family":"IP-20","x":8000.0,"y":4000.0},{"name":"ehHub","model":"EH-8010FX","family":"EtherHaul","x":2810.0,"y":20.0},{"name":"ehSpur","model":"EH-8010FX","family":"EtherHaul","x":2800.0,"y":1800.0},{"name":"pop","model":"MH-N366","family":"MultiHaul TG","x":3000.0,"y":1810.0},{"name":"cn1","model":"MH-T261","family":"MultiHaul TG","x":3150.0,"y":1900.0},{"name":"cn2","model":"MH-T265","family":"MultiHaul TG","x":3120.0,"y":1680.0},{"name":"cell1","model":"host","family":"host","x":8050.0,"y":4000.0},{"name":"fwa1","model":"host","family":"host","x":3200.0,"y":1950.0}],"links":[{"link":"hubA->hubB","availability":0.9955,"min_capacity_mbps":0.0,"avg_capacity_mbps":8843.2599,"max_capacity_mbps":15138.7826,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[45355,0,0,0,0,27749,0,19820]},"state":{"node":1,"ifindex":2,"model":"IP-50EX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":15051.13,"rain_mmh":0.0,"distance_km":2.8,"protection":"1+1_HSB","active_unit":1,"switchovers":1,"macsec":false,"atpc":false,"power_w":79.253,"energy_j":816.99,"sync":"ptp-bc","time_error_ns":21.614,"beam_misalignment_deg":0.0,"tx_packets":92924,"rx_packets":88,"dropped":0,"corrupted":0,"modulation_changes":45,"outage_s":0.05,"carriers":[{"freq_mhz":73500.0,"bw_mhz":2000.0,"pol":"H","modulation":"512QAM","rsl_dbm":-34.255,"sinr_db":38.735,"tx_power_dbm":17.0,"rate_mbps":14086.957,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":18000.0,"bw_mhz":112.0,"pol":"H","modulation":"2048QAM","rsl_dbm":-45.15,"sinr_db":40.358,"tx_power_dbm":17.0,"rate_mbps":964.174,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubB->hubA","availability":1.0,"min_capacity_mbps":262.9565,"avg_capacity_mbps":8849.3751,"max_capacity_mbps":15051.1304,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[88,0,0,0,0,0,0,0]},"state":{"node":2,"ifindex":1,"model":"IP-50EX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":15051.13,"rain_mmh":0.0,"distance_km":2.8,"protection":"1+1_HSB","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":79.253,"energy_j":870.99,"sync":"ptp-bc","time_error_ns":24.467,"beam_misalignment_deg":0.0,"tx_packets":88,"rx_packets":92905,"dropped":0,"corrupted":19,"modulation_changes":41,"outage_s":0.0,"carriers":[{"freq_mhz":73500.0,"bw_mhz":2000.0,"pol":"H","modulation":"512QAM","rsl_dbm":-34.333,"sinr_db":38.656,"tx_power_dbm":17.0,"rate_mbps":14086.957,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":18000.0,"bw_mhz":112.0,"pol":"H","modulation":"2048QAM","rsl_dbm":-45.984,"sinr_db":39.524,"tx_power_dbm":17.0,"rate_mbps":964.174,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubB->hubC","availability":1.0,"min_capacity_mbps":175.3043,"avg_capacity_mbps":1594.0465,"max_capacity_mbps":2103.6522,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,27742,0,0,19816]},"state":{"node":2,"ifindex":2,"model":"IP-50FX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":2103.652,"rain_mmh":0.0,"distance_km":4.0,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":60.28,"energy_j":662.474,"sync":"ptp-bc","time_error_ns":17.865,"beam_misalignment_deg":0.0,"tx_packets":47558,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":46,"outage_s":0.0,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-40.286,"sinr_db":46.998,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"4096QAM","rsl_dbm":-40.131,"sinr_db":47.145,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubC->hubB","availability":1.0,"min_capacity_mbps":262.9565,"avg_capacity_mbps":1596.0849,"max_capacity_mbps":2103.6522,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":3,"ifindex":1,"model":"IP-50FX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":2103.652,"rain_mmh":0.0,"distance_km":4.0,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":60.28,"energy_j":662.474,"sync":"ptp-bc","time_error_ns":16.76,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":47551,"dropped":0,"corrupted":7,"modulation_changes":44,"outage_s":0.0,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-40.003,"sinr_db":47.267,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"4096QAM","rsl_dbm":-40.107,"sinr_db":47.168,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubC->hubD","availability":1.0,"min_capacity_mbps":788.8696,"avg_capacity_mbps":1793.8119,"max_capacity_mbps":2103.6522,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":3,"ifindex":2,"model":"IP-50FX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":2103.652,"rain_mmh":0.0,"distance_km":2.8,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":60.28,"energy_j":662.474,"sync":"ptp-bc","time_error_ns":19.499,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":269,"dropped":0,"corrupted":0,"modulation_changes":32,"outage_s":0.0,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-37.132,"sinr_db":49.927,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"4096QAM","rsl_dbm":-36.518,"sinr_db":50.476,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubD->hubC","availability":1.0,"min_capacity_mbps":788.8696,"avg_capacity_mbps":1795.8504,"max_capacity_mbps":2103.6522,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,157,0,0,112]},"state":{"node":4,"ifindex":1,"model":"IP-50FX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":2103.652,"rain_mmh":0.0,"distance_km":2.8,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":60.28,"energy_j":662.474,"sync":"ptp-bc","time_error_ns":14.5,"beam_misalignment_deg":0.0,"tx_packets":269,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":34,"outage_s":0.0,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-36.827,"sinr_db":50.2,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"4096QAM","rsl_dbm":-37.32,"sinr_db":49.757,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubD->hubA","availability":1.0,"min_capacity_mbps":175.3043,"avg_capacity_mbps":1594.0465,"max_capacity_mbps":2103.6522,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":4,"ifindex":2,"model":"IP-50FX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":2103.652,"rain_mmh":0.0,"distance_km":4.0,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":60.28,"energy_j":662.474,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":269,"dropped":0,"corrupted":0,"modulation_changes":44,"outage_s":0.0,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-39.919,"sinr_db":47.347,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"4096QAM","rsl_dbm":-40.805,"sinr_db":46.504,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubA->hubD","availability":1.0,"min_capacity_mbps":262.9565,"avg_capacity_mbps":1596.0849,"max_capacity_mbps":2103.6522,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,157,0,0,112]},"state":{"node":1,"ifindex":3,"model":"IP-50FX","family":"IP-50","api_flavor":"ceraos","link_up":true,"capacity_mbps":2103.652,"rain_mmh":0.0,"distance_km":4.0,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":60.28,"energy_j":662.474,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":269,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":46,"outage_s":0.0,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-40.084,"sinr_db":47.191,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"4096QAM","rsl_dbm":-39.817,"sinr_db":47.443,"tx_power_dbm":24.0,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"hubC->tailC","availability":0.8582,"min_capacity_mbps":0.0,"avg_capacity_mbps":729.7553,"max_capacity_mbps":1051.8261,"qos":{"gate_cycle_us":500,"gate_blocked":72676,"drops":0,"dequeued_per_cos":[0,0,0,0,27803,0,0,19858]},"state":{"node":3,"ifindex":3,"model":"IP-20C","family":"IP-20","api_flavor":"ceraos","link_up":true,"capacity_mbps":1051.826,"rain_mmh":0.0,"distance_km":5.2,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":true,"power_w":38.973,"energy_j":475.034,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":47661,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":31,"outage_s":1.56,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-45.377,"sinr_db":42.131,"tx_power_dbm":21.982,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"64QAM","rsl_dbm":-67.056,"sinr_db":20.436,"tx_power_dbm":24.0,"rate_mbps":0.0,"rain_att_db":24.022,"xpd_db":24.65,"sleeping":true,"up":false}]}},{"link":"tailC->hubC","availability":0.8627,"min_capacity_mbps":0.0,"avg_capacity_mbps":729.7553,"max_capacity_mbps":1051.8261,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":5,"ifindex":1,"model":"IP-20C","family":"IP-20","api_flavor":"ceraos","link_up":true,"capacity_mbps":1051.826,"rain_mmh":0.0,"distance_km":5.2,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":true,"power_w":38.902,"energy_j":473.074,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":47644,"dropped":0,"corrupted":17,"modulation_changes":30,"outage_s":1.51,"carriers":[{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"H","modulation":"4096QAM","rsl_dbm":-44.627,"sinr_db":42.881,"tx_power_dbm":21.824,"rate_mbps":1051.826,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true},{"freq_mhz":23000.0,"bw_mhz":112.0,"pol":"V","modulation":"16QAM","rsl_dbm":-69.105,"sinr_db":18.39,"tx_power_dbm":24.0,"rate_mbps":0.0,"rain_att_db":26.501,"xpd_db":23.686,"sleeping":true,"up":false}]}},{"link":"ehHub->ehSpur","availability":0.7373,"min_capacity_mbps":0.0,"avg_capacity_mbps":6333.6704,"max_capacity_mbps":9391.3043,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[45257,0,0,0,0,0,0,0]},"state":{"node":6,"ifindex":2,"model":"EH-8010FX","family":"EtherHaul","api_flavor":"siklu_eh","link_up":true,"capacity_mbps":9391.304,"rain_mmh":0.0,"distance_km":1.78,"protection":"none","active_unit":0,"switchovers":0,"macsec":true,"atpc":false,"power_w":45.626,"energy_j":501.435,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":45257,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":13,"outage_s":2.89,"carriers":[{"freq_mhz":73500.0,"bw_mhz":2000.0,"pol":"H","modulation":"64QAM","rsl_dbm":-30.741,"sinr_db":42.249,"tx_power_dbm":17.0,"rate_mbps":9391.304,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"ehSpur->ehHub","availability":0.7364,"min_capacity_mbps":0.0,"avg_capacity_mbps":6370.0708,"max_capacity_mbps":9391.3043,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":7,"ifindex":1,"model":"EH-8010FX","family":"EtherHaul","api_flavor":"siklu_eh","link_up":true,"capacity_mbps":9391.304,"rain_mmh":0.0,"distance_km":1.78,"protection":"none","active_unit":0,"switchovers":0,"macsec":true,"atpc":false,"power_w":45.626,"energy_j":501.435,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":45253,"dropped":0,"corrupted":4,"modulation_changes":13,"outage_s":2.9,"carriers":[{"freq_mhz":73500.0,"bw_mhz":2000.0,"pol":"H","modulation":"64QAM","rsl_dbm":-29.745,"sinr_db":43.245,"tx_power_dbm":17.0,"rate_mbps":9391.304,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"pop->cn1","availability":1.0,"min_capacity_mbps":1232.0,"avg_capacity_mbps":1769.2093,"max_capacity_mbps":1848.0,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[13530,0,0,0,0,0,0,0]},"state":{"node":8,"ifindex":2,"model":"MH-N366","family":"MultiHaul TG","api_flavor":"siklu_tg","link_up":true,"capacity_mbps":1848.0,"rain_mmh":0.0,"distance_km":0.17,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":40.395,"energy_j":443.944,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.2,"tx_packets":13530,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":5,"outage_s":0.0,"carriers":[{"freq_mhz":60480.0,"bw_mhz":2160.0,"pol":"H","modulation":"MCS12","rsl_dbm":-48.325,"sinr_db":23.33,"tx_power_dbm":15.0,"rate_mbps":1848.0,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"cn1->pop","availability":1.0,"min_capacity_mbps":1000.0,"avg_capacity_mbps":1000.0,"max_capacity_mbps":1000.0,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":9,"ifindex":1,"model":"MH-T261","family":"MultiHaul TG","api_flavor":"siklu_tg","link_up":true,"capacity_mbps":1000.0,"rain_mmh":0.0,"distance_km":0.17,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":17.395,"energy_j":191.174,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":13530,"dropped":0,"corrupted":0,"modulation_changes":5,"outage_s":0.0,"carriers":[{"freq_mhz":60480.0,"bw_mhz":2160.0,"pol":"H","modulation":"MCS12","rsl_dbm":-48.333,"sinr_db":23.323,"tx_power_dbm":15.0,"rate_mbps":1848.0,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"pop->cn2","availability":1.0,"min_capacity_mbps":1232.0,"avg_capacity_mbps":1740.5581,"max_capacity_mbps":1848.0,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":8,"ifindex":3,"model":"MH-N366","family":"MultiHaul TG","api_flavor":"siklu_tg","link_up":true,"capacity_mbps":1848.0,"rain_mmh":0.0,"distance_km":0.18,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":40.395,"energy_j":443.944,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":7,"outage_s":0.0,"carriers":[{"freq_mhz":60480.0,"bw_mhz":2160.0,"pol":"H","modulation":"MCS12","rsl_dbm":-48.909,"sinr_db":22.746,"tx_power_dbm":15.0,"rate_mbps":1848.0,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}},{"link":"cn2->pop","availability":1.0,"min_capacity_mbps":1232.0,"avg_capacity_mbps":1704.8372,"max_capacity_mbps":1800.0,"qos":{"gate_cycle_us":0,"gate_blocked":0,"drops":0,"dequeued_per_cos":[0,0,0,0,0,0,0,0]},"state":{"node":10,"ifindex":1,"model":"MH-T265","family":"MultiHaul TG","api_flavor":"siklu_tg","link_up":true,"capacity_mbps":1800.0,"rain_mmh":0.0,"distance_km":0.18,"protection":"none","active_unit":0,"switchovers":0,"macsec":false,"atpc":false,"power_w":17.395,"energy_j":191.174,"sync":"none","time_error_ns":0.0,"beam_misalignment_deg":0.0,"tx_packets":0,"rx_packets":0,"dropped":0,"corrupted":0,"modulation_changes":9,"outage_s":0.0,"carriers":[{"freq_mhz":60480.0,"bw_mhz":2160.0,"pol":"H","modulation":"MCS12","rsl_dbm":-48.12,"sinr_db":23.535,"tx_power_dbm":15.0,"rate_mbps":1848.0,"rain_att_db":0.0,"xpd_db":40.0,"sleeping":false,"up":true}]}}],"flows":[{"name":"video","src":"dc","dst":"cell1","dscp":34,"offered_mbps":35.0,"throughput_mbps":30.2399,"tx_packets":32812,"rx_packets":27794,"loss_pct":15.2932,"mean_delay_ms":0.2477,"mean_jitter_ms":0.1259},{"name":"fronthaul","src":"dc","dst":"cell1","dscp":46,"offered_mbps":25.0,"throughput_mbps":21.5968,"tx_packets":23437,"rx_packets":19850,"loss_pct":15.3049,"mean_delay_ms":0.175,"mean_jitter_ms":0.0021},{"name":"fwa","src":"dc","dst":"fwa1","dscp":0,"offered_mbps":20.0,"throughput_mbps":14.7206,"tx_packets":18749,"rx_packets":13530,"loss_pct":27.8362,"mean_delay_ms":0.236,"mean_jitter_ms":0.0},{"name":"bulk","src":"dc","dst":"ehSpur","dscp":0,"offered_mbps":50.0,"throughput_mbps":36.0976,"tx_packets":44642,"rx_packets":31598,"loss_pct":29.2191,"mean_delay_ms":0.0574,"mean_jitter_ms":0.0012}],"timeline":[{"t":0.02,"type":"acm","detail":"hubA->hubB carrier 1 4096QAM -> 2048QAM"},{"t":0.07,"type":"acm","detail":"hubB->hubA carrier 1 4096QAM -> 2048QAM"},{"t":0.17,"type":"acm","detail":"hubA->hubB carrier 1 2048QAM -> 4096QAM"},{"t":0.3,"type":"acm","detail":"hubA->hubB carrier 1 4096QAM -> 2048QAM"},{"t":1.39,"type":"acm","detail":"hubB->hubA carrier 1 2048QAM -> 4096QAM"},{"t":1.47,"type":"acm","detail":"hubB->hubA carrier 1 4096QAM -> 2048QAM"},{"t":1.95,"type":"acm","detail":"hubA->hubB carrier 1 2048QAM -> 4096QAM"},{"t":2.1,"type":"acm","detail":"hubA->hubB carrier 1 4096QAM -> 2048QAM"},{"t":2.58,"type":"acm","detail":"hubB->hubA carrier 1 2048QAM -> 4096QAM"},{"t":2.64,"type":"acm","detail":"hubB->hubA carrier 1 4096QAM -> 2048QAM"},{"t":2.67,"type":"acm","detail":"hubB->hubA carrier 1 2048QAM -> 4096QAM"},{"t":2.7,"type":"acm","detail":"hubB->hubA carrier 1 4096QAM -> 2048QAM"},{"t":3.34,"type":"acm","detail":"hubA->hubB carrier 0 512QAM -> 256QAM"},{"t":3.36,"type":"acm","detail":"hubB->hubA carrier 0 512QAM -> 256QAM"},{"t":3.45,"type":"acm","detail":"hubB->hubA carrier 0 256QAM -> 128QAM"},{"t":3.47,"type":"acm","detail":"hubA->hubB carrier 0 256QAM -> 128QAM"},{"t":3.52,"type":"acm","detail":"hubC->tailC carrier 0 4096QAM -> 2048QAM"},{"t":3.54,"type":"acm","detail":"tailC->hubC carrier 0 4096QAM -> 2048QAM"},{"t":3.56,"type":"acm","detail":"hubA->hubB carrier 0 128QAM -> 64QAM"},{"t":3.56,"type":"acm","detail":"hubB->hubA carrier 0 128QAM -> 64QAM"},{"t":3.63,"type":"acm","detail":"hubA->hubB carrier 0 64QAM -> 32QAM"},{"t":3.64,"type":"acm","detail":"hubB->hubA carrier 0 64QAM -> 32QAM"},{"t":3.66,"type":"acm","detail":"hubB->hubA carrier 1 2048QAM -> 1024QAM"},{"t":3.67,"type":"acm","detail":"hubA->hubB carrier 1 2048QAM -> 1024QAM"},{"t":3.69,"type":"acm","detail":"hubC->tailC carrier 0 2048QAM -> 1024QAM"},{"t":3.69,"type":"acm","detail":"tailC->hubC carrier 0 2048QAM -> 1024QAM"},{"t":3.72,"type":"acm","detail":"hubB->hubC carrier 0 4096QAM -> 2048QAM"},{"t":3.73,"type":"acm","detail":"hubA->hubD carrier 0 4096QAM -> 2048QAM"},{"t":3.73,"type":"acm","detail":"hubB->hubA carrier 0 32QAM -> 16QAM"},{"t":3.73,"type":"acm","detail":"hubD->hubA carrier 0 4096QAM -> 2048QAM"},{"t":3.74,"type":"acm","detail":"hubA->hubB carrier 0 32QAM -> 16QAM"},{"t":3.75,"type":"acm","detail":"hubC->hubB carrier 0 4096QAM -> 2048QAM"},{"t":3.78,"type":"acm","detail":"hubA->hubD carrier 1 4096QAM -> 2048QAM"},{"t":3.8,"type":"acm","detail":"hubC->hubB carrier 1 4096QAM -> 2048QAM"},{"t":3.8,"type":"acm","detail":"hubD->hubA carrier 1 4096QAM -> 2048QAM"},{"t":3.81,"type":"acm","detail":"hubB->hubC carrier 1 4096QAM -> 2048QAM"},{"t":3.83,"type":"acm","detail":"tailC->hubC carrier 0 1024QAM -> 512QAM"},{"t":3.84,"type":"acm","detail":"hubA->hubB carrier 0 16QAM -> 8PSK"},{"t":3.84,"type":"acm","detail":"hubB->hubA carrier 0 16QAM -> 8PSK"},{"t":3.85,"type":"acm","detail":"hubC->tailC carrier 0 1024QAM -> 512QAM"},{"t":3.89,"type":"acm","detail":"hubA->hubD carrier 0 2048QAM -> 1024QAM"},{"t":3.89,"type":"acm","detail":"hubB->hubC carrier 0 2048QAM -> 1024QAM"},{"t":3.89,"type":"acm","detail":"hubD->hubA carrier 0 2048QAM -> 1024QAM"},{"t":3.92,"type":"acm","detail":"hubA->hubB carrier 0 8PSK -> QPSK"},{"t":3.92,"type":"acm","detail":"hubA->hubB carrier 1 1024QAM -> 512QAM"},{"t":3.92,"type":"acm","detail":"hubC->hubB carrier 0 2048QAM -> 1024QAM"},{"t":3.93,"type":"acm","detail":"hubB->hubA carrier 0 8PSK -> QPSK"},{"t":3.93,"type":"acm","detail":"hubB->hubA carrier 1 1024QAM -> 512QAM"},{"t":3.95,"type":"acm","detail":"hubC->tailC carrier 0 512QAM -> 256QAM"},{"t":3.96,"type":"acm","detail":"tailC->hubC carrier 0 512QAM -> 256QAM"},{"t":3.99,"type":"acm","detail":"hubA->hubD carrier 1 2048QAM -> 1024QAM"},{"t":3.99,"type":"acm","detail":"hubC->hubB carrier 1 2048QAM -> 1024QAM"},{"t":3.99,"type":"acm","detail":"ehHub->ehSpur carrier 0 64QAM -> 32QAM"},{"t":4.0,"type":"acm","detail":"ehSpur->ehHub carrier 0 64QAM -> 32QAM"},{"t":4.01,"type":"acm","detail":"hubB->hubC carrier 1 2048QAM -> 1024QAM"},{"t":4.01,"type":"acm","detail":"hubD->hubA carrier 1 2048QAM -> 1024QAM"},{"t":4.02,"type":"acm","detail":"hubA->hubB carrier 0 QPSK -> OUTAGE"},{"t":4.02,"type":"acm","detail":"hubB->hubA carrier 0 QPSK -> OUTAGE"},{"t":4.03,"type":"acm","detail":"hubD->hubC carrier 0 4096QAM -> 2048QAM"},{"t":4.04,"type":"acm","detail":"hubA->hubD carrier 0 1024QAM -> 512QAM"},{"t":4.04,"type":"acm","detail":"hubC->hubD carrier 0 4096QAM -> 2048QAM"},{"t":4.04,"type":"acm","detail":"hubD->hubA carrier 0 1024QAM -> 512QAM"},{"t":4.05,"type":"acm","detail":"hubB->hubC carrier 0 1024QAM -> 512QAM"},{"t":4.06,"type":"acm","detail":"hubC->hubB carrier 0 1024QAM -> 512QAM"},{"t":4.09,"type":"acm","detail":"hubC->tailC carrier 0 256QAM -> 128QAM"},{"t":4.1,"type":"acm","detail":"tailC->hubC carrier 0 256QAM -> 128QAM"},{"t":4.11,"type":"acm","detail":"ehSpur->ehHub carrier 0 32QAM -> 16QAM"},{"t":4.12,"type":"acm","detail":"ehHub->ehSpur carrier 0 32QAM -> 16QAM"},{"t":4.13,"type":"acm","detail":"hubD->hubC carrier 1 4096QAM -> 2048QAM"},{"t":4.16,"type":"acm","detail":"hubA->hubB carrier 1 512QAM -> 256QAM"},{"t":4.16,"type":"acm","detail":"hubB->hubA carrier 1 512QAM -> 256QAM"},{"t":4.17,"type":"acm","detail":"hubA->hubD carrier 1 1024QAM -> 512QAM"},{"t":4.17,"type":"acm","detail":"hubB->hubC carrier 1 1024QAM -> 512QAM"},{"t":4.17,"type":"acm","detail":"hubC->hubB carrier 1 1024QAM -> 512QAM"},{"t":4.17,"type":"acm","detail":"hubC->hubD carrier 1 4096QAM -> 2048QAM"},{"t":4.17,"type":"acm","detail":"hubD->hubA carrier 1 1024QAM -> 512QAM"},{"t":4.18,"type":"acm","detail":"hubA->hubD carrier 0 512QAM -> 256QAM"},{"t":4.19,"type":"acm","detail":"hubB->hubC carrier 0 512QAM -> 256QAM"},{"t":4.2,"type":"acm","detail":"hubC->hubB carrier 0 512QAM -> 256QAM"},{"t":4.2,"type":"acm","detail":"hubD->hubC carrier 0 2048QAM -> 1024QAM"},{"t":4.2,"type":"acm","detail":"hubD->hubA carrier 0 512QAM -> 256QAM"},{"t":4.21,"type":"acm","detail":"tailC->hubC carrier 0 128QAM -> 64QAM"},{"t":4.22,"type":"acm","detail":"hubC->hubD carrier 0 2048QAM -> 1024QAM"},{"t":4.22,"type":"acm","detail":"ehHub->ehSpur carrier 0 16QAM -> 8PSK"},{"t":4.22,"type":"acm","detail":"ehSpur->ehHub carrier 0 16QAM -> 8PSK"}],"errors":[],"execution":{"engine":"ns-3.45 contrib/ceragon (Live SSH)","host":"efid@cersrv-029","binary":"/home/efid/ns3-dev/build/scratch/ns3.45-ceragon-twin-default","command":"ns3.45-ceragon-twin-default --topology=/home/efid/.ceragon_tmp/twin-19286ffb70.twin --simTime=11.0 --telemetryInterval=0.25","wall_clock_ms":18557.9,"is_live_remote":true,"stderr_tail":""},"twin_topology":"# ---------------------------------------------------------------------------\n# Ceragon functional twin - metro aggregation ring (mixed portfolio)\n#   IP-50EX Multi-Band trunk (E-band + 18 GHz, 1+1 HSB), IP-50FX XPIC ring hops,\n#   IP-20C green tail, EtherHaul E-band spur with MACsec, MultiHaul TG access.\n#   A \"site\" node can host several radios: use model= on the link line.\n# Run:\n#   ./ns3 run \"ceragon-twin-from-file --topology=contrib/ceragon/examples/topologies/metro-ring.twin --simTime=12\"\n# ---------------------------------------------------------------------------\n\n# name     model      x(m)    y(m)\nnode dc     host       -50     0\nnode hubA   site        0      0\nnode hubB   site       2800    0\nnode hubC   site       2800   4000\nnode hubD   site        0     4000\nnode tailC  IP-20C     8000   4000\nnode ehHub  EH-8010FX  2810   20\nnode ehSpur EH-8010FX  2800   1800\nnode pop    MH-N366    3000   1810\nnode cn1    MH-T261    3150   1900\nnode cn2    MH-T265    3120   1680\nnode cell1  host       8050   4000\nnode fwa1   host       3200   1950\n\nwire dc hubA rate=25Gbps\nlink hubA hubB model=IP-50EX distance=2800 protection=hsb sync=bc\nlink hubB hubC model=IP-50FX distance=4000 sync=bc\nlink hubC hubD model=IP-50FX distance=2800 sync=bc\nlink hubD hubA model=IP-50FX distance=4000\nlink hubC tailC model=IP-20C distance=5200 atpc=1 rsl=-45 sleep=1\nwire hubB ehHub rate=10Gbps\nlink ehHub ehSpur distance=1780 macsec=1\nwire ehSpur pop rate=10Gbps\nlink pop cn1 distance=170\nlink pop cn2 distance=180\nwire tailC cell1 rate=10Gbps\nwire cn1 fwa1 rate=1Gbps\n\n# transport slice on the trunk (CoS 5 = video slice capped at 1 Gb/s)\nslice hubA hubB 5 1Gbps dscp=34,36 weight=4\n# 802.1Qbv express window for fronthaul on the tail hop\ntsn hubC tailC 500 250 express_mask=0x80\n\n# services\nflow fronthaul dc cell1 25Mbps  dscp=46 start=0.5\nflow video     dc cell1 35Mbps  dscp=34 start=0.5\nflow fwa       dc fwa1  20Mbps  dscp=0  start=0.5\nflow bulk      dc ehSpur 50Mbps dscp=0  start=1.0\n\n# weather: storm crossing the ring\nrain 3 6 110\n\n# operator / intent actions\nevent 7.0 hubA hubB fail-unit 0\nevent 8.0 pop cn1 pole-sway 2\nevent 9.0 hubC tailC min-mod 64QAM\nevent 10.0 hubA hubB restore-unit 0\n","cer_intent_twin_topology":"# Ceragon ns-3 functional twin - generated by tfs_to_ceragon_twin.py\n# source: TeraFlowSDN  synced: 2026-10-19T07:03:27.294409+00:00\n\nnode oran-cu1           host          3800.0    2400.0\nnode mw-hub-4           IP-20N        2200.0    5200.0\nnode oran-du3           host          8500.0    5200.0\nnode oran-core          host          5000.0    1500.0\nnode oran-ru-1a         host          1500.0    2600.0\nnode oran-du1           host          1500.0    3200.0\nnode oran-cu2           host          7000.0    3200.0\nnode mw-tail-4a         IP-20C        2200.0    4600.0\nnode oran-ru-3a         host          8500.0    4600.0\nnode mw-hub-1           IP-20N        2200.0    3200.0\nnode oran-ru-4b         host          1500.0    5800.0\nnode oran-ru-3b         host          8500.0    5800.0\nnode oran-du4           host          1500.0    5200.0\nnode mmw-tail-4b        IP-50E        2200.0    5800.0\nnode oran-ru-1b         host          1500.0    3800.0\nnode oran-ru-2b         host          8500.0    3800.0\nnode mw-tail-1a         IP-20C        2200.0    2600.0\nnode oran-ru-4a         host          1500.0    4600.0\nnode mw-agg-2           IP-50FX       6200.0    3200.0\nnode mw-agg-1           IP-50FX       3800.0    3200.0\nnode mmw-tail-1b        IP-50E        2200.0    3800.0\nnode mw-agg-3           IP-50FX       6200.0    5200.0\nnode mw-tail-2a         IP-20C        7800.0    2600.0\nnode mmw-tail-2b        IP-50E        7800.0    3800.0\nnode oran-cu4           host          3000.0    5200.0\nnode oran-cu3           host          6200.0    6000.0\nnode mw-hub-2           IP-20N        7800.0    3200.0\nnode mw-hub-3           IP-20N        7800.0    5200.0\nnode edge-dc-1          host          5000.0    2500.0\nnode oran-du2           host          8500.0    3200.0\nnode mw-tail-3a         IP-20C        7800.0    4600.0\nnode mmw-tail-3b        IP-50E        7800.0    5800.0\nnode ceragon-mh-t261-_ctu-96_-_60ghz-v-band_ MH-T261       7570.0    2210.0\nnode oran-ru-2a         host          8500.0    2600.0\nnode mw-agg-4           IP-50FX       3800.0    5200.0\n\nlink mw-hub-2 mmw-tail-2b model=IP-50E distance=800\nlink mw-hub-3 mw-tail-3a model=IP-20N distance=1200\nwire oran-ru-1b mmw-tail-1b rate=10Gbps\nlink mw-agg-4 mw-agg-1 model=IP-50FX distance=4500\nlink mw-hub-1 mmw-tail-1b model=IP-50E distance=800\nlink mw-hub-3 mmw-tail-3b model=IP-50E distance=800\nwire oran-cu4 mw-agg-4 rate=25Gbps\nlink mw-agg-2 mw-agg-3 model=IP-50FX distance=4500\nwire oran-cu2 mw-agg-2 rate=25Gbps\nlink mw-agg-2 mw-hub-2 model=IP-50FX distance=3200\nlink mw-agg-3 mw-agg-4 model=IP-50FX distance=4500\nwire oran-cu1 mw-agg-1 rate=25Gbps\nwire oran-ru-2b mmw-tail-2b rate=10Gbps\nlink mw-agg-1 mw-hub-1 model=IP-50FX distance=3200\nwire oran-du3 mw-hub-3 rate=10Gbps\nwire oran-ru-4b mmw-tail-4b rate=10Gbps\nlink mw-agg-3 mw-hub-3 model=IP-50FX distance=3200\nwire oran-du2 mw-hub-2 rate=10Gbps\nlink mw-hub-4 mw-tail-4a model=IP-20N distance=1200\nwire edge-dc-1 mw-agg-2 rate=100Gbps\nwire oran-du4 mw-hub-4 rate=10Gbps\nwire oran-cu3 mw-agg-3 rate=25Gbps\nlink mw-hub-2 mw-tail-2a model=IP-20N distance=1200\nwire oran-ru-2a mw-tail-2a rate=10Gbps\nwire oran-ru-1a mw-tail-1a rate=10Gbps\nlink mw-agg-1 mw-agg-2 model=IP-50FX distance=4500\nwire oran-ru-3b mmw-tail-3b rate=10Gbps\nwire oran-du1 mw-hub-1 rate=10Gbps\nwire oran-core mw-agg-1 rate=100Gbps\nwire oran-ru-3a mw-tail-3a rate=10Gbps\nwire oran-ru-4a mw-tail-4a rate=10Gbps\nlink mw-agg-4 mw-hub-4 model=IP-50FX distance=3200\nlink mw-hub-1 mw-tail-1a model=IP-20N distance=1200\nlink mw-hub-4 mmw-tail-4b model=IP-50E distance=800\n\ntsn mw-hub-2 mmw-tail-2b 250 62 express_mask=0x80\ntsn mmw-tail-2b mw-hub-2 250 62 express_mask=0x80\n\nflow urllc0 edge-dc-1 oran-ru-1a 15Mbps dscp=46 start=0.5\nflow embb0 edge-dc-1 oran-ru-1a 45Mbps dscp=0 start=0.5\nflow urllc1 edge-dc-1 oran-ru-1b 15Mbps dscp=46 start=0.5\nflow embb1 edge-dc-1 oran-ru-1b 45Mbps dscp=0 start=0.5\nrain 1 2 85\n"}};
+  </script>
+  <script>
+    const DATA = window.SHOWCASE_DATA || { portfolio: [], yang_schemas: [], ns3_examples: {}, live_twin_run: { links: [], flows: [], timeline: [] } };
+    let selectedLinkName = "hubA->hubB";
+    let currentSimTime = 1.0;
+    let manualRainOverride = null;
+    let playInterval = null;
+    let currentExampleKey = "TEST_SUITE";
+
+    // Exact node coordinates for the 13-node metro-ring.twin topology
+    const NODE_COORDS = {
+      dc:     { x: 55,  y: 115, role: "Core DC (25G)" },
+      hubA:   { x: 165, y: 115, role: "Ring West (IP-50EX)" },
+      hubB:   { x: 375, y: 115, role: "Ring North (IP-50EX)" },
+      hubC:   { x: 375, y: 310, role: "Ring East (IP-50FX)" },
+      hubD:   { x: 165, y: 310, role: "Ring South (IP-50FX)" },
+      tailC:  { x: 515, y: 345, role: "TSN Tail (IP-20C)" },
+      cell1:  { x: 640, y: 345, role: "5G Cell O-DU" },
+      ehHub:  { x: 500, y: 95,  role: "E-Band Hub (EH-8010FX)" },
+      ehSpur: { x: 635, y: 95,  role: "MACsec Spur (EH-8010FX)" },
+      pop:    { x: 685, y: 215, role: "TG POP DN (MH-N366)" },
+      cn1:    { x: 785, y: 145, role: "TG CN1 (MH-T261)" },
+      cn2:    { x: 795, y: 295, role: "TG CN2 (MH-T265)" },
+      fwa1:   { x: 830, y: 60,  role: "FWA Host" }
+    };
+
+    const WIRE_LINKS = [
+      ["dc", "hubA", "25G Fiber"],
+      ["hubB", "ehHub", "10G Fiber"],
+      ["ehSpur", "pop", "10G Fiber"],
+      ["tailC", "cell1", "10G Fiber"],
+      ["cn1", "fwa1", "1G Fiber"]
+    ];
+
+    function switchTab(tabId) {
+      ["topology", "portfolio", "yang", "examples", "repos"].forEach(id => {
+        document.getElementById("tab-" + id).classList.toggle("hidden", id !== tabId);
+        document.getElementById("tab-btn-" + id).classList.toggle("active", id === tabId);
+      });
+    }
+
+    function getRainAtTime(t) {
+      if (manualRainOverride !== null) return manualRainOverride;
+      // Matches metro-ring.twin: rain 3 6 110 (starts t=3s, duration 6s -> ends t=9s, half-sine peak 110 mm/h at t=6s)
+      if (t < 3.0 || t > 9.0) return 0.0;
+      const phase = (t - 3.0) / 6.0;
+      return 110.0 * Math.sin(Math.PI * phase);
+    }
+
+    function computeDynamicLinkState(linkObj, t, rainMmh) {
+      const st = JSON.parse(JSON.stringify(linkObj.state));
+      const isTg = st.family === "MultiHaul TG";
+      const swayActive = isTg && linkObj.link.includes("cn1") && t >= 8.0;
+      const minModActive = linkObj.link.includes("tailC") && t >= 9.0;
+
+      let totalMbps = 0;
+      st.carriers.forEach((c) => {
+        const isEbandCarrier = c.freq_mhz >= 57000 && c.freq_mhz <= 86000;
+        if (swayActive && c.freq_mhz >= 57000) {
+          c.rain_att_db = 8.5;
+          c.sinr_db = Math.max(11.0, c.sinr_db - 6.5);
+          c.modulation = "MCS9";
+          c.rate_mbps = 1155.0;
+          st.beam_misalignment_deg = 2.0;
+        }
+        if (rainMmh > 2.0) {
+          const attFactor = isEbandCarrier ? (c.freq_mhz >= 70000 ? 0.38 : 0.20) : 0.11;
+          const attDb = rainMmh * attFactor * Math.max(0.18, st.distance_km);
+          c.rain_att_db = (c.rain_att_db || 0) + attDb;
+          c.rsl_dbm = c.rsl_dbm - attDb;
+          c.sinr_db = c.sinr_db - attDb;
+          if (isEbandCarrier && c.freq_mhz >= 70000 && rainMmh >= 42.0 && st.distance_km >= 1.5) {
+            c.up = false;
+            c.modulation = "OUTAGE";
+            c.rate_mbps = 0.0;
+          } else if (c.sinr_db < 14.0) {
+            c.modulation = isTg ? "MCS7" : (minModActive ? "64QAM" : "QPSK");
+            c.rate_mbps = c.rate_mbps * 0.18;
+          } else if (c.sinr_db < 22.0) {
+            c.modulation = isTg ? "MCS9" : (minModActive ? "64QAM" : "32QAM");
+            c.rate_mbps = c.rate_mbps * 0.42;
+          } else if (c.sinr_db < 31.0) {
+            c.modulation = isTg ? "MCS11" : "256QAM";
+            c.rate_mbps = c.rate_mbps * 0.68;
+          }
+        } else if (minModActive && !isTg) {
+          c.modulation = "4096QAM (Floor 64QAM)";
+        }
+        if (c.up) totalMbps += c.rate_mbps;
+      });
+
+      if (st.protection === "1+1-HSB") {
+        // event 7.0 hubA hubB fail-unit 0, event 10.0 hubA hubB restore-unit 0
+        st.active_unit = (t >= 7.0 && t < 10.0) ? 1 : 0;
+        st.switchovers = t >= 10.0 ? 2 : (t >= 7.0 ? 1 : 0);
+      }
+      st.capacity_mbps = Math.min(linkObj.max_capacity_mbps, totalMbps);
+      st.link_up = st.capacity_mbps > 0;
+      st.rain_mmh = rainMmh;
+      return st;
+    }
+
+    function renderTopologySvg() {
+      const svg = document.getElementById("topology-svg");
+      const rain = getRainAtTime(currentSimTime);
+      const links = (DATA.live_twin_run && DATA.live_twin_run.links) || [];
+
+      let html = `
+        <defs>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <rect x="14" y="14" width="660" height="402" rx="14" fill="rgba(14,165,233,0.04)" stroke="rgba(56,189,248,0.2)" stroke-dasharray="4 4"/>
+        <text x="28" y="34" fill="#38bdf8" font-size="12" font-weight="600">Metro Aggregation Ring (IP-50EX MBH + IP-50FX XPIC) + TSN Tail (IP-20C) + 80 GHz MACsec Spur (EH-8010FX)</text>
+        <rect x="682" y="14" width="184" height="402" rx="14" fill="rgba(245,158,11,0.04)" stroke="rgba(245,158,11,0.22)" stroke-dasharray="4 4"/>
+        <text x="694" y="34" fill="#fbbf24" font-size="12" font-weight="600">60 GHz MultiHaul TG</text>
+      `;
+
+      // Draw optical fiber wires
+      WIRE_LINKS.forEach(([u, v, label]) => {
+        const p1 = NODE_COORDS[u], p2 = NODE_COORDS[v];
+        if (!p1 || !p2) return;
+        html += `
+          <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#64748b" stroke-width="2" stroke-dasharray="3 3" />
+        `;
+      });
+
+      // Draw radio links
+      const drawnPairs = new Set();
+      links.forEach(lk => {
+        const [u, v] = lk.link.split("->");
+        const pairKey = [u, v].sort().join("--");
+        if (drawnPairs.has(pairKey)) return;
+        drawnPairs.add(pairKey);
+
+        const p1 = NODE_COORDS[u];
+        const p2 = NODE_COORDS[v];
+        if (!p1 || !p2) return;
+
+        const dyn = computeDynamicLinkState(lk, currentSimTime, rain);
+        const isSelected = lk.link === selectedLinkName || (`${v}->${u}`) === selectedLinkName;
+
+        let stroke = "#38bdf8";
+        if (dyn.model === "IP-50EX") stroke = "#34d399";
+        else if (dyn.family === "EtherHaul") stroke = "#c084fc";
+        else if (dyn.family === "MultiHaul TG") stroke = "#fbbf24";
+
+        const ebandDown = dyn.carriers.some(c => !c.up);
+        if (ebandDown && dyn.link_up) stroke = "#f97316"; // Multi-Band 18 GHz anchor carrying traffic!
+        if (!dyn.link_up) stroke = "#ef4444"; // Full rain outage on E-band-only hop
+
+        const midX = (p1.x + p2.x) / 2;
+        const midY = (p1.y + p2.y) / 2;
+
+        html += `
+          <g class="cursor-pointer" onclick="selectLink('${lk.link}')">
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
+                  stroke="${stroke}" stroke-width="${isSelected ? 6 : 3.5}" stroke-opacity="0.35" />
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
+                  stroke="${stroke}" stroke-width="${isSelected ? 3.5 : 2.2}" class="${dyn.link_up ? 'pulse-flow' : ''}" />
+            <rect x="${midX - 46}" y="${midY - 12}" width="92" height="24" rx="6"
+                  fill="#090d16" stroke="${isSelected ? '#ffffff' : stroke}" stroke-width="${isSelected ? 1.8 : 1}" />
+            <text x="${midX}" y="${midY + 4}" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="700">
+              ${dyn.model}
+            </text>
+          </g>
+        `;
+      });
+
+      // Draw nodes
+      Object.entries(NODE_COORDS).forEach(([name, pt]) => {
+        const isTg = ["pop", "cn1", "cn2"].includes(name);
+        const isHost = ["dc", "cell1", "fwa1"].includes(name);
+        const fill = isHost ? "#1e293b" : (isTg ? "#78350f" : "#0c4a6e");
+        const ring = isHost ? "#94a3b8" : (isTg ? "#fbbf24" : "#38bdf8");
+        html += `
+          <g transform="translate(${pt.x}, ${pt.y})">
+            <circle r="20" fill="${fill}" stroke="${ring}" stroke-width="2.2" filter="url(#glow)" />
+            <text y="4" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">${name}</text>
+            <text y="34" text-anchor="middle" fill="#cbd5e1" font-size="12">${pt.role}</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = html;
+      updateInspector(rain);
+    }
+
+    function selectLink(linkName) {
+      selectedLinkName = linkName;
+      renderTopologySvg();
+    }
+
+    function updateInspector(rain) {
+      const links = (DATA.live_twin_run && DATA.live_twin_run.links) || [];
+      const lk = links.find(x => x.link === selectedLinkName) || links[0];
+      if (!lk) return;
+
+      const dyn = computeDynamicLinkState(lk, currentSimTime, rain);
+      document.getElementById("insp-link-name").textContent = lk.link.replace("->", " → ");
+      document.getElementById("insp-model-badge").textContent = `${dyn.model} (${dyn.family})`;
+      document.getElementById("insp-capacity").textContent = `${dyn.capacity_mbps.toFixed(1)} Mbps`;
+      document.getElementById("insp-avail").textContent = `Avail: ${(lk.availability * 100).toFixed(2)}% | Range: ${lk.min_capacity_mbps.toFixed(0)}–${lk.max_capacity_mbps.toFixed(0)} Mbps`;
+      document.getElementById("insp-hop").textContent = `${dyn.distance_km.toFixed(3)} km`;
+      document.getElementById("insp-flavor").textContent = `SBI Flavor: ${dyn.api_flavor}`;
+      document.getElementById("insp-prot").textContent = `${dyn.protection} (Active Unit #${dyn.active_unit})`;
+      document.getElementById("insp-sw").textContent = `Switchovers: ${dyn.switchovers} | Misalign: ${dyn.beam_misalignment_deg.toFixed(1)}°`;
+      document.getElementById("insp-power").textContent = `${dyn.power_w.toFixed(1)} W (${dyn.energy_j.toFixed(0)} J)`;
+      document.getElementById("insp-sync").textContent = `Sync: ${dyn.sync} (${dyn.time_error_ns.toFixed(1)} ns) | MACsec: ${dyn.macsec ? 'ON' : 'OFF'}`;
+
+      // Carriers
+      const carriersDiv = document.getElementById("insp-carriers");
+      carriersDiv.innerHTML = dyn.carriers.map((c, idx) => `
+        <div class="p-2.5 rounded-lg sub-box text-xs flex flex-col gap-1">
+          <div class="flex items-center justify-between font-semibold">
+            <span>Carrier #${idx} (${(c.freq_mhz / 1000).toFixed(1)} GHz, ${c.bw_mhz.toFixed(0)} MHz, Pol ${c.pol})</span>
+            <span class="px-2 py-0.5 rounded ${c.up ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-400'}">
+              ${c.modulation} • ${c.rate_mbps.toFixed(1)} Mbps
+            </span>
+          </div>
+          <div class="flex flex-wrap justify-between muted-text font-mono">
+            <span>RSL: ${c.rsl_dbm.toFixed(1)} dBm</span>
+            <span>SINR: ${c.sinr_db.toFixed(1)} dB</span>
+            <span>Rain Att: ${(c.rain_att_db || 0).toFixed(1)} dB</span>
+            <span>XPD: ${c.xpd_db.toFixed(1)} dB</span>
+          </div>
+        </div>
+      `).join("");
+
+      // 8-CoS Bars
+      const cosArr = (lk.qos && lk.qos.dequeued_per_cos) || [0,0,0,0,0,0,0,0];
+      const maxCos = Math.max(1, ...cosArr);
+      document.getElementById("insp-qos-summary").textContent =
+        `Cycle: ${lk.qos ? lk.qos.gate_cycle_us : 0} µs | Gate Blocked: ${lk.qos ? lk.qos.gate_blocked : 0} | Drops: ${lk.qos ? lk.qos.drops : 0}`;
+      document.getElementById("insp-cos-bars").innerHTML = cosArr.map((cnt, i) => {
+        const hPct = Math.max(12, Math.round((cnt / maxCos) * 100));
+        return `
+          <div class="flex flex-col items-center sub-box p-1.5 rounded">
+            <div class="h-10 w-full flex items-end justify-center">
+              <div class="w-full rounded-t ${cnt > 0 ? 'bg-sky-400' : 'bg-slate-700'}" style="height:${hPct}%"></div>
+            </div>
+            <div class="text-xs font-mono mt-1">CoS${i}</div>
+            <div class="text-xs muted-text font-mono">${cnt > 999 ? (cnt/1000).toFixed(1)+'k' : cnt}</div>
+          </div>
+        `;
+      }).join("");
+
+      // Timeline events up to currentSimTime
+      const tl = (DATA.live_twin_run && DATA.live_twin_run.timeline) || [];
+      const activeEvents = tl.filter(e => e.t <= currentSimTime + 0.05).slice(-16);
+      document.getElementById("insp-timeline-log").innerHTML = activeEvents.length
+        ? activeEvents.map(e => {
+            let color = "text-sky-300";
+            if (e.type === "protection" || e.type === "control") color = "text-amber-300 font-semibold";
+            else if (e.detail.includes("OUTAGE") || e.detail.includes("DOWN") || e.detail.includes("fail")) color = "text-red-400";
+            return `<div><span class="muted-text">[t=${e.t.toFixed(2)}s]</span> <span class="${color}">[${e.type}] ${e.detail}</span></div>`;
+          }).join("")
+        : `<div class="muted-text">All 16 radio links up in Clear Sky ACM state (t = ${currentSimTime.toFixed(2)}s). Scrub timeline past t=3.0s to see the 110 mm/h storm, t=7.0s 1+1 HSB switchover, and t=8.0s 60 GHz pole sway.</div>`;
+    }
+
+    function onTimeScrub(val) {
+      currentSimTime = parseFloat(val);
+      manualRainOverride = null;
+      const rain = getRainAtTime(currentSimTime);
+      document.getElementById("slider-rain").value = Math.round(rain);
+      document.getElementById("lbl-sim-time").textContent = `t = ${currentSimTime.toFixed(2)} s`;
+      document.getElementById("lbl-rain-rate").textContent = `${rain.toFixed(1)} mm/h`;
+
+      let phase = "Clear Sky (0.0 mm/h)";
+      if (currentSimTime >= 6.9 && currentSimTime <= 7.5) phase = "⚡ t=7.0s: 1+1 HSB Switchover (hubA→hubB Unit #0→#1)";
+      else if (currentSimTime >= 7.9 && currentSimTime <= 8.5) phase = "🌬️ t=8.0s: 60 GHz Pole Sway (pop→cn1 2° Misalignment)";
+      else if (currentSimTime >= 8.9 && currentSimTime <= 9.5) phase = "🛡️ t=9.0s: Intent ACM Floor Hardened (hubC→tailC min-mod 64QAM)";
+      else if (currentSimTime >= 9.9 && currentSimTime <= 10.5) phase = "✅ t=10.0s: Primary Unit #0 Restored (hubA→hubB)";
+      else if (rain > 45) phase = `🌧️ Peak Storm (${rain.toFixed(0)} mm/h — EH-8010FX Fades, IP-50EX 18GHz Anchor Up)`;
+      else if (rain > 1) phase = `🌦️ Rain Front (${rain.toFixed(1)} mm/h — Hitless ACM Adapting)`;
+      document.getElementById("lbl-sim-phase").textContent = phase;
+
+      renderTopologySvg();
+    }
+
+    function onRainOverride(val) {
+      manualRainOverride = parseFloat(val);
+      document.getElementById("lbl-rain-rate").textContent = `${manualRainOverride.toFixed(1)} mm/h (Manual)`;
+      renderTopologySvg();
+    }
+
+    function togglePlaySim() {
+      const btn = document.getElementById("btn-play-sim");
+      if (playInterval) {
+        clearInterval(playInterval);
+        playInterval = null;
+        btn.textContent = "▶ Auto-Play Timeline (0..11s)";
+        return;
+      }
+      btn.textContent = "⏸ Pause Timeline";
+      playInterval = setInterval(() => {
+        let next = currentSimTime + 0.25;
+        if (next > 11.0) next = 0.0;
+        document.getElementById("slider-time").value = next;
+        onTimeScrub(next);
+      }, 450);
+    }
+
+    function showBanner(msg) {
+      const b = document.getElementById("live-status-banner");
+      const t = document.getElementById("live-status-text");
+      t.textContent = msg;
+      b.classList.remove("hidden");
+    }
+
+    async function runLiveOnServer() {
+      const btn = document.getElementById("btn-live-run");
+      const badge = document.getElementById("live-exec-badge");
+      btn.disabled = true;
+      btn.textContent = "⏳ Running on efid@cersrv-029...";
+      try {
+        const res = await fetch((window.location.protocol.startsWith("http") ? "/api/v1/digital-twin/ceragon/run" : "http://127.0.0.1:5000/api/v1/digital-twin/ceragon/run"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ preset: "metro-ring", sim_time: 11.0 })
+        });
+        const json = await res.json();
+        if (json.links && json.links.length) {
+          DATA.live_twin_run = json;
+          renderTopologySvg();
+          renderFlowsTable();
+          const wc = json.execution ? json.execution.wall_clock_ms : 0;
+          const host = json.execution ? json.execution.host : "efid@cersrv-029";
+          badge.textContent = `✓ Live SSH Run OK in ${wc} ms on ${host}`;
+          showBanner(`✓ LIVE NS-3.45 EXECUTION COMPLETED ON ${host} in ${wc} ms — ${json.links.length} directional radio links, ${json.flows ? json.flows.length : 0} UDP flows, ${json.timeline ? json.timeline.length : 0} discrete events captured.`);
+        } else if (json.error) {
+          showBanner(`⚠️ Server response: ${json.error}`);
+        }
+      } catch (e) {
+        badge.textContent = "Verified snapshot from efid@cersrv-029 (start local server on :5000 for live re-runs)";
+        showBanner("ℹ️ Using pre-collected live NS-3.45 telemetry from efid@cersrv-029 (http://127.0.0.1:5000 not reachable from this sandbox).");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Run Live on NS-3 (cersrv-029)";
+      }
+    }
+
+    async function runSelectedExampleLive() {
+      if (currentExampleKey === "TWIN_DSL") {
+        await runLiveOnServer();
+        selectExample("TWIN_DSL");
+        return;
+      }
+      const btn = document.getElementById("btn-run-example-live");
+      const pre = document.getElementById("example-console-pre");
+      btn.disabled = true;
+      btn.textContent = `⏳ Executing ${currentExampleKey} on efid@cersrv-029...`;
+      try {
+        const res = await fetch((window.location.protocol.startsWith("http") ? "/api/v1/digital-twin/ceragon/run-example" : "http://127.0.0.1:5000/api/v1/digital-twin/ceragon/run-example"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ example: currentExampleKey })
+        });
+        const json = await res.json();
+        if (json.output) {
+          DATA.ns3_examples[currentExampleKey] = json.output;
+          pre.textContent = `// ✓ Executed LIVE on ${json.host} in ${json.wall_clock_ms} ms (exit code ${json.returncode})\n\n` + json.output;
+          showBanner(`✓ Live C++ binary (${currentExampleKey}) executed on ${json.host} in ${json.wall_clock_ms} ms.`);
+        }
+      } catch (e) {
+        showBanner("ℹ️ Showing verified C++ output from efid@cersrv-029.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Re-Run Selected Binary Live on cersrv-029";
+      }
+    }
+
+    function renderFlowsTable() {
+      const flows = (DATA.live_twin_run && DATA.live_twin_run.flows) || [];
+      const cosNames = { 46: "EF (CoS 7 - 5G Fronthaul)", 34: "AF41 (CoS 5 - Video Slice)", 0: "BE (CoS 0 - FWA / Bulk)" };
+      document.getElementById("flows-table-body").innerHTML = flows.map(f => `
+        <tr class="border-b hover:bg-white/5" style="border-color: var(--border, #1e293b);">
+          <td class="py-2 px-3 font-bold text-sky-300 font-mono">${f.name}</td>
+          <td class="py-2 px-3 font-mono">${f.src} → ${f.dst}</td>
+          <td class="py-2 px-3"><span class="px-2 py-0.5 rounded sub-box font-mono">DSCP ${f.dscp} • ${cosNames[f.dscp] || 'CoS'}</span></td>
+          <td class="py-2 px-3 font-mono">${f.offered_mbps.toFixed(1)} Mbps</td>
+          <td class="py-2 px-3 font-bold text-emerald-400 font-mono">${f.throughput_mbps.toFixed(2)} Mbps</td>
+          <td class="py-2 px-3 font-mono">${f.tx_packets.toLocaleString()} / ${f.rx_packets.toLocaleString()}</td>
+          <td class="py-2 px-3 font-mono ${f.loss_pct < 2 ? 'text-emerald-400' : 'text-amber-300'}">${f.loss_pct.toFixed(3)}%</td>
+          <td class="py-2 px-3 font-mono">${f.mean_delay_ms.toFixed(3)} ms</td>
+          <td class="py-2 px-3 font-mono">${f.mean_jitter_ms.toFixed(4)} ms</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderPortfolioTable() {
+      const fam = document.getElementById("filter-family").value;
+      const q = (document.getElementById("search-portfolio").value || "").toLowerCase();
+      const rows = (DATA.portfolio || []).filter(m => {
+        if (fam !== "ALL" && m.family !== fam) return false;
+        if (!q) return true;
+        return JSON.stringify(m).toLowerCase().includes(q);
+      });
+
+      document.getElementById("portfolio-table-body").innerHTML = rows.map(m => {
+        const bands = (m.bands || []).map(b => `${b.name} (${b.min_ghz}-${b.max_ghz}G)`).join(", ");
+        const clearStr = m.ns3_clear_mbps != null ? `${m.ns3_clear_mod} • ${m.ns3_clear_mbps.toFixed(0)} Mbps` : "Catalog Fallback";
+        const rainStr = m.ns3_rain_mbps != null ? `${m.ns3_rain_mod} • ${m.ns3_rain_mbps.toFixed(0)} Mbps` : "—";
+        const feats = (m.features || []).slice(0, 5).join(", ");
+        return `
+          <tr class="border-b hover:bg-white/5" style="border-color: var(--border, #1e293b);">
+            <td class="py-2 px-2.5 font-bold text-sky-300 font-mono">${m.model}${m.is_family_fallback ? ' <span class="text-amber-400">(Generic)</span>' : ''}</td>
+            <td class="py-2 px-2.5">${m.family} <span class="muted-text font-mono">(${m.api_flavor})</span></td>
+            <td class="py-2 px-2.5 font-mono">${bands}</td>
+            <td class="py-2 px-2.5 font-mono">${m.radio_carriers}x • ${m.max_modulation}</td>
+            <td class="py-2 px-2.5 font-bold font-mono">${m.max_capacity_gbps} Gbps</td>
+            <td class="py-2 px-2.5 font-mono">${m.ns3_hop_km != null ? m.ns3_hop_km.toFixed(1) + ' km' : '—'}</td>
+            <td class="py-2 px-2.5 font-mono text-emerald-400">${clearStr}</td>
+            <td class="py-2 px-2.5 font-mono ${m.ns3_rain_mod && m.ns3_rain_mod.includes('OUTAGE') ? 'text-amber-300' : 'text-sky-300'}">${rainStr}</td>
+            <td class="py-2 px-2.5 font-mono">${m.ns3_sinr_db != null ? m.ns3_sinr_db.toFixed(1) + ' dB' : '—'}</td>
+            <td class="py-2 px-2.5 font-mono">${m.ns3_power_w != null ? m.ns3_power_w.toFixed(1) + ' W' : '—'}</td>
+            <td class="py-2 px-2.5 muted-text">${feats}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderYangTable() {
+      const q = (document.getElementById("search-yang").value || "").toLowerCase();
+      const rows = (DATA.yang_schemas || []).filter(s => !q || JSON.stringify(s).toLowerCase().includes(q));
+      document.getElementById("yang-table-body").innerHTML = rows.map(s => `
+        <tr class="border-b hover:bg-white/5" style="border-color: var(--border, #1e293b);">
+          <td class="py-1.5 px-3 font-mono font-semibold text-sky-300">${s.name}.yang</td>
+          <td class="py-1.5 px-3 font-mono">${s.kind}</td>
+          <td class="py-1.5 px-3 font-mono muted-text">${s.prefix || '—'}</td>
+          <td class="py-1.5 px-3 font-mono">${s.revision || '—'}</td>
+          <td class="py-1.5 px-3 font-mono">${s.imports_count}</td>
+          <td class="py-1.5 px-3 font-mono text-emerald-400">${(s.rpcs || []).length} RPC / ${(s.notifications || []).length} Notif</td>
+        </tr>
+      `).join("");
+    }
+
+    const SBI_PAYLOADS = {
+      radio: {
+        out: (fl) => fl === "ceraos"
+          ? `PATCH /restconf/data/ietf-network-topology:network-topology/topology=topology-netconf/node=IP50EX-HUBA/yang-ext:mount/core-model:network-element/ltp=radio-1/lp=mws-1/air-interface:air-interface-pac/air-interface-configuration\n{\n  "air-interface:air-interface-configuration": {\n    "tx-frequency": 82000000,\n    "rx-frequency": 72000000,\n    "tx-Channel-bandwidth": 2000000,\n    "transmitter-is-on": true,\n    "tx-power": 18,\n    "adaptive-modulation-is-on": true,\n    "atpc-is-on": true,\n    "atpc-thresh-upper": -35,\n    "atpc-thresh-lower": -55\n  }\n}`
+          : `PATCH /restconf/data/siklu-radio:radio-links/radio-link=rf1\n{\n  "siklu-radio:radio-link": {\n    "link-name": "rf1",\n    "admin-status": "up",\n    "tx-frequency-mhz": ${fl === 'siklu_tg' ? 60480 : 82000},\n    "channel-bandwidth-mhz": ${fl === 'siklu_tg' ? 2160 : 2000},\n    "tx-power-dbm": 15,\n    "adaptive-modulation": "enabled"\n  }\n}`,
+        inb: (fl) => `{\n  "domain": "radio",\n  "api_flavor": "${fl}",\n  "rsl_dbm": -42.4,\n  "sinr_db": 36.8,\n  "tx_power_dbm": 18.0,\n  "active_modulation": "${fl === 'siklu_tg' ? 'MCS12' : '512QAM'}",\n  "effective_capacity_mbps": ${fl === 'siklu_tg' ? 1848.0 : 10000.0},\n  "rain_rate_mmh": 0.0\n}`
+      },
+      carriers: {
+        out: () => `PUT /restconf/data/ceragon-radio-augment:ceragon-radio/carriers/carrier=0\n{\n  "carrier-id": 0,\n  "admin-state": "enabled",\n  "center-frequency-mhz": 18000,\n  "channel-bandwidth-mhz": 112,\n  "polarization": "H",\n  "min-modulation": "QPSK",\n  "max-modulation": "4096QAM"\n}`,
+        inb: () => `{\n  "carriers": [\n    {"id": 0, "pol": "H", "freq_mhz": 18000, "bw_mhz": 112, "mod": "4096QAM", "rate_mbps": 1051.8, "rsl_dbm": -38.9, "sinr_db": 45.0},\n    {"id": 1, "pol": "V", "freq_mhz": 18000, "bw_mhz": 112, "mod": "4096QAM", "rate_mbps": 1051.8, "rsl_dbm": -38.9, "sinr_db": 45.0}\n  ]\n}`
+      },
+      xpic: {
+        out: () => `PATCH /restconf/data/ceragon-radio-augment:ceragon-radio/xpic-group=xpic-1\n{\n  "xpic-group-id": "xpic-1",\n  "enabled": true,\n  "h-carrier-id": 0,\n  "v-carrier-id": 1,\n  "cancellation-depth-db": 28.0\n}`,
+        inb: () => `{\n  "xpic_enabled": true,\n  "xpd_measured_db": 38.4,\n  "xpic_improvement_db": 26.5,\n  "post_canceller_sinr_h_db": 44.9,\n  "post_canceller_sinr_v_db": 44.8\n}`
+      },
+      mimo: {
+        out: () => `PATCH /restconf/data/ceragon-radio-augment:ceragon-radio/mimo-group=los-mimo-4x4\n{\n  "mimo-mode": "4x4-LoS-MIMO",\n  "optimal-antenna-separation-m": 1.85,\n  "phase-alignment-loop": "locked"\n}`,
+        inb: () => `{\n  "mimo_mode": "4x4-LoS-MIMO",\n  "spatial_streams": 4,\n  "condition_number_db": 2.1,\n  "aggregate_capacity_mbps": 4207.3\n}`
+      },
+      protection: {
+        out: () => `POST /restconf/operations/ceragon-radio-augment:trigger-protection-switchover\n{\n  "input": {\n    "protection-group-id": "hsb-hubA-hubB",\n    "scheme": "1+1-HSB",\n    "command": "force-switch-to-standby",\n    "revertive": true,\n    "wtr-timer-seconds": 300\n  }\n}`,
+        inb: () => `{\n  "protection_scheme": "1+1-HSB",\n  "active_unit": 1,\n  "standby_unit_health": "READY_HOT",\n  "switchover_count": 1,\n  "last_switchover_duration_ms": 28.4\n}`
+      },
+      multiband: {
+        out: () => `PUT /restconf/data/onf-wire-interface:wire-interface/air-interface-diversity=mbh-hubA-hubB\n{\n  "super-group-id": "mbh-hubA-hubB",\n  "eband-member-ltp": "carrier-80ghz-0",\n  "microwave-anchor-ltp": "carrier-18ghz-1",\n  "l1-link-bonding": true,\n  "hitless-priority-preservation": true\n}`,
+        inb: () => `{\n  "super_group": "mbh-hubA-hubB",\n  "eband_state": "DEGRADED_OR_FADE",\n  "mw_anchor_state": "UP_4096QAM",\n  "bonded_capacity_mbps": 12103.7,\n  "high_priority_cos_preserved": true\n}`
+      },
+      qos: {
+        out: () => `PUT /restconf/data/ietf-interfaces:interfaces/interface=eth0/ieee802-dot1q-bridge:bridge-port/ieee802-dot1q-sched-bridge:gate-parameter-table\n{\n  "gate-enabled": true,\n  "admin-cycle-time": {"numerator": 500, "denominator": 1000000},\n  "admin-control-list": [\n    {"index": 0, "operation-name": "set-gate-states", "time-interval-value": 250000, "gate-states-value": 128},\n    {"index": 1, "operation-name": "set-gate-states", "time-interval-value": 250000, "gate-states-value": 127}\n  ]\n}`,
+        inb: () => `{\n  "gate_cycle_us": 500,\n  "gate_blocked_deferrals": 5376,\n  "dequeued_per_cos": [0, 0, 0, 0, 0, 31545, 0, 22528],\n  "fronthaul_cos7_mean_jitter_ms": 0.0001\n}`
+      },
+      interfaces: {
+        out: () => `PATCH /restconf/data/ietf-interfaces:interfaces/interface=ten-gig-eth-1\n{\n  "name": "ten-gig-eth-1",\n  "type": "iana-if-type:ethernetCsmacd",\n  "enabled": true,\n  "mtu": 9600\n}`,
+        inb: () => `{\n  "interface": "ten-gig-eth-1",\n  "oper_status": "up",\n  "speed_gbps": 10,\n  "in_octets": 642891200,\n  "out_octets": 642889400\n}`
+      },
+      sync: {
+        out: () => `PUT /restconf/data/ietf-ptp:ptp/instance-list=0\n{\n  "profile": "ITU-T-G.8275.1",\n  "clock-class": 6,\n  "synce-ql-input": "QL-PRC",\n  "asymmetry-compensation-ps": 0\n}`,
+        inb: () => `{\n  "sync_profile": "G.8275.1",\n  "ptp_state": "PHASE_LOCKED",\n  "time_error_ns": -6.34,\n  "max_abs_time_error_ns": 14.2\n}`
+      },
+      security: {
+        out: () => `PUT /restconf/data/ieee802-dot1ae:secy/cipher-suite=GCM-AES-256\n{\n  "confidentiality-protection": true,\n  "replay-protection": true,\n  "sak-rekey-interval-seconds": 3600\n}`,
+        inb: () => `{\n  "macsec_active": true,\n  "cipher_suite": "GCM-AES-256",\n  "overhead_bytes_per_frame": 32,\n  "protected_octets": 512094200\n}`
+      },
+      power: {
+        out: () => `PATCH /restconf/data/ceragon-radio-augment:ceragon-radio/green-mode\n{\n  "carrier-sleep-enabled": true,\n  "low-load-threshold-pct": 15,\n  "wake-threshold-pct": 40\n}`,
+        inb: () => `{\n  "power_draw_w": 55.3,\n  "cumulative_energy_j": 387.1,\n  "sleeping_carriers": 0,\n  "poe_class": "802.3bt-Type4"\n}`
+      },
+      beamforming: {
+        out: () => `POST /restconf/operations/siklu-tg-beamforming:trigger-sector-scan\n{\n  "input": {\n    "sector-id": 1,\n    "codebook-beams": 64,\n    "target-remote-mac": "00:24:A8:C0:01:02"\n  }\n}`,
+        inb: () => `{\n  "frequency_ghz": 60.48,\n  "active_beam_index": 31,\n  "beam_misalignment_deg": 0.0,\n  "array_gain_dbi": 36.0,\n  "mcs": "MCS12",\n  "phy_rate_mbps": 1848.0\n}`
+      }
+    };
+
+    function renderSbiPayload() {
+      const dom = document.getElementById("sel-sbi-domain").value;
+      const fl = document.getElementById("sel-sbi-flavor").value;
+      const spec = SBI_PAYLOADS[dom] || SBI_PAYLOADS.radio;
+      document.getElementById("sbi-outbound-pre").textContent = spec.out(fl);
+      document.getElementById("sbi-inbound-pre").textContent = spec.inb(fl);
+    }
+
+    function selectExample(key) {
+      currentExampleKey = key;
+      ["TEST_SUITE", "EX_PORTFOLIO", "EX_MULTIBAND", "EX_TSN", "EX_TERRAGRAPH", "EX_PROTECTION", "TWIN_DSL"].forEach(k => {
+        const btn = document.getElementById("ex-btn-" + k);
+        if (!btn) return;
+        if (k === key) {
+          btn.className = "ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white cursor-pointer";
+        } else {
+          btn.className = "ex-btn px-3 py-1.5 rounded-lg text-xs font-semibold sub-box cursor-pointer";
+        }
+      });
+
+      const pre = document.getElementById("example-console-pre");
+      if (key === "TWIN_DSL") {
+        const t1 = (DATA.live_twin_run && DATA.live_twin_run.twin_topology) || "";
+        const t2 = (DATA.live_twin_run && DATA.live_twin_run.cer_intent_twin_topology) || "";
+        pre.textContent = "=== 1. Reference Multi-Layer Topology (metro-ring.twin) ===\n" + t1 +
+          "\n\n=== 2. Auto-Exported CER-Intent / TeraFlowSDN Topology (tfs_to_ceragon_twin.py) ===\n" + t2;
+      } else {
+        pre.textContent = (DATA.ns3_examples && DATA.ns3_examples[key]) || "No output loaded.";
+      }
+    }
+
+    // Initialize all views on load
+    renderTopologySvg();
+    renderFlowsTable();
+    renderPortfolioTable();
+    renderYangTable();
+    renderSbiPayload();
+    selectExample("TEST_SUITE");
+  </script>
+</body>
+</html>

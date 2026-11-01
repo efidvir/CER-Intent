@@ -84,19 +84,38 @@ class CeragonNs3TwinRunner:
 
     # ── execution ──────────────────────────────────────────────────────────
     def _ssh(self, remote_cmd: str, stdin: Optional[str], timeout: int) -> subprocess.CompletedProcess:
-        return subprocess.run(["ssh", "-o", "ConnectTimeout=6", "-o", "BatchMode=yes", self.host, remote_cmd],
-                              input=stdin, capture_output=True, text=True, timeout=timeout)
+        run_fn = subprocess.run
+        tpool_exec = None
+        if "eventlet" in sys.modules:
+            try:
+                from eventlet.patcher import original as _ev_original  # type: ignore
+                from eventlet import tpool as _ev_tpool  # type: ignore
+                run_fn = _ev_original("subprocess").run
+                tpool_exec = _ev_tpool.execute
+            except Exception:
+                pass
+        cmd = ["ssh", "-o", "ConnectTimeout=6", "-o", "BatchMode=yes", self.host, remote_cmd]
+        kwargs: Dict[str, Any] = {"capture_output": True, "text": True, "timeout": timeout}
+        if stdin is not None:
+            kwargs["input"] = stdin
+        else:
+            kwargs["stdin"] = subprocess.DEVNULL
+        if tpool_exec is not None:
+            return tpool_exec(run_fn, cmd, **kwargs)
+        return run_fn(cmd, **kwargs)
 
-    def run(self, twin_text: str, sim_time: float = 10.0, telemetry_interval: float = 0.1,
-            timeout: int = 180) -> Dict[str, Any]:
+    def run(self, twin_text: str, sim_time: float = 7.0, telemetry_interval: float = 0.25,
+            timeout: int = 120) -> Dict[str, Any]:
         """Run a .twin scenario and return the parsed JSON report."""
+        import base64
         started = time.time()
         run_id = uuid.uuid4().hex[:10]
         remote_file = f"{self.remote_tmp}/twin-{run_id}.twin"
+        b64_payload = base64.b64encode(twin_text.encode("utf-8")).decode("ascii")
         args = f"--topology={remote_file} --simTime={sim_time} --telemetryInterval={telemetry_interval}"
-        remote_cmd = (f"mkdir -p {self.remote_tmp} && cat > {remote_file} && "
+        remote_cmd = (f"mkdir -p {self.remote_tmp} && echo '{b64_payload}' | base64 -d > {remote_file} && "
                       f"TMPDIR={self.remote_tmp} {self.binary} {args}; rc=$?; rm -f {remote_file}; exit $rc")
-        proc = self._ssh(remote_cmd, twin_text, timeout)
+        proc = self._ssh(remote_cmd, None, timeout)
         report = _extract(proc.stdout, METRICS_START, METRICS_END)
         if report is None:
             raise RuntimeError(f"ns-3 twin returned no report (rc={proc.returncode}): "
