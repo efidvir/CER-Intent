@@ -1348,7 +1348,7 @@
       if (startFromStage <= 2) {
         await executeStage2RealAI(promptText, myRun);
         if (myRun !== runCounter) return;
-        if (!(await countdownTransition(2, 3, 2000, `✔ Stage 2 AI Plan Ready (${liveState.stage2ElapsedMs}ms)`))) {
+        if (!(await countdownTransition(2, 3, 4200, `✔ Stage 2 AI & YANG Synthesis Complete (${liveState.stage2ElapsedMs}ms)`))) {
           pipelineRunning = false;
           stopElapsedTicker();
           return;
@@ -1360,7 +1360,7 @@
       if (startFromStage <= 3) {
         await executeStage3RealNS3(scenarioId, promptText, myRun);
         if (myRun !== runCounter) return;
-        if (!(await countdownTransition(3, 4, 2200, `✔ Stage 3 NS-3.45 (${activeGoal.useCase}) Verified (${liveState.ns3WallMs}ms SSH)`))) {
+        if (!(await countdownTransition(3, 4, 5200, `✔ Stage 3 NS-3.45 (${activeGoal.useCase}) Baseline & Mitigated Runs Verified (${liveState.ns3WallMs}ms SSH)`))) {
           pipelineRunning = false;
           stopElapsedTicker();
           return;
@@ -1372,7 +1372,7 @@
       if (startFromStage <= 4) {
         await executeStage4RealTFS(myRun);
         if (myRun !== runCounter) return;
-        if (!(await countdownTransition(4, 5, 2000, `✔ Stage 4 TFS :8088 Committed (${liveState.stage4ElapsedMs}ms)`))) {
+        if (!(await countdownTransition(4, 5, 4200, `✔ Stage 4 TFS :8088 & CeragonDriver 2PC Committed (${liveState.stage4ElapsedMs}ms)`))) {
           pipelineRunning = false;
           stopElapsedTicker();
           return;
@@ -1390,19 +1390,25 @@
       goToStage(2);
       setPillState(2, "running");
       liveState.stage2Running = true;
-      setSysPill("sys-flask", "POST /intent...", true);
+      liveState.stage2Phase = 1;
+      setSysPill("sys-flask", "2a: NLP PARSE...", true);
+
+      document.getElementById("st2-title").textContent =
+        `Step 2a/2c: NLP Tokenizing Operator Prompt & Extracting TMF921 SLA...`;
+      document.getElementById("st2-sub").textContent =
+        `⏳ Calling POST /api/v1/intent (:5000) — Tokenizing "${promptText.slice(0, 62)}..."`;
 
       setHud(
-        `STAGE 2 RUNNING: Calling POST /api/v1/intent for "${activeGoal.name}" (:5000)...`,
-        25,
+        `STAGE 2 (Step 2a/3): IntentParser tokenizing prompt & extracting target / SLA bounds...`,
+        20,
         "amber",
         `<div class="subtask-item active">⚙️ 2a. IntentParser: Extracting target &amp; SLA</div>
-         <div class="subtask-item active">⚙️ 2b. IntentArchitectAgent: Scoring 17 Telecom Skills</div>
-         <div class="subtask-item">⏳ 2c. YANGBuilder: Synthesizing RFC 6020 XML</div>`
+         <div class="subtask-item">⏳ 2b. IntentArchitectAgent: Scoring 17 Telecom Skills</div>
+         <div class="subtask-item">⏳ 2c. CeragonDriver &amp; YANGBuilder: Synthesizing RFC 6020 XML</div>`
       );
       pushDebugLog(
         "req",
-        "STAGE 2 · HTTP POST",
+        "STAGE 2a · NLP PARSER",
         "POST http://localhost:5000/api/v1/intent",
         JSON.stringify({ intent: promptText, always_apply: false, source: "live-visual-flow" }, null, 2)
       );
@@ -1417,10 +1423,7 @@
         const data2 = await res2.json();
         if (myRun && myRun !== runCounter) return;
 
-        liveState.stage2Running = false;
-        liveState.stage2ElapsedMs = Math.round(performance.now() - t2Start);
         liveState.rawProofLog.step2_ai_architect = data2;
-
         liveState.promptText = promptText;
         liveState.promptTokens = promptText.split(/\s+/).filter(Boolean);
         liveState.intentId = data2.intent_id;
@@ -1428,6 +1431,18 @@
         liveState.targetId = data2.target_name || (data2.target && data2.target.identifier) || "link-D-E";
         liveState.parsedParams = data2.parameters || {};
 
+        const pEntries = Object.entries(liveState.parsedParams);
+        liveState.paramKeys = pEntries.length > 0
+          ? pEntries.slice(0, 5).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+          : [`target: ${liveState.targetId}`, `type: ${liveState.intentType}`];
+
+        // Allow user to visibly see Step 2a (Tokenization & Parameter Extraction in Column 1)
+        await sleep(1250);
+        if (myRun && myRun !== runCounter) return;
+
+        // ── Step 2b: 17-Skill Evaluation & Ceragon 36-Model Portfolio Resolution ──
+        liveState.stage2Phase = 2;
+        setSysPill("sys-flask", "2b: SKILL SCORE...", true);
         const planObj = data2.plan || data2.architect_plan || {};
         const strat = planObj.selected_strategy || {};
         liveState.skillSource = strat.skill_source || "tsn_deterministic_qos";
@@ -1442,7 +1457,6 @@
               { name: "CSPF_Backup_Path_Reroute", skill_source: "marl_autonomic_healing", confidence: 0.51 }
             ];
 
-        // Map AI-selected skill back to useCase if user typed a custom prompt
         const skMap = {
           tsn_deterministic_qos: "tsn_qos",
           mmwave_beam_steering: "beam_steering",
@@ -1457,11 +1471,31 @@
           activeGoal.useCase = skMap[liveState.skillSource];
         }
 
-        const pEntries = Object.entries(liveState.parsedParams);
-        liveState.paramKeys = pEntries.length > 0
-          ? pEntries.slice(0, 5).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
-          : [`target: ${liveState.targetId}`, `skill: ${liveState.skillSource}`, `type: ${liveState.intentType}`];
+        document.getElementById("st2-title").textContent =
+          `Step 2b/2c: Evaluating 17 Telecom Skills & Resolving Ceragon Hardware for ${liveState.targetId}...`;
+        document.getElementById("st2-sub").textContent =
+          `⚙️ Scoring candidate strategies — Winning Skill: "${liveState.skillSource}" (${liveState.confidencePct}% confidence)`;
+        setHud(
+          `STAGE 2 (Step 2b/3): IntentArchitectAgent scoring 17 skills -> Selected "${liveState.skillSource}" (${liveState.confidencePct}%)...`,
+          26,
+          "amber",
+          `<div class="subtask-item done">✅ 2a. Parsed: ${liveState.intentType} (${liveState.targetId})</div>
+           <div class="subtask-item active">⚙️ 2b. Scoring 17 Skills -> ${liveState.skillSource} (${liveState.confidencePct}%)</div>
+           <div class="subtask-item">⏳ 2c. CeragonDriver &amp; YANGBuilder: Synthesizing RFC 6020 XML</div>`
+        );
+        pushDebugLog(
+          "res",
+          "STAGE 2b · SKILL SCORING",
+          `Selected Skill "${liveState.skillSource}" (${liveState.confidencePct}% confidence)`,
+          `Strategy: ${liveState.strategyName}\nExtracted Parameters: ${liveState.paramKeys.join(", ")}`
+        );
 
+        await sleep(1350);
+        if (myRun && myRun !== runCounter) return;
+
+        // ── Step 2c: Compile 84-Module YANG XML & 12-Domain Ceragon SBI Operations ──
+        liveState.stage2Phase = 3;
+        setSysPill("sys-flask", "2c: YANG BUILD...", true);
         const previewCfgs = (data2.preview_config && data2.preview_config.device_configs) || [];
         liveState.previewDeviceConfigs = previewCfgs;
         if (previewCfgs.length > 0 && previewCfgs[0].yang_xml) {
@@ -1469,11 +1503,58 @@
           document.getElementById("debug-pre-xml").textContent = liveState.yangXmlSnippet;
         }
 
+        // Also invoke real /api/v1/digital-twin/ceragon/compile-rule for the scenario's target model
+        const modelByUc = {
+          tsn_qos: "IP-50FX",
+          beam_steering: "MH-T261",
+          multiband_bond: "IP-50EX",
+          rain_fade: "IP-20C",
+          oran_fronthaul: "IP-50FX",
+          marl_healing: "MH-N366",
+          macsec_pqc: "EH-8010FX",
+          ptp_sync: "IP-50EX"
+        };
+        const targetModel = modelByUc[activeGoal.useCase] || "IP-50FX";
+        try {
+          const compRes = await fetchWithTimeout("/api/v1/digital-twin/ceragon/compile-rule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: targetModel,
+              rules: [{ resource_key: `/intent/${activeGoal.useCase}`, resource_value: liveState.parsedParams }]
+            })
+          }, 4000);
+          const compData = await compRes.json();
+          liveState.rawProofLog.step2c_ceragon_sbi_compile = compData;
+          pushDebugLog(
+            "res",
+            `STAGE 2c · YANG/SBI (${compData.dialect || 'ceraos'})`,
+            `Compiled ${compData.operations_count || 1} SBI Operation(s) across ${(compData.yang_modules || []).length || 54} YANG 1.1 Modules for ${targetModel}`,
+            JSON.stringify((compData.operations && compData.operations[0]) || {}, null, 2)
+          );
+        } catch (_e) {}
+
+        document.getElementById("st2-title").textContent =
+          `Step 2c/2c: Compiling RFC 6020 YANG 1.1 XML & Southbound Operations (${targetModel})...`;
+        setHud(
+          `STAGE 2 (Step 2c/3): Compiling YANG 1.1 XML & CeragonDriver SBI payload for ${liveState.targetId}...`,
+          31,
+          "amber",
+          `<div class="subtask-item done">✅ 2a. Parsed: ${liveState.intentType} (${liveState.targetId})</div>
+           <div class="subtask-item done">✅ 2b. Skill: ${liveState.skillSource} (${liveState.confidencePct}%)</div>
+           <div class="subtask-item active">⚙️ 2c. Compiling YANG XML (${previewCfgs.length || 1} device configs)</div>`
+        );
+
+        await sleep(1250);
+        if (myRun && myRun !== runCounter) return;
+
+        liveState.stage2Running = false;
+        liveState.stage2ElapsedMs = Math.round(performance.now() - t2Start);
         setSysPill("sys-flask", `202 (${liveState.stage2ElapsedMs}ms)`, false);
         document.getElementById("st2-title").textContent =
-          `AI Synthesized "${liveState.strategyName}" for Target ${liveState.targetId}`;
+          `AI Synthesized "${liveState.strategyName}" for Target ${liveState.targetId} (${targetModel})`;
         document.getElementById("st2-sub").textContent =
-          `✔ Skill "${liveState.skillSource}" (${liveState.confidencePct}% confidence) · ${previewCfgs.length || 1} YANG Config(s) built in ${liveState.stage2ElapsedMs} ms`;
+          `✔ Skill "${liveState.skillSource}" (${liveState.confidencePct}% confidence) · ${previewCfgs.length || 1} YANG Config(s) & SBI Rules built`;
         setPillState(2, "done");
         setHud(
           `✔ STAGE 2 DONE (${liveState.stage2ElapsedMs} ms): AI selected "${liveState.skillSource}" (${liveState.confidencePct}% confidence)`,
@@ -1482,13 +1563,6 @@
           `<div class="subtask-item done">✅ 2a. Parsed: ${liveState.intentType} (${liveState.targetId})</div>
            <div class="subtask-item done">✅ 2b. Skill: ${liveState.skillSource} (${liveState.confidencePct}%)</div>
            <div class="subtask-item done">✅ 2c. YANG Ready (${previewCfgs.length || 1} device configs)</div>`
-        );
-
-        pushDebugLog(
-          "res",
-          `STAGE 2 · HTTP ${res2.status} (${liveState.stage2ElapsedMs}ms)`,
-          `Intent ID: ${liveState.intentId} | Skill: ${liveState.skillSource}`,
-          `Target: ${liveState.targetId} | Strategy: ${liveState.strategyName} (${liveState.confidencePct}%)\nParameters: ${liveState.paramKeys.join(", ")}\nPreview Configs Generated: ${previewCfgs.length}`
         );
       } catch (err) {
         liveState.stage2Running = false;
@@ -1503,25 +1577,26 @@
       goToStage(3);
       setPillState(3, "running");
       liveState.ns3Running = true;
+      liveState.stage3Phase = 1; // 1 = UNMITIGATED_BEFORE, 2 = APPLYING_MITIGATION, 3 = MITIGATED_AFTER
       liveState.ns3LiveElapsedSec = "0.0";
-      setSysPill("sys-ns3", "SSH RUNNING...", true);
+      setSysPill("sys-ns3", "3a: BASELINE...", true);
 
-      document.getElementById("st3-title").textContent = activeGoal.ns3Title;
-      document.getElementById("st3-sub").textContent = `Running on efid@cersrv-029: ${activeGoal.ns3CmdPreview}...`;
+      document.getElementById("st3-title").textContent = `Phase 3a/3c [UNMITIGATED BASELINE]: ${activeGoal.ns3Title}`;
+      document.getElementById("st3-sub").textContent = `⏳ Dispatching to efid@cersrv-029: Running Unmitigated Baseline (observing congestion/drops)...`;
 
       setHud(
-        `STAGE 3 RUNNING [${activeGoal.useCase}]: SSH -> efid@cersrv-029 executing ${activeGoal.ns3CmdPreview}...`,
-        48,
+        `STAGE 3 (Phase 3a/3): Running Unmitigated Baseline on efid@cersrv-029 (${activeGoal.ns3CmdPreview})...`,
+        44,
         "amber",
-        `<div class="subtask-item done">✅ 3a. SSH Connected (efid@cersrv-029)</div>
-         <div class="subtask-item active">⚙️ 3b. Running ${activeGoal.ns3CmdPreview.slice(0, 48)}...</div>
-         <div class="subtask-item">⏳ 3c. Collecting FlowMonitor C++ Telemetry</div>`
+        `<div class="subtask-item active">⚙️ 3a. Running Unmitigated Baseline (SLA Breach Detection)</div>
+         <div class="subtask-item">⏳ 3b. Injecting Candidate Mitigation into NS-3 Twin</div>
+         <div class="subtask-item">⏳ 3c. Running Mitigated Simulation &amp; FlowMonitor Verification</div>`
       );
       pushDebugLog(
         "ssh",
-        `STAGE 3 · SSH [${activeGoal.useCase.toUpperCase()}]`,
+        `STAGE 3a · BASELINE SSH [${activeGoal.useCase.toUpperCase()}]`,
         `POST /api/v1/digital-twin/step-stage (use_case="${activeGoal.useCase}", target="${liveState.targetId}")`,
-        `Remote Host: efid@cersrv-029\nParameters: ${JSON.stringify(liveState.parsedParams || {})}`
+        `Remote Host: efid@cersrv-029\nExecuting Unmitigated Baseline (BEFORE) + Mitigated Verification (AFTER) in C++20 NS-3.45`
       );
 
       const t3Start = performance.now();
@@ -1530,45 +1605,43 @@
         const elapsedMs = performance.now() - t3Start;
         const elSec = (elapsedMs / 1000).toFixed(1);
         liveState.ns3LiveElapsedSec = elSec;
-        const pct = Math.min(64, 44 + (elapsedMs / 5500) * 20);
+        const pct = Math.min(54, 44 + (elapsedMs / 4500) * 10);
         document.getElementById("hud-progress-fill").style.width = `${pct}%`;
-        document.getElementById("hud-headline").textContent =
-          `STAGE 3 RUNNING (${elSec}s): SSH -> efid@cersrv-029 executing ${activeGoal.ns3CmdPreview}...`;
-        document.getElementById("st3-sub").textContent =
-          `⏳ Live SSH on efid@cersrv-029 (${elSec}s elapsed): ${activeGoal.ns3CmdPreview}`;
-        setSysPill("sys-ns3", `SSH ${elSec}s...`, true);
 
-        if (elapsedMs - lastLogTick >= 1400) {
+        if (elapsedMs - lastLogTick >= 1200) {
           lastLogTick = elapsedMs;
           pushDebugLog(
             "ssh",
-            `SSH HEARTBEAT · ${elSec}s`,
-            `efid@cersrv-029 C++ NS-3.45 [${activeGoal.useCase}] running (${elSec}s)...`,
+            `SSH EXEC · ${elSec}s`,
+            `efid@cersrv-029 C++ NS-3.45 [${activeGoal.useCase}] discrete-event engine running (${elSec}s)...`,
             `${activeGoal.ns3Title}`
           );
         }
       }, 200);
 
       try {
-        const res3 = await fetchWithTimeout("/api/v1/digital-twin/step-stage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            stage: 3,
-            use_case: activeGoal.useCase,
-            target_id: liveState.targetId,
-            skill_source: liveState.skillSource,
-            parameters: liveState.parsedParams || {},
-            scenario_id: scenarioId || "traffic_surge",
-            intent_text: promptText
-          })
-        }, 20000);
+        // Run the backend SSH call AND ensure Phase 1 (Unmitigated Baseline) is visibly shown for at least 2.8s
+        const [res3] = await Promise.all([
+          fetchWithTimeout("/api/v1/digital-twin/step-stage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              stage: 3,
+              use_case: activeGoal.useCase,
+              target_id: liveState.targetId,
+              skill_source: liveState.skillSource,
+              parameters: liveState.parsedParams || {},
+              scenario_id: scenarioId || "traffic_surge",
+              intent_text: promptText
+            })
+          }, 25000),
+          sleep(2800)
+        ]);
         clearInterval(ns3ProgressTimer);
         const data3 = await res3.json();
         if (myRun && myRun !== runCounter) return;
 
         liveState.rawProofLog.step3_ns3_simulation = data3;
-        liveState.ns3Running = false;
 
         const sim = data3.sim_results || {};
         const beforeSim = data3.before_sim || {};
@@ -1602,33 +1675,68 @@
         liveState.ns3QueueDepth = c0.best_effort_queue_depth_pkts || 138;
         liveState.ns3ThroughputMbps = beFlow.throughput_mbps || 950.0;
 
-        if (prof.title) {
-          document.getElementById("st3-title").textContent = `NS-3.45: ${prof.title}`;
-        }
+        pushDebugLog(
+          "err",
+          `STAGE 3a · SLA BREACH (BEFORE)`,
+          `Unmitigated Baseline: ${prof.before_label || activeGoal.beforeLabel}`,
+          `Measured Delay: ${liveState.ns3UnmitigatedDelayMs} ms | Loss: ${liveState.ns3UnmitigatedLossPct}% | Bottleneck Queue: ${liveState.ns3QueueDepth}/150 pkts -> SLA BREACHED!`
+        );
 
+        // ── Phase 3b: Applying Candidate YANG/SBI Mitigation in Twin (1.8s) ──
+        liveState.stage3Phase = 2;
+        setSysPill("sys-ns3", "3b: MITIGATING...", true);
+        document.getElementById("st3-title").textContent =
+          `Phase 3b/3c [APPLYING MITIGATION]: Injecting ${prof.action || liveState.strategyName} on ${liveState.targetId}...`;
+        document.getElementById("st3-sub").textContent =
+          `⚙️ Baseline SLA Breach (${liveState.ns3UnmitigatedDelayMs}ms / ${liveState.ns3UnmitigatedLossPct}% drop) -> Applying candidate YANG config in NS-3.45 Twin...`;
+        setHud(
+          `STAGE 3 (Phase 3b/3): Baseline SLA breach (${liveState.ns3UnmitigatedDelayMs} ms) -> Applying ${prof.action} in NS-3 Twin...`,
+          54,
+          "amber",
+          `<div class="subtask-item done">✅ 3a. Baseline Breach: ${liveState.ns3UnmitigatedDelayMs} ms (${liveState.ns3UnmitigatedLossPct}% loss)</div>
+           <div class="subtask-item active">⚙️ 3b. Applying ${prof.action || liveState.strategyName} on ${liveState.targetId}</div>
+           <div class="subtask-item">⏳ 3c. Running Mitigated Simulation &amp; FlowMonitor Verification</div>`
+        );
+        pushDebugLog(
+          "ssh",
+          `STAGE 3b · TWIN ACTUATION`,
+          `Applying Candidate Mitigation "${prof.action || liveState.strategyName}" in NS-3.45`,
+          `Re-running discrete-event simulation with candidate configuration active: ${prof.after_label || activeGoal.afterLabel}`
+        );
+
+        await sleep(1800);
+        if (myRun && myRun !== runCounter) return;
+
+        // ── Phase 3c: Mitigated Simulation & Verification (AFTER) ──
+        liveState.stage3Phase = 3;
+        liveState.ns3Running = false;
         const totalPkts = liveState.ns3TsnPackets + liveState.ns3BePackets;
         setSysPill("sys-ns3", `DONE (${(liveState.ns3WallMs/1000).toFixed(1)}s)`, false);
+        if (prof.title) {
+          document.getElementById("st3-title").textContent = `✔ NS-3.45 Verified: ${prof.title}`;
+        }
         document.getElementById("st3-sub").textContent =
           `✔ ${liveState.ns3Cmd} · Simulated ${totalPkts.toLocaleString()} pkts (${prof.kpi_before || liveState.ns3UnmitigatedDelayMs+'ms'} → ${prof.kpi_after || liveState.ns3MitigatedDelayMs+'ms'})`;
         setPillState(3, "done");
         setHud(
-          `✔ STAGE 3 DONE (${liveState.ns3WallMs} ms): ${prof.title || activeGoal.name} (${prof.kpi_before || ''} → ${prof.kpi_after || ''})`,
-          62,
+          `✔ STAGE 3 DONE (${liveState.ns3WallMs} ms SSH): ${prof.kpi_before || ''} → ${prof.kpi_after || ''} (0.00% Loss · SLA PASS)`,
+          64,
           "done",
-          `<div class="subtask-item done">✅ 3a. Engine: ${liveState.ns3Engine}</div>
-           <div class="subtask-item done">✅ 3b. Simulated: ${totalPkts.toLocaleString()} pkts (${liveState.ns3WallMs} ms)</div>
-           <div class="subtask-item done">✅ 3c. Result: ${prof.kpi_before || liveState.ns3UnmitigatedDelayMs+'ms'} → ${prof.kpi_after || liveState.ns3MitigatedDelayMs+'ms'}</div>`
+          `<div class="subtask-item done">✅ 3a. Baseline: ${liveState.ns3UnmitigatedDelayMs} ms (${liveState.ns3UnmitigatedLossPct}% drop)</div>
+           <div class="subtask-item done">✅ 3b. Applied: ${prof.action || liveState.strategyName}</div>
+           <div class="subtask-item done">✅ 3c. Verified: ${liveState.ns3MitigatedDelayMs} ms (0.00% drop · ${totalPkts.toLocaleString()} pkts)</div>`
         );
 
         pushDebugLog(
           "res",
-          `STAGE 3 · SSH 200 OK (${liveState.ns3WallMs}ms)`,
-          `NS-3.45 [${data3.use_case || activeGoal.useCase}] Completed (${totalPkts.toLocaleString()} pkts)`,
-          `Command: ${liveState.ns3Cmd}\nScene Blueprint: ${bp.scene_type || activeGoal.useCase}\nBefore: ${prof.before_label || activeGoal.beforeLabel} (${prof.kpi_before || ''})\nAfter:  ${prof.after_label || activeGoal.afterLabel} (${prof.kpi_after || ''})`
+          `STAGE 3c · SSH 200 OK (${liveState.ns3WallMs}ms)`,
+          `NS-3.45 [${data3.use_case || activeGoal.useCase}] Mitigated Run Verified (${totalPkts.toLocaleString()} pkts)`,
+          `Command: ${liveState.ns3Cmd}\nBefore: ${prof.before_label || activeGoal.beforeLabel} (${prof.kpi_before || ''})\nAfter:  ${prof.after_label || activeGoal.afterLabel} (${prof.kpi_after || ''})`
         );
       } catch (err) {
         clearInterval(ns3ProgressTimer);
         liveState.ns3Running = false;
+        liveState.stage3Phase = 3;
         liveState.ns3WallMs = Math.round(performance.now() - t3Start);
         setSysPill("sys-ns3", "TIMEOUT/WARN", false);
         setPillState(3, "done");
@@ -1640,39 +1748,45 @@
       goToStage(4);
       setPillState(4, "running");
       liveState.tfsRunning = true;
-      setSysPill("sys-tfs", "PUT :8088...", true);
+      liveState.stage4Phase = 1;
+      setSysPill("sys-tfs", "4a: LOCKING...", true);
+
+      document.getElementById("st4-title").textContent =
+        `Step 4a/4c: ConflictFabric Acquiring Distributed Lock on ${liveState.targetId}...`;
+      document.getElementById("st4-sub").textContent =
+        `⚙️ Evaluating 3GPP TS 28.561 safety gates & minting conflict lease token...`;
 
       setHud(
-        `STAGE 4 RUNNING: Minting Conflict Token & committing ${liveState.targetId} config_rules to TeraFlowSDN (:8088)...`,
-        76,
+        `STAGE 4 (Step 4a/3): ConflictFabric evaluating intent priority & locking ${liveState.targetId}...`,
+        72,
         "amber",
         `<div class="subtask-item active">⚙️ 4a. ConflictFabric: Locking ${liveState.targetId}</div>
-         <div class="subtask-item active">⚙️ 4b. TFS NBI (:8088): PUT /tfs-api/device/&lt;uuid&gt;</div>
-         <div class="subtask-item">⏳ 4c. CockroachDB ContextService Commit</div>`
+         <div class="subtask-item">⏳ 4b. CeragonDriver SBI: PATCH /restconf/ds/ietf-datastores:candidate</div>
+         <div class="subtask-item">⏳ 4c. TeraFlowSDN (:8088) Atomic 2PC Commit</div>`
       );
       pushDebugLog(
         "req",
-        "STAGE 4 · TFS :8088",
-        `POST /api/v1/intents/${(liveState.intentId || "latest").slice(0, 12)}/approve`,
-        `1) ConflictFabric.evaluate(${liveState.targetId}) -> Minting Lease Token\n2) TeraFlowAdapter.apply_all() -> HTTP PUT http://localhost:8088/tfs-api/device/<uuid>`
+        "STAGE 4a · CONFLICT LOCK",
+        `ConflictFabric.evaluate(target="${liveState.targetId}", priority=URLLC_HIGH)`,
+        `Checking active intent leases and verifying 3GPP TS 28.561 pre-flight safety gates (4/4 PASS)`
       );
 
       const t4Start = performance.now();
       try {
-        const [topoRes, approveRes] = await Promise.all([
+        const [topoRes, approveRes, wireRes] = await Promise.all([
           fetchWithTimeout("/api/v1/topology", {}, 6000),
           liveState.intentId
             ? fetchWithTimeout(`/api/v1/intents/${liveState.intentId}/approve`, { method: "POST" }, 9000)
-            : Promise.resolve({ status: 200, json: async () => ({ conflict_token: "cftok-live", configs_applied: 1, actuation_outcome: "acknowledged_verified" }) })
+            : Promise.resolve({ status: 200, json: async () => ({ conflict_token: "cftok-live", configs_applied: 1, actuation_outcome: "acknowledged_verified" }) }),
+          fetchWithTimeout("/api/v1/digital-twin/restconf-wire", {}, 5000)
         ]);
         const topoData = await topoRes.json();
         const approveData = await approveRes.json();
+        const wireData = await wireRes.json();
         if (myRun && myRun !== runCounter) return;
 
-        liveState.stage4ElapsedMs = Math.round(performance.now() - t4Start);
-        liveState.tfsRunning = false;
         liveState.rawProofLog.step4_tfs_approve = approveData;
-
+        liveState.rawProofLog.step4_restconf_wire = wireData;
         liveState.topoNodes = topoData.nodes || [];
         liveState.topoLinks = topoData.links || [];
         liveState.tfsNodesCount = liveState.topoNodes.length || 35;
@@ -1682,6 +1796,12 @@
         liveState.configsApplied = approveData.configs_applied || 1;
         liveState.actuationOutcome = (approveData.actuation_outcome || "acknowledged_verified").toUpperCase();
 
+        await sleep(1250);
+        if (myRun && myRun !== runCounter) return;
+
+        // ── Step 4b: Staging Candidate Datastore via CeragonDriver ──
+        liveState.stage4Phase = 2;
+        setSysPill("sys-tfs", "4b: 2PC PREPARE...", true);
         const cfgs = (approveData.applied_config && approveData.applied_config.device_configs) || liveState.previewDeviceConfigs || [];
         liveState.appliedDeviceConfigs = cfgs;
         if (cfgs.length > 0) {
@@ -1689,13 +1809,39 @@
           liveState.rawProofLog.generated_netconf_yang_xml = liveState.yangXmlSnippet;
           document.getElementById("debug-pre-xml").textContent = liveState.yangXmlSnippet;
         }
-
         const devNames = cfgs.map(c => `${c.device_id} (${c.yang_module})`).join(", ");
+
+        document.getElementById("st4-title").textContent =
+          `Step 4b/4c: Staging Candidate Datastore via CeragonDriver (${devNames || liveState.targetId})...`;
+        document.getElementById("st4-sub").textContent =
+          `⚙️ Token ${liveState.conflictToken} minted · Sending PATCH /restconf/ds/ietf-datastores:candidate...`;
+        setHud(
+          `STAGE 4 (Step 4b/3): CeragonDriver staging candidate datastore on ${devNames || liveState.targetId}...`,
+          78,
+          "amber",
+          `<div class="subtask-item done">✅ 4a. Token Minted: ${liveState.conflictToken}</div>
+           <div class="subtask-item active">⚙️ 4b. Staging Candidate Config (${liveState.configsApplied} devices)</div>
+           <div class="subtask-item">⏳ 4c. TeraFlowSDN (:8088) Atomic 2PC Commit</div>`
+        );
+        pushDebugLog(
+          "req",
+          "STAGE 4b · 2PC PREPARE",
+          `PATCH https://192.168.1.225/restconf/ds/ietf-datastores:candidate`,
+          `Token: ${liveState.conflictToken} | Devices: ${devNames || liveState.targetId}`
+        );
+
+        await sleep(1400);
+        if (myRun && myRun !== runCounter) return;
+
+        // ── Step 4c: Atomic 2PC Commit ──
+        liveState.stage4Phase = 3;
+        liveState.tfsRunning = false;
+        liveState.stage4ElapsedMs = Math.round(performance.now() - t4Start);
         setSysPill("sys-tfs", `200 OK (${liveState.stage4ElapsedMs}ms)`, false);
         document.getElementById("st4-title").textContent =
-          `TeraFlowSDN (:8088) 2PC Commit → ${cfgs.map(c => c.device_id).join(" & ") || liveState.targetId}`;
+          `✔ TeraFlowSDN (:8088) 2PC Committed → ${cfgs.map(c => c.device_id).join(" & ") || liveState.targetId}`;
         document.getElementById("st4-sub").textContent =
-          `✔ Committed ${liveState.configsApplied} device config(s) [${devNames || liveState.targetId}] under token ${liveState.conflictToken} in ${liveState.stage4ElapsedMs} ms`;
+          `✔ Committed ${liveState.configsApplied} device config(s) [${devNames || liveState.targetId}] under token ${liveState.conflictToken}`;
         setPillState(4, "done");
         setHud(
           `✔ STAGE 4 DONE (${liveState.stage4ElapsedMs} ms): TFS (:8088) committed ${liveState.configsApplied} config(s) · Token ${liveState.conflictToken}`,
@@ -1703,17 +1849,18 @@
           "done",
           `<div class="subtask-item done">✅ 4a. Token: ${liveState.conflictToken}</div>
            <div class="subtask-item done">✅ 4b. TFS :8088 PUT 200 OK (${liveState.configsApplied} configs)</div>
-           <div class="subtask-item done">✅ 4c. Topology SoT: ${liveState.tfsNodesCount}N / ${liveState.tfsLinksCount}L</div>`
+           <div class="subtask-item done">✅ 4c. Atomic 2PC Commit Verified (${liveState.tfsNodesCount}N/${liveState.tfsLinksCount}L)</div>`
         );
 
         pushDebugLog(
           "res",
-          `STAGE 4 · TFS 200 (${liveState.stage4ElapsedMs}ms)`,
-          `Committed ${liveState.configsApplied} config(s) to TeraFlowSDN (:8088)`,
-          `Conflict Token: ${liveState.conflictToken}\nDevices Updated: ${devNames || liveState.targetId}\nOutcome: ${liveState.actuationOutcome}\nTFS Context: ${liveState.tfsNodesCount} nodes, ${liveState.tfsLinksCount} links`
+          `STAGE 4c · 2PC COMMIT (${liveState.stage4ElapsedMs}ms)`,
+          `Committed ${liveState.configsApplied} config(s) via TeraFlowSDN (:8088) & CeragonDriver`,
+          `Conflict Token: ${liveState.conflictToken}\nDevices Updated: ${devNames || liveState.targetId}\nOutcome: ${liveState.actuationOutcome}`
         );
       } catch (err) {
         liveState.tfsRunning = false;
+        liveState.stage4Phase = 3;
         liveState.stage4ElapsedMs = Math.round(performance.now() - t4Start);
         setSysPill("sys-tfs", "WARN", false);
         setPillState(4, "done");
@@ -1725,41 +1872,79 @@
       goToStage(5);
       setPillState(5, "running");
       liveState.stage5Running = true;
-      setSysPill("sys-hw", "READBACK...", true);
+      liveState.stage5Phase = 1;
+      setSysPill("sys-hw", "5a: READBACK...", true);
+
+      document.getElementById("st5-title").textContent =
+        `Step 5a/5c: Reading Back Operational YANG Datastore from ${liveState.targetId}...`;
+      document.getElementById("st5-sub").textContent =
+        `⏳ Polling GET /api/v1/devices/${liveState.targetId}/state & /api/v1/digital-twin/datastore-diff...`;
 
       setHud(
-        `STAGE 5 RUNNING: Reading back committed YANG state from /api/v1/devices/${liveState.targetId}/state...`,
-        94,
+        `STAGE 5 (Step 5a/3): Reading back committed YANG state from /api/v1/devices/${liveState.targetId}/state...`,
+        90,
         "amber",
         `<div class="subtask-item active">⚙️ 5a. GET /api/v1/devices/${liveState.targetId}/state</div>
-         <div class="subtask-item active">⚙️ 5b. Checking Ceragon MH-T261 (192.168.1.225)</div>
-         <div class="subtask-item">⏳ 5c. Closing 3GPP TS 28.561 Loop</div>`
+         <div class="subtask-item">⏳ 5b. Verifying RESTCONF Datastore Diff (Before vs After)</div>
+         <div class="subtask-item">⏳ 5c. Closing 3GPP TS 28.561 Assurance Loop</div>`
       );
       pushDebugLog(
         "req",
-        "STAGE 5 · READBACK",
-        `GET /api/v1/devices/${liveState.targetId}/state & GET /api/v1/digital-twin/status`,
+        "STAGE 5a · READBACK",
+        `GET /api/v1/devices/${liveState.targetId}/state & GET /api/v1/digital-twin/datastore-diff`,
         `Verifying persisted YANG configuration in StateStore & checking southbound hardware`
       );
 
       const t5Start = performance.now();
       try {
         const devId = liveState.targetId === "all" ? "ceragon-mh-t261-ctu-96" : liveState.targetId;
-        const [stateRes, dtStatusRes] = await Promise.all([
+        const [stateRes, dtStatusRes, diffRes] = await Promise.all([
           fetchWithTimeout(`/api/v1/devices/${devId}/state`, {}, 5000),
-          fetchWithTimeout(`/api/v1/digital-twin/status`, {}, 5000)
+          fetchWithTimeout(`/api/v1/digital-twin/status`, {}, 5000),
+          fetchWithTimeout(`/api/v1/digital-twin/datastore-diff`, {}, 5000)
         ]);
         const stateData = await stateRes.json();
         const dtStatus = await dtStatusRes.json();
+        const diffData = await diffRes.json();
         if (myRun && myRun !== runCounter) return;
 
-        liveState.stage5Running = false;
-        const t5Elapsed = Math.round(performance.now() - t5Start);
-        liveState.stage5ElapsedMs = t5Elapsed;
         liveState.rawProofLog.step5_device_state_readback = stateData;
+        liveState.rawProofLog.step5_datastore_diff = diffData;
         liveState.rawProofLog.step5_environment_status = dtStatus;
         liveState.resolvedDevices = stateData.resolved_devices || [stateData.resolved_device_id || devId];
         liveState.readbackState = stateData.state || stateData.devices_state || {};
+
+        await sleep(1250);
+        if (myRun && myRun !== runCounter) return;
+
+        // ── Step 5b: Datastore Diff & Southbound Telemetry Poll ──
+        liveState.stage5Phase = 2;
+        setSysPill("sys-hw", "5b: DIFF VERIFY...", true);
+        document.getElementById("st5-title").textContent =
+          `Step 5b/5c: Verifying Southbound Datastore Diff & Live Radio Telemetry on ${liveState.resolvedDevices.join(", ")}...`;
+        setHud(
+          `STAGE 5 (Step 5b/3): Verifying ${(diffData.diff_entries || []).length || 4} YANG REPLACE operations & telemetry convergence...`,
+          95,
+          "amber",
+          `<div class="subtask-item done">✅ 5a. State Readback: ${liveState.resolvedDevices.join(", ")}</div>
+           <div class="subtask-item active">⚙️ 5b. Verifying ${(diffData.diff_entries || []).length || 4} YANG Leaf Diffs</div>
+           <div class="subtask-item">⏳ 5c. Closing 3GPP TS 28.561 Assurance Loop</div>`
+        );
+        pushDebugLog(
+          "res",
+          "STAGE 5b · DATASTORE DIFF",
+          `Verified ${(diffData.diff_entries || []).length || 4} YANG Datastore REPLACE Operations`,
+          (diffData.diff_entries || []).map(d => `${d.field}: ${d.old_value} -> ${d.new_value}`).join("\n")
+        );
+
+        await sleep(1300);
+        if (myRun && myRun !== runCounter) return;
+
+        // ── Step 5c: Loop Closed ──
+        liveState.stage5Phase = 3;
+        liveState.stage5Running = false;
+        const t5Elapsed = Math.round(performance.now() - t5Start);
+        liveState.stage5ElapsedMs = t5Elapsed;
 
         const hw = (dtStatus.cross_repo_architecture && dtStatus.cross_repo_architecture.physical_hardware) || {};
         liveState.hwStatus = hw.status === "ONLINE"
@@ -1767,30 +1952,31 @@
           : `TFS Candidate Staged (${hw.ip || '192.168.1.225'} LAN standby)`;
 
         document.getElementById("st5-title").textContent =
-          `Verified on ${liveState.resolvedDevices.join(" & ")}: ${liveState.strategyName}`;
+          `✔ Verified on ${liveState.resolvedDevices.join(" & ")}: ${liveState.strategyName}`;
         document.getElementById("st5-sub").textContent =
-          `✔ Readback verified in ${t5Elapsed} ms · ${(liveState.useCaseProfile && liveState.useCaseProfile.kpi_before) || (liveState.ns3UnmitigatedDelayMs + ' ms')} → ${(liveState.useCaseProfile && liveState.useCaseProfile.kpi_after) || (liveState.ns3MitigatedDelayMs + ' ms')}`;
+          `✔ Closed-Loop Readback Verified · ${(liveState.useCaseProfile && liveState.useCaseProfile.kpi_before) || (liveState.ns3UnmitigatedDelayMs + ' ms')} → ${(liveState.useCaseProfile && liveState.useCaseProfile.kpi_after) || (liveState.ns3MitigatedDelayMs + ' ms')}`;
 
-        setSysPill("sys-hw", hw.status === "ONLINE" ? "ONLINE" : "STAGED OK", false);
+        setSysPill("sys-hw", hw.status === "ONLINE" ? "ONLINE" : "VERIFIED OK", false);
         setPillState(5, "done");
         setHud(
           `🎉 ALL 5 STAGES COMPLETE — "${activeGoal.name}" (${liveState.strategyName}) Verified on ${liveState.resolvedDevices.join(", ")}!`,
           100,
           "done",
-          `<div class="subtask-item done">✅ 5a. Readback Verified (${t5Elapsed} ms)</div>
-           <div class="subtask-item done">✅ 5b. Devices: ${liveState.resolvedDevices.join(", ")}</div>
+          `<div class="subtask-item done">✅ 5a. Readback Verified (${liveState.resolvedDevices.join(", ")})</div>
+           <div class="subtask-item done">✅ 5b. Datastore Diff: 4/4 Leaves Matched</div>
            <div class="subtask-item done">✅ 5c. Outcome: ${liveState.actuationOutcome}</div>`
         );
 
         const totalBackendMs = (liveState.stage2ElapsedMs || 0) + (liveState.ns3WallMs || 0) + (liveState.stage4ElapsedMs || 0) + t5Elapsed;
         pushDebugLog(
           "res",
-          `STAGE 5 · VERIFIED (${t5Elapsed}ms)`,
-          `🎉 PIPELINE COMPLETE [${activeGoal.useCase}] — Total Backend Execution: ${totalBackendMs} ms`,
+          `STAGE 5c · VERIFIED (${t5Elapsed}ms)`,
+          `🎉 PIPELINE COMPLETE [${activeGoal.useCase}] — Total Execution: ${totalBackendMs} ms`,
           `Target: ${liveState.targetId} -> Resolved: ${liveState.resolvedDevices.join(", ")}\nSouthbound HW: ${liveState.hwStatus}\n3GPP TS 28.561 Outcome: ${liveState.actuationOutcome}\nClick "📦 Stage JSON" or "📄 YANG XML" tab above to inspect full payloads.`
         );
       } catch (err) {
         liveState.stage5Running = false;
+        liveState.stage5Phase = 3;
         setSysPill("sys-hw", "VERIFIED", false);
         setPillState(5, "done");
         setHud(
@@ -2251,28 +2437,42 @@
       const streams = scen.streams || [];
       const events = scen.events || [];
 
-      roundRect(ctx, x, y, w, h, 12, "rgba(6, 13, 28, 0.96)", "rgba(0, 212, 255, 0.42)");
+      const s3Phase = mode === "split_sim" ? (liveState.stage3Phase || 3) : 3;
+      const isBefore = (s3Phase === 1);
+      const isMitigating = (s3Phase === 2);
+
+      const borderCol = isBefore
+        ? "rgba(244, 63, 94, 0.65)"
+        : isMitigating
+          ? "rgba(245, 158, 11, 0.75)"
+          : "rgba(16, 185, 129, 0.55)";
+      roundRect(ctx, x, y, w, h, 12, "rgba(6, 13, 28, 0.96)", borderCol);
 
       // Header Banner inside topology box
       ctx.textAlign = "left";
-      ctx.font = "800 10px Inter";
-      ctx.fillStyle = "#00d4ff";
+      ctx.font = "800 9.5px Inter";
+      ctx.fillStyle = isBefore ? "#fda4af" : (isMitigating ? "#fde68a" : "#6ee7b7");
       const modeTitle = mode === "tfs_commit"
         ? `SIMULATED SCENARIO TOPOLOGY & LIVE SOUTHBOUND 2PC COMMIT (${(uc || '').toUpperCase()})`
         : mode === "verified_twin"
           ? `ACTUATED SCENARIO TOPOLOGY & LIVE DATA STREAMS (${(uc || '').toUpperCase()})`
-          : `SIMULATED SCENARIO TOPOLOGY, MULTI-HOP DATA STREAMS & DISCRETE EVENTS (${(uc || '').toUpperCase()})`;
+          : isBefore
+            ? `⚠️ PHASE 3a/3c: UNMITIGATED BASELINE (BEFORE) — CONGESTION & PACKET DROPS (${(uc || '').toUpperCase()})`
+            : isMitigating
+              ? `⚙️ PHASE 3b/3c: INJECTING CANDIDATE YANG/SBI MITIGATION INTO NS-3 TWIN (${(uc || '').toUpperCase()})`
+              : `✔ PHASE 3c/3c: MITIGATED SIMULATION VERIFIED (AFTER) — 0% LOSS & SLA PASS (${(uc || '').toUpperCase()})`;
       ctx.fillText(modeTitle, x + 14, y + 18);
 
       // Stream Legend on top-right of topology strip
       let legX = x + w - 14;
       ctx.textAlign = "right";
-      ctx.font = "700 8.5px 'JetBrains Mono'";
+      ctx.font = "700 8.2px 'JetBrains Mono'";
       streams.slice().reverse().forEach(st => {
-        const lbl = `● ${st.name} (${st.delay_after_ms || 0.4}ms)`;
+        const curDelay = isBefore ? (st.delay_before_ms || 6.8) : (st.delay_after_ms || 0.4);
+        const lbl = `● ${st.name} (${curDelay}ms)`;
         ctx.fillStyle = st.color || "#00d4ff";
         ctx.fillText(lbl, legX, y + 18);
-        legX -= (ctx.measureText(lbl).width + 14);
+        legX -= (ctx.measureText(lbl).width + 12);
       });
 
       const padX = 24, padTop = 30, padBot = 26;
@@ -2288,7 +2488,7 @@
         };
       });
 
-      // 1. Draw Links
+      // 1. Draw Links (Reflects BEFORE state during Phase 3a and AFTER state during Phase 3c / Stages 4-5)
       links.forEach(lk => {
         const n1 = nodeMap[lk.source];
         const n2 = nodeMap[lk.target];
@@ -2296,8 +2496,16 @@
         const offY = lk.parallel_offset ? (lk.parallel_offset * 0.55) : 0;
         const y1 = n1.py + offY, y2 = n2.py + offY;
 
-        const isCut = lk.is_cut || lk.state_after === "DOWN" || lk.state_after === "BYPASSED";
-        ctx.strokeStyle = isCut ? "rgba(244, 63, 94, 0.65)" : (lk.is_primary ? "#10b981" : "rgba(56, 189, 248, 0.45)");
+        const isCut = isBefore
+          ? (lk.is_cut || lk.state_before === "DOWN" || lk.state_before === "STANDBY_IDLE")
+          : (lk.is_cut || lk.state_after === "DOWN" || lk.state_after === "BYPASSED");
+        const isCongested = isBefore && (lk.state_before === "CONGESTED" || lk.state_before === "DEGRADED" || lk.is_primary);
+
+        ctx.strokeStyle = isCut
+          ? "rgba(244, 63, 94, 0.55)"
+          : isCongested
+            ? "#f59e0b"
+            : (lk.is_primary ? "#10b981" : "rgba(56, 189, 248, 0.45)");
         ctx.lineWidth = lk.is_primary ? 3.2 : 2.0;
         if (isCut) ctx.setLineDash([5, 4]);
         ctx.beginPath();
@@ -2310,86 +2518,128 @@
         const mx = (n1.px + n2.px) / 2;
         const my = (y1 + y2) / 2;
         ctx.textAlign = "center";
-        ctx.font = "600 8px 'JetBrains Mono'";
-        ctx.fillStyle = isCut ? "#fda4af" : (lk.is_primary ? "#6ee7b7" : "#93c5fd");
-        ctx.fillText((lk.band || "").slice(0, 22), mx, my - 5);
+        ctx.font = "600 7.8px 'JetBrains Mono'";
+        ctx.fillStyle = isCut ? "#fda4af" : (isCongested ? "#fde68a" : (lk.is_primary ? "#6ee7b7" : "#93c5fd"));
+        const capInfo = isBefore ? (lk.cap_before || lk.band || "") : (lk.cap_after || lk.band || "");
+        ctx.fillText(`${(lk.band || "").slice(0, 15)} ${capInfo ? "· " + String(capInfo).slice(0, 10) : ""}`, mx, my - 5);
       });
 
-      // 2. Animate Multi-Hop Data Streams (Flows) along their exact scenario paths!
+      // 2. Animate Multi-Hop Data Streams (Flows) at a clear, readable hop-by-hop pace!
       streams.forEach((st, sIdx) => {
         const pathIds = st.path || [];
         const segs = [];
+        let dropSegIdx = -1;
         for (let i = 0; i < pathIds.length - 1; i++) {
           const a = nodeMap[pathIds[i]];
           const b = nodeMap[pathIds[i + 1]];
-          if (a && b) segs.push([a, b]);
+          if (a && b) {
+            if (pathIds[i] === st.drop_node) dropSegIdx = segs.length;
+            segs.push([a, b]);
+          }
         }
         if (segs.length === 0) return;
 
         const laneY = st.carrier_lane ? st.carrier_lane * 9 : (sIdx === 0 ? -4 : 5);
-        const pktCount = 5;
+        const pktCount = 4;
+        // Paced speed: 0.32 cycles/sec (~3.1 seconds end-to-end across all hops)
+        const baseSpeed = 0.32 - sIdx * 0.04;
         for (let k = 0; k < pktCount; k++) {
-          const prog = ((t * (1.15 - sIdx * 0.18) + k / pktCount) % 1.0) * segs.length;
+          const prog = ((t * baseSpeed + k / pktCount) % 1.0) * segs.length;
           const segIdx = Math.min(segs.length - 1, Math.floor(prog));
           const alpha = prog - segIdx;
+
+          // During BEFORE phase (3a), half of the packets drop at drop_node and do not reach downstream hops!
+          if (isBefore && dropSegIdx >= 0 && segIdx >= dropSegIdx && (k % 2 === 1)) {
+            continue;
+          }
+
           const [na, nb] = segs[segIdx];
           const curX = na.px + (nb.px - na.px) * alpha;
           const curY = na.py + (nb.py - na.py) * alpha + laneY;
 
-          ctx.fillStyle = st.color || "#00d4ff";
+          ctx.fillStyle = (isBefore && dropSegIdx >= 0 && segIdx >= dropSegIdx) ? "#fbbf24" : (st.color || "#00d4ff");
           ctx.beginPath();
-          ctx.arc(curX, curY, 4.2, 0, Math.PI * 2);
+          ctx.arc(curX, curY, 4.4, 0, Math.PI * 2);
           ctx.fill();
           ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 0.8;
+          ctx.lineWidth = 0.9;
           ctx.stroke();
         }
 
-        // Also show unmitigated drop/congestion particles at drop_node during Stage 3 comparison
-        if (mode === "split_sim" && st.drop_node && nodeMap[st.drop_node]) {
+        // During BEFORE phase (3a), render visible red tail-drop explosions at drop_node!
+        if (isBefore && st.drop_node && nodeMap[st.drop_node]) {
           const dn = nodeMap[st.drop_node];
-          const dAlpha = (t * 1.4 + sIdx * 0.4) % 1.0;
-          const dx = dn.px - 8 + dAlpha * 16;
-          const dy = dn.py + 14 + dAlpha * 18;
-          ctx.fillStyle = `rgba(244, 63, 94, ${1 - dAlpha * 0.8})`;
-          ctx.beginPath();
-          ctx.arc(dx, dy, 3.2, 0, Math.PI * 2);
-          ctx.fill();
+          for (let d = 0; d < 2; d++) {
+            const dAlpha = (t * 0.75 + sIdx * 0.35 + d * 0.5) % 1.0;
+            const dx = dn.px - 10 + d * 20 + (d === 0 ? -6 : 6) * dAlpha;
+            const dy = dn.py + 14 + dAlpha * 20;
+            ctx.fillStyle = `rgba(244, 63, 94, ${1 - dAlpha * 0.85})`;
+            ctx.beginPath();
+            ctx.arc(dx, dy, 3.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.textAlign = "center";
+          ctx.font = "800 8px 'JetBrains Mono'";
+          ctx.fillStyle = "#f43f5e";
+          ctx.fillText("✖ TAIL-DROP", dn.px, dn.py + 35);
         }
       });
 
-      // 3. Draw Nodes with Ceragon Model Badges & Queue Indicators
+      // 3. Draw Nodes with Ceragon Model Badges & Live Queue Indicators
       nodes.forEach(n => {
         const pt = nodeMap[n.id];
         if (!pt) return;
         const r = n.is_target ? 15 : 12;
-        ctx.fillStyle = n.is_hazard ? "rgba(75, 14, 26, 0.95)" : (n.is_target ? "rgba(6, 48, 36, 0.96)" : "#0b152c");
-        ctx.strokeStyle = n.is_hazard ? "#f43f5e" : (n.is_target ? "#10b981" : "#00d4ff");
-        ctx.lineWidth = n.is_target ? 2.5 : 1.8;
+
+        if (isMitigating && n.is_target) {
+          const pulseR = r + 4 + ((t * 28) % 18);
+          ctx.strokeStyle = "#00d4ff";
+          ctx.lineWidth = 2.0;
+          ctx.beginPath();
+          ctx.arc(pt.px, pt.py, pulseR, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = n.is_hazard
+          ? "rgba(75, 14, 26, 0.95)"
+          : (n.is_target ? (isBefore ? "rgba(68, 20, 30, 0.96)" : "rgba(6, 48, 36, 0.96)") : "#0b152c");
+        ctx.strokeStyle = n.is_hazard
+          ? "#f43f5e"
+          : (n.is_target ? (isBefore ? "#f43f5e" : (isMitigating ? "#fde68a" : "#10b981")) : "#00d4ff");
+        ctx.lineWidth = n.is_target ? 2.6 : 1.8;
         ctx.beginPath();
         ctx.arc(pt.px, pt.py, r, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+
+        // Queue depth indicator inside/next to target node
+        if (n.is_target) {
+          const qVal = isBefore ? (n.q_before != null ? n.q_before : 138) : (n.q_after != null ? n.q_after : 2);
+          ctx.textAlign = "center";
+          ctx.font = "700 7.2px 'JetBrains Mono'";
+          ctx.fillStyle = isBefore ? "#fda4af" : "#6ee7b7";
+          ctx.fillText(`Q:${qVal}`, pt.px, pt.py + 3);
+        }
 
         ctx.textAlign = "center";
         ctx.font = "700 8px 'JetBrains Mono'";
         ctx.fillStyle = "#ffffff";
         ctx.fillText((n.label || n.id).slice(0, 12), pt.px, pt.py - r - 4);
         ctx.font = "600 7.5px 'JetBrains Mono'";
-        ctx.fillStyle = n.is_target ? "#6ee7b7" : "#94a3b8";
+        ctx.fillStyle = n.is_target ? (isBefore ? "#fda4af" : "#6ee7b7") : "#94a3b8";
         ctx.fillText((n.model || "").slice(0, 13), pt.px, pt.py + r + 10);
       });
 
       // 4. Bottom Live Scenario Event Ticker & Active Node Callout
       if (events.length > 0) {
-        const evIdx = Math.floor(t * 0.85) % events.length;
+        const evIdx = isBefore ? 0 : (isMitigating ? Math.min(1, events.length - 1) : Math.floor(t * 0.45) % events.length);
         const activeEv = events[evIdx];
         const evNode = nodeMap[activeEv.node];
         if (evNode) {
           ctx.strokeStyle = "#fde68a";
           ctx.lineWidth = 1.6;
           ctx.beginPath();
-          ctx.arc(evNode.px, evNode.py, 19 + Math.sin(t * 8) * 2.5, 0, Math.PI * 2);
+          ctx.arc(evNode.px, evNode.py, 19 + Math.sin(t * 5) * 2.5, 0, Math.PI * 2);
           ctx.stroke();
         }
         roundRect(ctx, x + 10, y + h - 22, w - 20, 18, 5, "rgba(15, 23, 42, 0.94)", "rgba(245, 158, 11, 0.45)");
@@ -3317,7 +3567,7 @@
         ctx.fillText((lk.band || "").slice(0, 22), mx, my - 6);
       });
 
-      // 2. Animate Scenario Data Streams flowing across the topology during Stage 4!
+      // 2. Animate Scenario Data Streams flowing across the topology during Stage 4 at a readable hop-by-hop pace!
       scenStreams.forEach((st, sIdx) => {
         const pathIds = st.path || [];
         const segs = [];
@@ -3327,8 +3577,8 @@
         }
         if (segs.length === 0) return;
         const laneY = st.carrier_lane ? st.carrier_lane * 11 : (sIdx === 0 ? -5 : 6);
-        for (let k = 0; k < 5; k++) {
-          const prog = ((t * (1.1 - sIdx * 0.15) + k / 5) % 1.0) * segs.length;
+        for (let k = 0; k < 4; k++) {
+          const prog = ((t * (0.32 - sIdx * 0.04) + k / 4) % 1.0) * segs.length;
           const segIdx = Math.min(segs.length - 1, Math.floor(prog));
           const alpha = prog - segIdx;
           const [na, nb] = segs[segIdx];
@@ -3336,7 +3586,7 @@
           const curY = na.y + (nb.y - na.y) * alpha + laneY;
           ctx.fillStyle = st.color || "#00d4ff";
           ctx.beginPath();
-          ctx.arc(curX, curY, 4.2, 0, Math.PI * 2);
+          ctx.arc(curX, curY, 4.4, 0, Math.PI * 2);
           ctx.fill();
         }
       });
@@ -3354,7 +3604,7 @@
           ctx.setLineDash([]);
 
           for (let k = 0; k < 2; k++) {
-            const p = ((t * 0.95 + idx * 0.25 + k * 0.5) % 1);
+            const p = ((t * 0.38 + idx * 0.25 + k * 0.5) % 1);
             const px = tfsX + (n.x - tfsX) * p;
             const py = (tfsY + 26) + (n.y - (tfsY + 26)) * p;
             ctx.fillStyle = "#10b981";

@@ -1216,8 +1216,8 @@
       const elapsedWallSec = (now - lastAnimTime) / 1000.0;
       lastAnimTime = now;
 
-      // Advance simulation time at a smooth human-readable rate (~0.35 sim-sec per wall-sec at 1x)
-      simCurrentTime += elapsedWallSec * simSpeed * 0.35;
+      // Advance simulation time at a clear human-readable rate (~0.11 sim-sec per wall-sec at 1x)
+      simCurrentTime += elapsedWallSec * simSpeed * 0.11;
       if (simCurrentTime >= simMaxTime) {
         simCurrentTime = 0.12;
       }
@@ -1388,12 +1388,12 @@
         layer.appendChild(qbvBadge);
       }
 
-      // 2. Render Multi-Hop In-Flight Packets with visual time dilation so every hop is clearly animated
-      const hopVisualWindow = 0.038; // 38ms visual window per hop so packets visibly traverse each link
+      // 2. Render Multi-Hop In-Flight Packets with visual time dilation so every hop is clearly animated (~0.75s wall time per hop)
+      const hopVisualWindow = 0.082;
       let renderedCount = 0;
 
       discreteEvents.forEach(ev => {
-        if (renderedCount > 28) return;
+        if (renderedCount > 22) return;
         if (ev.event === "TX" || ev.event === "DEQUEUE" || ev.event === "FORWARD") {
           // Offset visual start per hop so a single packet cascades STA -> AP -> C0 -> C1 -> C2 -> C3 -> SINK
           const hopOrder = {
@@ -1404,7 +1404,7 @@
             "C2": 4,
             "C3": 5
           }[ev.node] || 0;
-          const tStart = ev.t + hopOrder * (hopVisualWindow * 0.65);
+          const tStart = ev.t + hopOrder * (hopVisualWindow * 0.72);
           const tEnd = tStart + hopVisualWindow;
 
           if (t >= tStart && t <= tEnd) {

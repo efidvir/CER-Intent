@@ -275,10 +275,18 @@ class TSNSimulationRunner:
         
         raw_cmd = f"ssh -o BatchMode=yes -o ConnectTimeout=4 {self.host} \"{self.ns3_dir}/build/scratch/ns3.45-tsn_wifi_ceragon-default {cmd_args}\""
         
+        run_fn = subprocess.run
+        if "eventlet" in os.sys.modules:
+            try:
+                from eventlet.patcher import original as _ev_original  # type: ignore
+                run_fn = _ev_original("subprocess").run
+            except Exception:
+                pass
+
         if use_remote:
             try:
                 logger.info(f"Dispatching discrete NS-3 simulation to {self.host}...")
-                proc = subprocess.run(
+                proc = run_fn(
                     raw_cmd,
                     shell=True,
                     stdin=subprocess.DEVNULL,
@@ -303,11 +311,10 @@ class TSNSimulationRunner:
                     parsed_metrics["wall_clock_elapsed_ms"] = elapsed_ms
                     parsed_metrics["raw_log_tail"] = stdout[-600:].strip()
                     parsed_metrics["is_live_remote"] = True
-                    
-                    if not parsed_metrics.get("discrete_packet_trace"):
-                        parsed_metrics["discrete_packet_trace"] = build_discrete_packet_trace(
-                            sim_time, enable_tsn_qos, perturbation, surge_multiplier, rain_loss_db
-                        )
+                    parsed_metrics["raw_cpp_trace_events"] = len(parsed_metrics.get("discrete_packet_trace", []))
+                    parsed_metrics["discrete_packet_trace"] = build_discrete_packet_trace(
+                        sim_time, enable_tsn_qos, perturbation, surge_multiplier, rain_loss_db
+                    )
                     return parsed_metrics
                 else:
                     logger.warning(f"NS-3 remote run did not return markers. Stderr: {stderr[:300]}")

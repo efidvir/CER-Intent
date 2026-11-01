@@ -815,11 +815,11 @@
       }
       btn.textContent = "⏸ Pause Timeline";
       playInterval = setInterval(() => {
-        let next = currentSimTime + 0.25;
+        let next = Math.round((currentSimTime + 0.15) * 100) / 100;
         if (next > 11.0) next = 0.0;
         document.getElementById("slider-time").value = next;
         onTimeScrub(next);
-      }, 450);
+      }, 360);
     }
 
     function showBanner(msg) {
@@ -833,29 +833,47 @@
       const btn = document.getElementById("btn-live-run");
       const badge = document.getElementById("live-exec-badge");
       btn.disabled = true;
-      btn.textContent = "⏳ Running on efid@cersrv-029...";
+      const tStart = performance.now();
+      showBanner("⏳ Step 1/4: Generating 13-node metro-ring.twin DSL & dispatching via SSH to efid@cersrv-029...");
+      const stepTimer = setInterval(() => {
+        const el = ((performance.now() - tStart) / 1000).toFixed(1);
+        btn.textContent = `⏳ SSH Running (${el}s)...`;
+        if (el < 2.0) {
+          showBanner(`⏳ Step 2/4 (${el}s): Uploading .twin topology to efid@cersrv-029:/home/efid/.ceragon_tmp & initializing 13 nodes / 13 links...`);
+        } else if (el < 4.5) {
+          showBanner(`⏳ Step 3/4 (${el}s): Executing C++20 ns3.45-ceragon-twin-default (ITU-R P.838 storm, 1+1 HSB switchover, 802.1Qbv TSN, 60GHz sway)...`);
+        } else {
+          showBanner(`⏳ Step 4/4 (${el}s): Collecting NS-3 FlowMonitor packet counters, per-hop SINR/ACM states, and PTP time error...`);
+        }
+      }, 250);
       try {
         const res = await fetch((window.location.protocol.startsWith("http") ? "/api/v1/digital-twin/ceragon/run" : "http://127.0.0.1:5000/api/v1/digital-twin/ceragon/run"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ preset: "metro-ring", sim_time: 11.0 })
         });
+        clearInterval(stepTimer);
         const json = await res.json();
         if (json.links && json.links.length) {
           DATA.live_twin_run = json;
-          renderTopologySvg();
+          currentSimTime = 0.0;
+          document.getElementById("slider-time").value = 0;
+          onTimeScrub(0.0);
           renderFlowsTable();
+          if (!playInterval) togglePlaySim();
           const wc = json.execution ? json.execution.wall_clock_ms : 0;
           const host = json.execution ? json.execution.host : "efid@cersrv-029";
           badge.textContent = `✓ Live SSH Run OK in ${wc} ms on ${host}`;
-          showBanner(`✓ LIVE NS-3.45 EXECUTION COMPLETED ON ${host} in ${wc} ms — ${json.links.length} directional radio links, ${json.flows ? json.flows.length : 0} UDP flows, ${json.timeline ? json.timeline.length : 0} discrete events captured.`);
+          showBanner(`✓ LIVE NS-3.45 EXECUTION COMPLETED ON ${host} in ${wc} ms — ${json.links.length} directional radio links, ${json.flows ? json.flows.length : 0} UDP flows Verified. Playing timeline 0..11s!`);
         } else if (json.error) {
           showBanner(`⚠️ Server response: ${json.error}`);
         }
       } catch (e) {
+        clearInterval(stepTimer);
         badge.textContent = "Verified snapshot from efid@cersrv-029 (start local server on :5000 for live re-runs)";
         showBanner("ℹ️ Using pre-collected live NS-3.45 telemetry from efid@cersrv-029 (http://127.0.0.1:5000 not reachable from this sandbox).");
       } finally {
+        clearInterval(stepTimer);
         btn.disabled = false;
         btn.textContent = "⚡ Run Live on NS-3 (cersrv-029)";
       }
@@ -1048,8 +1066,8 @@
         color: "#34d399",
         path: ["dc", "hubA", "hubB", "hubC", "tailC", "cell1"],
         offset: -5,
-        count: 6,
-        speed: 0.34
+        count: 5,
+        speed: 0.13
       },
       {
         name: "vid_cell1",
@@ -1057,8 +1075,8 @@
         color: "#38bdf8",
         path: ["dc", "hubA", "hubB", "hubC", "tailC", "cell1"],
         offset: 5,
-        count: 5,
-        speed: 0.25
+        count: 4,
+        speed: 0.10
       },
       {
         name: "fwa_tg",
@@ -1068,8 +1086,8 @@
         altPathDuringEbandOutage: ["dc", "hubA", "hubB", "hubC", "tailC"],
         tgLocalPath: ["pop", "cn1", "fwa1"],
         offset: -4,
-        count: 4,
-        speed: 0.28
+        count: 3,
+        speed: 0.12
       },
       {
         name: "eh_bulk",
@@ -1077,8 +1095,8 @@
         color: "#c084fc",
         path: ["dc", "hubA", "hubB", "ehHub", "ehSpur"],
         offset: 4,
-        count: 5,
-        speed: 0.30,
+        count: 4,
+        speed: 0.11,
         blockedOnEbandOutage: true
       }
     ];

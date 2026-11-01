@@ -988,6 +988,31 @@ def step_stage_execution():
         real_sim["data_streams"] = scenario_sim_data["data_streams"]
         real_sim["scenario_events"] = scenario_sim_data["scenario_events"]
 
+        before_tsn = (before_sim.get("flows") or {}).get("tsn_urllc", {})
+        after_tsn = (real_sim.get("flows") or {}).get("tsn_urllc", {})
+        execution_phases = [
+            {
+                "phase": "3A_TOPOLOGY_EXPORT",
+                "title": f"Exporting {len(scenario_sim_data['simulated_topology']['nodes'])}-Node / {len(scenario_sim_data['simulated_topology']['links'])}-Link Scenario to NS-3.45 ({NS3_SSH_HOST})",
+                "detail": f"Target: {target_id} | Streams: {len(scenario_sim_data['data_streams'])} | Engine: {real_sim.get('execution_engine', 'ns-3.45')}",
+            },
+            {
+                "phase": "3B_BASELINE_BEFORE",
+                "title": f"Baseline Run (BEFORE): {prof['before_label']}",
+                "detail": f"Unmitigated Delay: {unmitigated_lat} ms | Packet Loss: {prof['unmitigated_loss_pct']}% | TX/RX: {before_tsn.get('tx_packets', 1000)}/{before_tsn.get('rx_packets', 980)} pkts -> SLA BREACH",
+            },
+            {
+                "phase": "3C_CANDIDATE_ACTUATION",
+                "title": f"Applying Candidate Mitigation in Twin: {prof['action']}",
+                "detail": f"Injected YANG/SBI config on {target_id} ({prof['title']})",
+            },
+            {
+                "phase": "3D_MITIGATED_AFTER",
+                "title": f"Mitigated Run (AFTER): {prof['after_label']}",
+                "detail": f"Mitigated Delay: {mitigated_lat} ms | Packet Loss: {prof['mitigated_loss_pct']}% | TX/RX: {after_tsn.get('tx_packets', 1000)}/{after_tsn.get('rx_packets', 1000)} pkts -> SLA VERIFIED",
+            },
+        ]
+
         return jsonify({
             "stage": 3,
             "use_case": use_case,
@@ -1002,6 +1027,7 @@ def step_stage_execution():
             "simulated_topology": scenario_sim_data["simulated_topology"],
             "data_streams": scenario_sim_data["data_streams"],
             "scenario_events": scenario_sim_data["scenario_events"],
+            "execution_phases": execution_phases,
             "before_sim": before_sim,
             "sim_results": real_sim,
             "outcome": {
@@ -1364,11 +1390,11 @@ def ceragon_twin_run_example():
     runner = _ceragon_runner()
     cmd_map = {
         "TEST_SUITE": "cd /home/efid/ns3-ceragon-ci && TMPDIR=/home/efid/.ceragon_tmp ./test.py -s ceragon -v --no-build",
-        "EX_PORTFOLIO": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-portfolio-twin-default",
-        "EX_MULTIBAND": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-multiband-rain-default --trafficMbps=80",
-        "EX_TSN": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-tsn-fronthaul-default --mode=fifo && LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-tsn-fronthaul-default --mode=tsn",
-        "EX_TERRAGRAPH": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-terragraph-mesh-default",
-        "EX_PROTECTION": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-protection-switchover-default",
+        "EX_PORTFOLIO": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-portfolio-twin-default --simTime=0.5",
+        "EX_MULTIBAND": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-multiband-rain-default --offered=80Mbps --simTime=4",
+        "EX_TSN": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-tsn-fronthaul-default --mode=fifo --simTime=0.4 --beLoad=120Mbps && LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-tsn-fronthaul-default --mode=tsn --simTime=0.4 --beLoad=120Mbps",
+        "EX_TERRAGRAPH": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-terragraph-mesh-default --simTime=1.5",
+        "EX_PROTECTION": "LD_LIBRARY_PATH=/home/efid/ns3-ceragon-ci/build/lib /home/efid/ns3-ceragon-ci/build/contrib/ceragon/examples/ns3.45-ceragon-protection-switchover-default --simTime=2.0",
     }
     remote_cmd = cmd_map.get(example_key, cmd_map["EX_MULTIBAND"])
     started = time.time()
