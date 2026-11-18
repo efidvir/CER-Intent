@@ -1,33 +1,41 @@
 """
-Network Slice Controller (NSC) - DMO for Transport Domain (D3.1 Section 2.4.1.1)
-================================================================================
-Implements the 5 functional blocks defined in D3.1 Figure 2-17:
-  1. NBI Processor (Translator): CRUD for IETF RFC 9543 Slice Services & Templates
-  2. Mapper: Enriches slice requests with topology and triggers the Planner
-  3. Planner (NDT PCE): Path Computation Engine powered by the Network Digital Twin
-  4. Realizer: Translates slice into IETF L2SM (RFC 9291) and L3SM (RFC 9182) for TFS
-  5. Slice Datastore: Central persistent state of active transport slices & TVR schedules
+Network Slice Controller (NSC) - DMO for the Transport Domain
+=============================================================
+Takes RFC 9543 slice requests (from OpenSlice or any client) and realizes them
+on TeraFlowSDN through its standard interfaces, in the stages the TeraFlowSDN
+slice controller uses:
+
+  1. Mapper               nsc/mapper.py               endpoints, SLOs, connectivity, ACs
+  2. Technology Selector  nsc/technology_selector.py  L2VPN or L3VPN
+  3. Realizer             nsc/realizer.py             L2SM (RFC 8466) / L3SM (RFC 8299)
+
+CER-Intent adds a twin-backed planner check (NDT PCE) between mapping and
+selection, an optional selector skill, and radio/ACM decisions that travel as
+TeraFlowSDN service settings. It also keeps the slice datastore, SLO/SLE
+templates, TVR schedules and subscriptions.
 """
 from __future__ import annotations
 
 import logging
 import time
 import uuid
-from typing import Dict, List, Optional, Any
+from dataclasses import asdict
+from typing import Any, Callable, Dict, List, Optional
 
 from cer_intent.nsc.ietf_models import (
     SLOSLETemplate,
     ServiceDemarcationPoint,
     ConnectivityConstruct,
     IETFSliceService,
-    generate_ietf_l2sm_payload,
-    generate_ietf_l3sm_payload,
     TVRScheduleItem,
     InstantaneousDeviceEnergy,
     StaticDeviceEnergy,
     IETFTelemetrySubscription,
 )
+from cer_intent.nsc.mapper import MappingError, map_request
 from cer_intent.nsc.pce_planner import NDTPathComputationEngine
+from cer_intent.nsc.realizer import Realization, Realizer
+from cer_intent.nsc.technology_selector import SelectorSkill, select_technology
 
 logger = logging.getLogger("NetworkSliceController")
 
@@ -37,10 +45,14 @@ class NetworkSliceController:
     Domain Management Orchestrator (DMO) for the Transport / xHaul Domain.
     """
 
-    def __init__(self, tfs_client=None, adapter=None, audit_log=None):
+    def __init__(self, tfs_client=None, adapter=None, audit_log=None,
+                 realization_mode: Optional[str] = None, technology_skill: Optional[SelectorSkill] = None):
         self.tfs_client = tfs_client
         self.adapter = adapter
         self.audit_log = audit_log
+        self.realizer = Realizer(tfs_client=tfs_client, mode=realization_mode)
+        self.technology_skill = technology_skill
+        self.realizations: Dict[str, Realization] = {}
 
         # Datastores
         self.templates: Dict[str, SLOSLETemplate] = {}
@@ -186,171 +198,141 @@ class NetworkSliceController:
         }
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Functional Block 1 & 2: NBI Processor & Mapper
+    # Slice pipeline: Mapper -> Planner -> Technology Selector -> Realizer
+    # (the same stages as the TeraFlowSDN slice controller, plus the twin-backed
+    # planner check that CER-Intent adds between mapping and selection)
     # ─────────────────────────────────────────────────────────────────────────
 
     def create_or_update_slice_service(self, raw_req: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Executes the 7-step Transport Service Creation Workflow (D3.1 Figure 2-18):
-          1. Ingest slice request
-          2. NBI Processor normalizes to IETF Slice
-          3. Mapper extracts endpoints & constraints
-          4. Mapper triggers Planner (NDT PCE)
-          5. Planner computes optimal underlay path
-          6. Realizer converts to L2SM (RFC 9291) or L3SM (RFC 9182)
-          7. Dispatches to TFS / transport infrastructure
+        Realize one RFC 9543 slice service request.
+
+          1. Mapper               endpoints, SLOs, connectivity, attachment circuits
+          2. Planner (NDT PCE)    advisory path and SLO check on the digital twin
+          3. Technology Selector  L2VPN or L3VPN, with the reason
+          4. Realizer             L2SM (RFC 8466) / L3SM (RFC 8299) to TeraFlowSDN,
+                                  radio and ACM decisions as service settings
+
+        A request that cannot be mapped or realized returns {"error": ..., "status": 400}.
         """
-        # Step 1 & 2: NBI Processor parsing
-        slice_id = raw_req.get("id") or raw_req.get("slice_id") or f"slice-{uuid.uuid4().hex[:6]}"
-        desc = raw_req.get("description", f"IETF Network Slice {slice_id}")
-        tpl_ref = raw_req.get("slo_sle_template_ref") or raw_req.get("slo-sle-policy", {}).get("slo-sle-template", "template-urllc-mission-critical")
-        
-        sdps_raw = raw_req.get("sdps", {}).get("sdp", []) or raw_req.get("sdps", [])
-        sdp_objects = []
-        for s in sdps_raw:
-            sdp_objects.append(ServiceDemarcationPoint(
-                sdp_id=s.get("id") or s.get("sdp_id", f"sdp-{uuid.uuid4().hex[:4]}"),
-                node_id=s.get("node_id") or s.get("node-id", "ctu-96"),
-                tp_id=s.get("tp_id") or s.get("tp-id", "eth0"),
-                ip_address=s.get("ip_address"),
-                vlan_id=s.get("vlan_id"),
-                dscp_code=s.get("dscp_code", 46)
-            ))
+        try:
+            mapped = map_request(raw_req, self.templates)
+        except MappingError as e:
+            return {"error": str(e), "status": 400, "stage": "mapper"}
 
-        # Default SDPs if omitted (ctu-96 to edge-router-02)
-        if len(sdp_objects) < 2:
-            sdp_objects = [
-                ServiceDemarcationPoint("sdp-ingress", "ctu-96", "eth0", "192.168.1.225", 100, 46),
-                ServiceDemarcationPoint("sdp-egress", "edge-router-02", "eth1", "10.100.2.1", 100, 46)
-            ]
-
-        # Step 3: Mapper extracts parameters & constraints
-        template = self.templates.get(tpl_ref)
-        max_lat = None
-        min_bw = None
-        isolation = "logical"
-        if template:
-            for slo in template.slos:
-                if "delay" in slo.get("metric_type", ""):
-                    max_lat = slo.get("metric_value")
-                elif "bandwidth" in slo.get("metric_type", ""):
-                    min_bw = slo.get("metric_value")
-            for sle in template.sles:
-                if sle.get("expectation_type") == "isolation":
-                    isolation = sle.get("expectation_value")
-
-        # Step 4 & 5: Planner (NDT PCE) computes optimal underlay path
-        src_node = sdp_objects[0].node_id
-        dst_node = sdp_objects[1].node_id
-        
-        # Pull active TVR schedules to ensure path avoids degraded/unavailable links
-        active_tvr = list(self.tvr_schedules.values())
-        
         pce_result = self.planner.compute_constrained_path(
-            src_node=src_node,
-            dst_node=dst_node,
-            max_latency_ms=max_lat,
-            bandwidth_mbps=min_bw,
-            isolation_policy=isolation,
-            tvr_schedules=active_tvr
+            src_node=mapped.endpoints[0].node_id,
+            dst_node=mapped.endpoints[1].node_id,
+            max_latency_ms=mapped.slos.max_latency_ms,
+            bandwidth_mbps=mapped.slos.bandwidth_mbps,
+            isolation_policy=str(mapped.sles.get("isolation", "logical")),
+            tvr_schedules=list(self.tvr_schedules.values()),
         )
+        computed_path = pce_result.get("computed_path", [ep.node_id for ep in mapped.endpoints])
 
-        computed_path = pce_result.get("computed_path", [src_node, dst_node])
-        is_feasible = pce_result.get("feasible", True)
+        choice = select_technology(mapped, skill=self.technology_skill)
 
-        # Step 6: Realizer selection (L2SM or L3SM)
-        requested_tech = raw_req.get("realization_technology", "L2SM").upper()
-        if "L3" in requested_tech or "IP" in requested_tech:
-            realization_tech = "L3SM"
-            controller_payload = generate_ietf_l3sm_payload(
-                slice_service=IETFSliceService(
-                    slice_id=slice_id,
-                    description=desc,
-                    slo_sle_template_ref=tpl_ref,
-                    sdps=sdp_objects,
-                    computed_path=computed_path
-                ),
-                dscp=sdp_objects[0].dscp_code or 46
-            )
+        if self.realizer.mode == "tfs-api":
+            realization = self.realizer.build(mapped, choice.technology)
+            realization.controller_response = self._legacy_tfs_api_dispatch(mapped, choice.technology, computed_path)
+            realization.status = "sent" if realization.controller_response.get("ok") else "failed"
         else:
-            realization_tech = "L2SM"
-            controller_payload = generate_ietf_l2sm_payload(
-                slice_service=IETFSliceService(
-                    slice_id=slice_id,
-                    description=desc,
-                    slo_sle_template_ref=tpl_ref,
-                    sdps=sdp_objects,
-                    computed_path=computed_path
-                ),
-                dscp=sdp_objects[0].dscp_code or 46
-            )
+            realization = self.realizer.realize(mapped, choice.technology)
+        if realization.status == "failed" and realization.payload == {}:
+            return {"error": realization.error, "status": 400, "stage": "realizer"}
 
-        # Assemble RFC 9543 Slice Service
         slice_svc = IETFSliceService(
-            slice_id=slice_id,
-            description=desc,
-            slo_sle_template_ref=tpl_ref,
-            sdps=sdp_objects,
+            slice_id=mapped.slice_id,
+            description=mapped.description,
+            slo_sle_template_ref=mapped.template_ref or "",
+            sdps=[
+                ServiceDemarcationPoint(ep.sdp_id, ep.node_id, ep.tp_id, ep.ip_address, ep.vlan_id, None)
+                for ep in mapped.endpoints
+            ],
             connectivity_constructs=[
                 ConnectivityConstruct(
-                    construct_id=f"cc-{slice_id}-1",
-                    connectivity_type="point-to-point",
-                    src_sdp_id=sdp_objects[0].sdp_id,
-                    dst_sdp_id=sdp_objects[1].sdp_id
+                    construct_id=cc.construct_id,
+                    connectivity_type=group.connectivity_type,
+                    src_sdp_id=cc.sender_sdp or mapped.endpoints[0].sdp_id,
+                    dst_sdp_id=cc.receiver_sdp or mapped.endpoints[1].sdp_id,
                 )
+                for group in mapped.connection_groups for cc in group.constructs
             ],
-            status="active" if is_feasible else "degraded",
+            status=self._slice_status(realization.status, pce_result.get("feasible", True)),
             computed_path=computed_path,
-            realization_technology=realization_tech,
-            controller_reference="TeraFlowSDN"
+            realization_technology="L3SM" if choice.technology == "L3VPN" else "L2SM",
+            controller_reference="TeraFlowSDN",
         )
-        self.slices[slice_id] = slice_svc
-
-        # Step 7: Southbound Controller dispatch to TFS (if connected)
-        tfs_dispatch_status = "STAGED_LOCAL"
-        if self.tfs_client:
-            try:
-                # TFS slice handler invocation
-                tfs_resp = self.tfs_client.create_or_update_slice({
-                    "slice_id": {"slice_uuid": {"uuid": slice_id}},
-                    "slice_endpoint_ids": [
-                        {"endpoint_uuid": {"uuid": sdp.tp_id}, "device_id": {"device_uuid": {"uuid": sdp.node_id}}}
-                        for sdp in sdp_objects
-                    ],
-                    "slice_status": {"slice_status": 2},  # SLICESTATUS_ACTIVE
-                    "slice_config": {
-                        "config_rules": [
-                            {"action": 1, "custom": {"resource_key": "/service/realization", "resource_value": realization_tech}},
-                            {"action": 1, "custom": {"resource_key": "/service/computed_path", "resource_value": str(computed_path)}},
-                        ]
-                    }
-                })
-                tfs_dispatch_status = "COMMITTED_TO_TFS"
-            except Exception as e:
-                logger.warning(f"TFS dispatch warning: {e}")
-                tfs_dispatch_status = f"LOCAL_EMULATED (TFS: {e})"
-
-        # Trigger Subscribed Notifications if any subscribers are registered for this slice
-        self._notify_subscribers(slice_id, slice_svc, pce_result)
+        self.slices[mapped.slice_id] = slice_svc
+        self.realizations[mapped.slice_id] = realization
+        self._notify_subscribers(mapped.slice_id, slice_svc, pce_result)
 
         return {
             "ietf-network-slice-service:network-slice-services": {
                 "slice-service": [slice_svc.to_ietf_dict()]
             },
-            "nsc_workflow": {
-                "step_1_idmo_request": "RECEIVED",
-                "step_2_ietf_slice_normalized": True,
-                "step_3_mapper_extracted": {
-                    "template": tpl_ref,
-                    "max_latency_slo_ms": max_lat,
-                    "isolation_sle": isolation
+            "nsc_pipeline": {
+                "mapper": {
+                    "endpoints": [
+                        {"sdp": ep.sdp_id, "node": ep.node_id, "tp": ep.tp_id, "ip": ep.ip_address, "vlan": ep.vlan_id}
+                        for ep in mapped.endpoints
+                    ],
+                    "slos": asdict(mapped.slos),
+                    "connectivity": [
+                        {"group": g.group_id, "type": g.connectivity_type, "constructs": len(g.constructs)}
+                        for g in mapped.connection_groups
+                    ],
+                    "attachment_circuits": sum(len(ep.attachment_circuits) for ep in mapped.endpoints),
                 },
-                "step_4_5_planner_pce": pce_result,
-                "step_6_realizer_technology": realization_tech,
-                "step_7_controller_payload": controller_payload,
-                "controller_status": tfs_dispatch_status
-            }
+                "planner": pce_result,
+                "technology_selector": choice.to_dict(),
+                "realizer": realization.to_dict(),
+            },
         }
+
+    @staticmethod
+    def _slice_status(realization_status: str, feasible: Optional[bool]) -> str:
+        if realization_status == "failed":
+            return "failed"
+        if feasible is False:  # None: the twin could not check the path
+            return "degraded"
+        return "active" if realization_status == "sent" else "planned"
+
+    def delete_slice_service(self, slice_id: str) -> Optional[Dict[str, Any]]:
+        """Withdraw a slice from TeraFlowSDN and the datastore. None if unknown."""
+        svc = self.slices.get(slice_id)
+        if svc is None:
+            return None
+        realization = self.realizations.get(slice_id)
+        technology = realization.technology if realization else (
+            "L3VPN" if svc.realization_technology == "L3SM" else "L2VPN")
+        result = self.realizer.withdraw(slice_id, technology)
+        if result.get("status") != "failed":
+            self.slices.pop(slice_id, None)
+            self.realizations.pop(slice_id, None)
+        return result
+
+    def _legacy_tfs_api_dispatch(self, mapped, technology: str, computed_path: List[str]) -> Dict[str, Any]:
+        """Earlier behaviour (TFS_REALIZATION=tfs-api): a custom slice object via the TFS API."""
+        if not self.tfs_client:
+            return {"ok": False, "error": "no TeraFlowSDN client configured"}
+        try:
+            self.tfs_client.create_or_update_slice({
+                "slice_id": {"slice_uuid": {"uuid": mapped.slice_id}},
+                "slice_endpoint_ids": [
+                    {"endpoint_uuid": {"uuid": ep.tp_id}, "device_id": {"device_uuid": {"uuid": ep.node_id}}}
+                    for ep in mapped.endpoints
+                ],
+                "slice_status": {"slice_status": 2},
+                "slice_config": {"config_rules": [
+                    {"action": 1, "custom": {"resource_key": "/service/realization", "resource_value": technology}},
+                    {"action": 1, "custom": {"resource_key": "/service/computed_path", "resource_value": str(computed_path)}},
+                ]},
+            })
+            return {"ok": True}
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning(f"TFS dispatch warning: {e}")
+            return {"ok": False, "error": str(e)}
 
     # ─────────────────────────────────────────────────────────────────────────
     # Subscribed Notifications (RFC 8639)

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cer-intent
+description: CER-Intent transport slice controller (RFC 9543 -> L2SM/L3SM on TeraFlowSDN), intent API and MCP tools
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

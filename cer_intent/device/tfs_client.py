@@ -153,6 +153,106 @@ class TFSClient:
         resp.raise_for_status()
         return resp.json()
 
+    # ── Standard IETF interfaces of TeraFlowSDN (RESTCONF) ────────────────────
+    #
+    # These are the interfaces the ETSI stack uses: OpenSlice talks RFC 9543 to a
+    # TeraFlowSDN slice controller, which talks L2VPN / L3VPN to the controller.
+
+    IETF_SLICE_PATH = "/restconf/data/ietf-network-slice-service:network-slice-services"
+    IETF_L2VPN_PATH = "/restconf/data/ietf-l2vpn-svc:l2vpn-svc"
+    IETF_L3VPN_PATH = "/restconf/data/ietf-l3vpn-svc:l3vpn-svc"
+    IETF_NETWORK_PATH = "/restconf/data/ietf-network:networks"
+
+    def _restconf_auth(self) -> Optional[Tuple[str, str]]:
+        user = os.getenv("TFS_USERNAME", "admin")
+        password = os.getenv("TFS_PASSWORD", "admin")
+        return (user, password) if user else None
+
+    def _restconf(self, method: str, path: str, payload: Optional[Dict[str, Any]] = None) -> Any:
+        url = f"{self.base_url}{path}"
+        logger.info(f"[TFS] {method} {url}")
+        resp = self._session.request(method, url, json=payload, auth=self._restconf_auth(), timeout=self.timeout)
+        if resp.status_code >= 400:
+            raise RuntimeError(f"TFS {method} {path} -> HTTP {resp.status_code}: {resp.text[:300]}")
+        if not resp.content:
+            return {}
+        try:
+            body = resp.json()
+        except ValueError:
+            return {"raw": resp.text}
+        # The VPN interfaces answer with a list of errors; an empty list means success.
+        if isinstance(body, list) and body:
+            raise RuntimeError(f"TFS {method} {path} reported errors: {body}")
+        return body
+
+    def create_network_slice(self, rfc9543_request: Dict[str, Any]) -> Any:
+        """POST an RFC 9543 slice service to a TeraFlowSDN slice controller."""
+        return self._restconf("POST", self.IETF_SLICE_PATH, rfc9543_request)
+
+    def get_network_slice(self, slice_id: str) -> Any:
+        return self._restconf("GET", f"{self.IETF_SLICE_PATH}/slice-service={slice_id}")
+
+    def delete_network_slice(self, slice_id: str) -> Any:
+        return self._restconf("DELETE", f"{self.IETF_SLICE_PATH}/slice-service={slice_id}")
+
+    def create_l3vpn(self, l3sm_request: Dict[str, Any]) -> Any:
+        """POST an RFC 8299 L3VPN service to TeraFlowSDN."""
+        return self._restconf("POST", f"{self.IETF_L3VPN_PATH}/vpn-services", l3sm_request)
+
+    def delete_l3vpn(self, vpn_id: str) -> Any:
+        return self._restconf("DELETE", f"{self.IETF_L3VPN_PATH}/vpn-services/vpn-service={vpn_id}")
+
+    def create_l2vpn(self, l2sm_request: Dict[str, Any]) -> Any:
+        """POST an RFC 8466 L2VPN service to TeraFlowSDN."""
+        return self._restconf("POST", f"{self.IETF_L2VPN_PATH}/vpn-services", l2sm_request)
+
+    def delete_l2vpn(self, vpn_id: str) -> Any:
+        return self._restconf("DELETE", f"{self.IETF_L2VPN_PATH}/vpn-services/vpn-service={vpn_id}")
+
+    def get_rfc8345_networks(self) -> Dict[str, Any]:
+        """RFC 8345 topology as TeraFlowSDN exposes it."""
+        return self._restconf("GET", f"{self.IETF_NETWORK_PATH}/")
+
+    def get_service(self, service_uuid: str, context_uuid: Optional[str] = None) -> Dict[str, Any]:
+        ctx = context_uuid or self.context_name
+        url = f"{self.base_url}/tfs-api/context/{ctx}/service/{service_uuid}"
+        resp = self._session.get(url, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json()
+
+    def update_service_settings(
+        self, service_uuid: str, settings: Dict[str, Any], context_uuid: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Merge keys into the "/settings" rule of a TFS service and update it. Used for
+        values the IETF models cannot carry (radio and ACM decisions), which the
+        Ceragon service handler applies on the radio hops.
+        """
+        ctx = context_uuid or self.context_name
+        service = self.get_service(service_uuid, ctx)
+        rules = service.setdefault("service_config", {}).setdefault("config_rules", [])
+        for rule in rules:
+            custom = rule.get("custom") or {}
+            if custom.get("resource_key") == "/settings":
+                value = custom.get("resource_value") or "{}"
+                current = json.loads(value) if isinstance(value, str) else dict(value)
+                current.update(settings)
+                custom["resource_value"] = json.dumps(current, sort_keys=True)
+                break
+        else:
+            rules.append({"action": 1, "custom": {"resource_key": "/settings",
+                                                   "resource_value": json.dumps(settings, sort_keys=True)}})
+        # The update must address the service by the identifiers TFS stored (UUIDs),
+        # which may differ from the name used to look it up.
+        sid = service.get("service_id", {})
+        put_ctx = sid.get("context_id", {}).get("context_uuid", {}).get("uuid", ctx)
+        put_uuid = sid.get("service_uuid", {}).get("uuid", service_uuid)
+        url = f"{self.base_url}/tfs-api/context/{put_ctx}/service/{put_uuid}"
+        logger.info(f"[TFS] PUT {url} (service settings: {sorted(settings)})")
+        resp = self._session.put(url, json=service, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json() if resp.content else {"status": "success"}
+
     # ── Normalized Topology Mapping ──────────────────────────────────────────
 
     def fetch_normalized_topology(self) -> Dict[str, Any]:

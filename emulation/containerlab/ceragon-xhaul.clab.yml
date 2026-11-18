@@ -1,0 +1,74 @@
+# Two data-centre sites joined over a core with an emulated Ceragon radio hop.
+# Routers and sites follow TeraFlowSDN's own eucnc24 test topology (Arista cEOS
+# managed over gNMI); radio-a and radio-b run the radio emulator: RESTCONF for
+# TeraFlowSDN's Ceragon driver on port 8080, a Linux bridge between their two
+# ports, and a tc rate cap on the air link at the emulated link speed.
+#
+#   dc1 -- r1 -- r2 -- radio-a ~~ air ~~ radio-b -- r3 -- dc2
+#
+# Build the emulator image first:
+#   docker build -f ../radio-emulator.Dockerfile -t cer-intent/radio-emulator:latest ..
+#   sudo containerlab deploy -t ceragon-xhaul.clab.yml
+
+name: ceragon-xhaul
+
+mgmt:
+  network: mgmt-net
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  kinds:
+    arista_ceos:
+      image: ceos:4.32.2F          # the version TeraFlowSDN's gNMI driver is tested with
+    linux:
+      image: ghcr.io/hellt/network-multitool:latest
+
+  nodes:
+    r1:
+      kind: arista_ceos
+      mgmt-ipv4: 172.20.20.101
+      startup-config: r1-startup.cfg
+    r2:
+      kind: arista_ceos
+      mgmt-ipv4: 172.20.20.102
+      startup-config: r2-startup.cfg
+    r3:
+      kind: arista_ceos
+      mgmt-ipv4: 172.20.20.103
+      startup-config: r3-startup.cfg
+
+    radio-a:
+      kind: linux
+      image: cer-intent/radio-emulator:latest
+      mgmt-ipv4: 172.20.20.121
+      cap-add: [NET_ADMIN]
+      cmd: python /app/radio_emulator.py --port 8080 --node-name radio-a --bridge eth1,eth2 --shape-dev eth2
+    radio-b:
+      kind: linux
+      image: cer-intent/radio-emulator:latest
+      mgmt-ipv4: 172.20.20.122
+      cap-add: [NET_ADMIN]
+      cmd: python /app/radio_emulator.py --port 8080 --node-name radio-b --bridge eth1,eth2 --shape-dev eth2
+
+    dc1:
+      kind: linux
+      mgmt-ipv4: 172.20.20.201
+      exec:
+        - ip link set address 00:c1:ab:00:01:01 dev eth1
+        - ip address add 172.16.1.10/24 dev eth1
+        - ip route add 172.16.2.0/24 via 172.16.1.1
+    dc2:
+      kind: linux
+      mgmt-ipv4: 172.20.20.202
+      exec:
+        - ip link set address 00:c1:ab:00:02:01 dev eth1
+        - ip address add 172.16.2.10/24 dev eth1
+        - ip route add 172.16.1.0/24 via 172.16.2.1
+
+  links:
+    - endpoints: ["r1:eth2", "r2:eth1"]
+    - endpoints: ["r2:eth3", "radio-a:eth1"]
+    - endpoints: ["radio-a:eth2", "radio-b:eth2"]     # the air link
+    - endpoints: ["radio-b:eth1", "r3:eth2"]
+    - endpoints: ["r1:eth10", "dc1:eth1"]
+    - endpoints: ["r3:eth10", "dc2:eth1"]

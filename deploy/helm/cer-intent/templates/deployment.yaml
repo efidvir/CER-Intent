@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cer-intent.name" . }}
+  labels: {{- include "cer-intent.labels" . | nindent 4 }}
+spec:
+  replicas: 1                      # the slice datastore is in memory: one replica
+  selector:
+    matchLabels: {{- include "cer-intent.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "cer-intent.labels" . | nindent 8 }}
+    spec:
+      securityContext: {runAsNonRoot: true, runAsUser: 10001}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env: {{- include "cer-intent.env" . | nindent 12 }}
+          {{- include "cer-intent.envFrom" . | nindent 10 }}
+          ports: [{name: http, containerPort: {{ .Values.service.port }}}]
+          readinessProbe:
+            httpGet: {path: /restconf/data/ietf-network-slice-service:network-slice-services, port: http}
+            periodSeconds: 10
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.mcp.enabled }}
+        - name: mcp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "cer_intent.mcp", "--transport", "streamable-http", "--host", "0.0.0.0",
+                    "--port", {{ .Values.mcp.port | quote }}]
+          env:
+            {{- include "cer-intent.env" . | nindent 12 }}
+            # slice tools use the API container's slice controller: one slice datastore
+            - name: CER_INTENT_URL
+              value: "http://127.0.0.1:{{ .Values.service.port }}"
+            - name: CER_INTENT_MCP_PROXY
+              value: "1"
+          {{- include "cer-intent.envFrom" . | nindent 10 }}
+          ports: [{name: mcp, containerPort: {{ .Values.mcp.port }}}]
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+        {{- end }}

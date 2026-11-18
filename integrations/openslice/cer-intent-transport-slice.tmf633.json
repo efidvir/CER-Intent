@@ -1,0 +1,144 @@
+{
+  "@type": "ServiceSpecification",
+  "name": "CER-Intent Wireless Transport Slice",
+  "description": "RFC 9543 network slice over Ceragon wireless transport. CER-Intent acts as the slice controller: it maps the request, chooses L2VPN or L3VPN and realizes it on TeraFlowSDN (L2SM RFC 8466 / L3SM RFC 8299). Radio and ACM settings decided by CER-Intent travel as TeraFlowSDN service settings.",
+  "version": "0.1.0",
+  "lifecycleStatus": "In design",
+  "isBundle": false,
+  "serviceSpecCharacteristic": [
+    {
+      "name": "sliceId",
+      "description": "Identifier of the slice service (RFC 9543 slice-service/id).",
+      "valueType": "TEXT",
+      "configurable": true,
+      "minCardinality": 1,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "TEXT", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "networkSliceService",
+      "description": "Full RFC 9543 request (network-slice-services tree, draft-ietf-teas-ietf-network-slice-nbi-yang). When set, it is sent as is and the fields below are ignored.",
+      "valueType": "LONGTEXT",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "LONGTEXT", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "endpointA",
+      "description": "First service demarcation point as node:port (e.g. pe-1:ge-0/0/1).",
+      "valueType": "TEXT",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "TEXT", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "endpointB",
+      "description": "Second service demarcation point as node:port.",
+      "valueType": "TEXT",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "TEXT", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "endpointAddresses",
+      "description": "IPv4 address/prefix of each endpoint, comma separated (needed for an L3VPN).",
+      "valueType": "TEXT",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "TEXT", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "vlanId",
+      "description": "Access VLAN at both endpoints; the radio hops carry the slice on it.",
+      "valueType": "INTEGER",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "INTEGER", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "bandwidthMbps",
+      "description": "One-way bandwidth SLO in Mbps.",
+      "valueType": "FLOAT",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "FLOAT", "isDefault": true, "unitOfMeasure": "Mbps", "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "maxLatencyMs",
+      "description": "One-way delay maximum SLO in milliseconds.",
+      "valueType": "FLOAT",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "FLOAT", "isDefault": true, "unitOfMeasure": "ms", "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "realizationTechnology",
+      "description": "L2VPN, L3VPN, or auto (CER-Intent's technology selector decides and reports why).",
+      "valueType": "ENUM",
+      "configurable": true,
+      "minCardinality": 1,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "ENUM", "isDefault": true, "value": { "value": "auto", "alias": "auto" } },
+        { "valueType": "ENUM", "isDefault": false, "value": { "value": "L2VPN", "alias": "L2VPN" } },
+        { "valueType": "ENUM", "isDefault": false, "value": { "value": "L3VPN", "alias": "L3VPN" } }
+      ]
+    },
+    {
+      "name": "intentText",
+      "description": "Optional free-text intent for CER-Intent (e.g. 'keep latency under 5 ms during rain').",
+      "valueType": "LONGTEXT",
+      "configurable": true,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "LONGTEXT", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    },
+    {
+      "name": "sliceControllerUrl",
+      "description": "RFC 9543 interface of the slice controller (CER-Intent): <base>/restconf/data/ietf-network-slice-service:network-slice-services.",
+      "valueType": "TEXT",
+      "configurable": false,
+      "minCardinality": 1,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "TEXT", "isDefault": true, "value": { "value": "http://cer-intent:5000/restconf/data/ietf-network-slice-service:network-slice-services", "alias": "" } }
+      ]
+    },
+    {
+      "name": "realizationStatus",
+      "description": "Reported back: built, sent or failed, with the technology and the reason it was chosen.",
+      "valueType": "TEXT",
+      "configurable": false,
+      "minCardinality": 0,
+      "maxCardinality": 1,
+      "serviceSpecCharacteristicValue": [
+        { "valueType": "TEXT", "isDefault": true, "value": { "value": "", "alias": "" } }
+      ]
+    }
+  ]
+}
