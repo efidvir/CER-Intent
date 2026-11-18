@@ -102,3 +102,45 @@ def test_registration_on_a_server_without_annotations():
     server = OldServer()
     names = tools.register(server, prefix="cer_")
     assert names[0] == "cer_preview_network_slice" and len(server.added) == len(tools.TOOLS)
+
+
+def test_proxy_mode_uses_the_api_slice_datastore(monkeypatch):
+    """With CER_INTENT_MCP_PROXY=1 the tools go through the API's RFC 9543 interface."""
+    from flask import Flask
+    from cer_intent.api import restconf_routes
+
+    monkeypatch.setenv("TFS_REALIZATION", "dry-run")
+    monkeypatch.setenv("CER_INTENT_MCP_MODE", "act")
+    monkeypatch.setenv("CER_INTENT_MCP_PROXY", "1")
+    reset_shared_controller()
+    monkeypatch.setattr(restconf_routes, "_nsc_instance", None)
+    app = Flask(__name__)
+    app.config["adapter"] = None
+    app.register_blueprint(restconf_routes.restconf_bp)
+    client = app.test_client()
+
+    class Resp:
+        def __init__(self, r):
+            self.status_code, self._r = r.status_code, r
+
+        def json(self):
+            return self._r.get_json()
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise RuntimeError(self.status_code)
+
+    def path(url):
+        return url.split("localhost:5000", 1)[1]
+
+    monkeypatch.setattr(tools.requests, "post", lambda url, json=None, timeout=None: Resp(client.post(path(url), json=json)))
+    monkeypatch.setattr(tools.requests, "get", lambda url, timeout=None: Resp(client.get(path(url))))
+    monkeypatch.setattr(tools.requests, "delete", lambda url, timeout=None: Resp(client.delete(path(url))))
+
+    created = tools.create_network_slice(rfc9543())
+    assert created["pipeline"]["realizer"]["status"] == "built"   # dry-run in the API process
+    assert [s["id"] for s in tools.list_network_slices()["slices"]] == ["slice-a"]
+    assert tools.get_network_slice("slice-a")["slice-service"]["id"] == "slice-a"
+    assert tools.delete_network_slice("slice-a")["applied"] is True
+    assert "error" in tools.get_network_slice("slice-a")
+    reset_shared_controller()

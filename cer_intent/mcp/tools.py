@@ -13,10 +13,13 @@ act on TeraFlowSDN. Twin results are always labelled as simulated.
 Environment:
   TERAFLOW_URL, TFS_USERNAME, TFS_PASSWORD   TeraFlowSDN (see device/tfs_client.py)
   TFS_REALIZATION                            how slices leave CER-Intent (see nsc/realizer.py)
-  CER_INTENT_URL                             running CER-Intent API, for submit_intent
+  CER_INTENT_URL                             running CER-Intent API: submit_intent, and when
+                                             CER_INTENT_MCP_PROXY=1 the slice tools use its
+                                             RFC 9543 interface (one slice datastore)
   TWIN_URL                                   digital twin service, for run_what_if
 """
-from __future__ import annotations
+# Annotations stay real types (no `from __future__ import annotations`): MCP SDK 1.x
+# inspects them with issubclass() when it builds the tool schemas.
 
 import json
 import os
@@ -59,6 +62,17 @@ class _Context:
 
 CONTEXT = _Context()
 
+RFC9543_PATH = "/restconf/data/ietf-network-slice-service:network-slice-services"
+
+
+def _api_base() -> str:
+    return os.getenv("CER_INTENT_URL", "http://localhost:5000").rstrip("/")
+
+
+def _proxy() -> bool:
+    """Slice tools call the running CER-Intent API instead of an in-process controller."""
+    return os.getenv("CER_INTENT_MCP_PROXY", "").strip().lower() in ("1", "true", "yes")
+
 
 def _http_timeout() -> float:
     return float(os.getenv("CER_INTENT_MCP_HTTP_TIMEOUT", "30"))
@@ -90,7 +104,11 @@ def create_network_slice(request: Dict[str, Any]) -> Dict[str, Any]:
     if mcp_mode() != "act":
         return {"mode": "advise", "applied": False, "note": "set CER_INTENT_MCP_MODE=act to apply",
                 "preview": preview_network_slice(request)}
-    result = CONTEXT.nsc.create_or_update_slice_service(request)
+    if _proxy():
+        resp = requests.post(f"{_api_base()}{RFC9543_PATH}", json=request, timeout=_http_timeout())
+        result = resp.json()
+    else:
+        result = CONTEXT.nsc.create_or_update_slice_service(request)
     if "nsc_pipeline" not in result:
         return {"mode": "act", "applied": False, **result}
     return {"mode": "act", "applied": result["nsc_pipeline"]["realizer"]["status"] == "sent",
@@ -99,6 +117,17 @@ def create_network_slice(request: Dict[str, Any]) -> Dict[str, Any]:
 
 def list_network_slices() -> Dict[str, Any]:
     """List the slices the slice controller holds, with status and realization technology."""
+    if _proxy():
+        resp = requests.get(f"{_api_base()}{RFC9543_PATH}", timeout=_http_timeout())
+        resp.raise_for_status()
+        tree = resp.json().get("ietf-network-slice-service:network-slice-services", {})
+        return {"slices": [
+            {"id": s.get("id"), "status": s.get("status"),
+             "technology": (s.get("custom-topology") or {}).get("realization-technology"),
+             "endpoints": [f"{sdp.get('node-id')}:{(sdp.get('service-match-criteria') or {}).get('match-criterion', [{}])[0].get('value')}"
+                           for sdp in (s.get("sdps") or {}).get("sdp", [])]}
+            for s in tree.get("slice-service", [])
+        ]}
     nsc = CONTEXT.nsc
     return {"slices": [
         {"id": s.slice_id, "status": s.status, "technology": s.realization_technology,
@@ -109,6 +138,13 @@ def list_network_slices() -> Dict[str, Any]:
 
 def get_network_slice(slice_id: str) -> Dict[str, Any]:
     """One slice as an RFC 9543 slice-service, plus how it was realized."""
+    if _proxy():
+        resp = requests.get(f"{_api_base()}{RFC9543_PATH}/slice-service={slice_id}", timeout=_http_timeout())
+        if resp.status_code == 404:
+            return {"error": f"slice '{slice_id}' not found"}
+        resp.raise_for_status()
+        items = resp.json().get("ietf-network-slice-service:slice-service", [])
+        return {"slice-service": items[0] if items else None, "realization": None}
     nsc = CONTEXT.nsc
     svc = nsc.slices.get(slice_id)
     if svc is None:
@@ -121,6 +157,12 @@ def delete_network_slice(slice_id: str) -> Dict[str, Any]:
     """Withdraw a slice from TeraFlowSDN (acts only when CER_INTENT_MCP_MODE=act)."""
     if mcp_mode() != "act":
         return {"mode": "advise", "applied": False, "note": f"would withdraw slice '{slice_id}'"}
+    if _proxy():
+        resp = requests.delete(f"{_api_base()}{RFC9543_PATH}/slice-service={slice_id}", timeout=_http_timeout())
+        if resp.status_code == 404:
+            return {"mode": "act", "applied": False, "error": f"slice '{slice_id}' not found"}
+        return {"mode": "act", "applied": resp.status_code == 204, "slice_id": slice_id,
+                "http_status": resp.status_code}
     result = CONTEXT.nsc.delete_slice_service(slice_id)
     if result is None:
         return {"mode": "act", "applied": False, "error": f"slice '{slice_id}' not found"}
@@ -151,8 +193,7 @@ def submit_intent(text: str) -> Dict[str, Any]:
     """Send a free-text intent to CER-Intent, which parses, checks and applies it (acts only in act mode)."""
     if mcp_mode() != "act":
         return {"mode": "advise", "applied": False, "note": "set CER_INTENT_MCP_MODE=act to submit", "intent": text}
-    base = os.getenv("CER_INTENT_URL", "http://localhost:5000").rstrip("/")
-    resp = requests.post(f"{base}/api/v1/intent", json={"intent": text, "source": "mcp"}, timeout=_http_timeout())
+    resp = requests.post(f"{_api_base()}/api/v1/intent", json={"intent": text, "source": "mcp"}, timeout=_http_timeout())
     try:
         body = resp.json()
     except ValueError:

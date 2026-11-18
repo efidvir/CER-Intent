@@ -143,8 +143,8 @@ def build_l3sm(mapped: MappedSlice, mtu: int = DEFAULT_MTU) -> Tuple[Dict[str, A
             }]},
         }
         if ep.vlan_id is not None:
-            # TeraFlowSDN takes the access VLAN from a static route whose next hop is in the
-            # attachment subnet; the radio hops carry the service on that VLAN.
+            # TeraFlowSDN takes the access VLAN (the tag on the PE's access interface) from a
+            # static route whose next hop is in the attachment subnet.
             site["routing-protocols"] = {"routing-protocol": [{
                 "type": "ietf-l3vpn-svc:static",
                 "static": {"cascaded-lan-prefixes": {"ipv4-lan-prefixes": [{

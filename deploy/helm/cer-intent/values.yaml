@@ -1,0 +1,31 @@
+image:
+  repository: ghcr.io/efidvir/cer-intent
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+teraflow:
+  # TeraFlowSDN NBI inside the cluster; check the service name and port of your TFS deployment
+  url: http://nbiservice.tfs.svc.cluster.local:8080
+  credentialsSecret: ""            # optional Secret with TFS_USERNAME / TFS_PASSWORD keys
+
+sliceController:
+  realization: ietf                # ietf | nsc | tfs-api | dry-run
+  defaultTechnology: L3VPN         # used when the request does not decide it
+
+llm:
+  secret: ""                       # optional Secret with the LLM API key used by the intent parser
+
+twin:
+  url: ""                          # e.g. http://twin-transport-twin:9100, for the run_what_if tool
+
+mcp:
+  enabled: true
+  port: 8765
+  mode: advise                     # advise | act
+
+service:
+  port: 5000
+
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: "1", memory: 1Gi}
