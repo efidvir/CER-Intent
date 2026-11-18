@@ -97,12 +97,21 @@ class NDTPathComputationEngine:
                 adj[src].append((dst, l_id, lat, cap, l_type))
                 adj[dst].append((src, l_id, lat, cap, l_type))  # Undirected transport link
 
-        # Validate endpoints exist
-        if src_node not in adj:
-            # Fallback to closest match or default
-            src_node = next(iter(adj.keys())) if adj else src_node
-        if dst_node not in adj:
-            dst_node = list(adj.keys())[-1] if adj else dst_node
+        # Endpoints outside the twin's topology cannot be checked; say so instead of
+        # computing a path between other nodes.
+        missing = [n for n in (src_node, dst_node) if n not in adj]
+        if missing:
+            return {
+                "feasible": None,
+                "src_node": src_node,
+                "dst_node": dst_node,
+                "computed_path": [src_node, dst_node],
+                "computed_links": [],
+                "hop_count": None,
+                "total_predicted_latency_ms": None,
+                "algorithm": "CSPF-Dijkstra-NDT",
+                "explanation": f"not checked: {', '.join(missing)} not in the twin topology",
+            }
 
         if src_node == dst_node:
             return {

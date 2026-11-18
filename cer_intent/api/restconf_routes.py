@@ -3,7 +3,7 @@ IETF RESTCONF Transport Exposure API (D3.1 Section 3.4.1, 4.2.4 & 4.2.5)
 ========================================================================
 Implements RFC 8040 RESTCONF interface for:
   - IETF RFC 9543: Network Slice Service YANG Model
-  - IETF RFC 9291 (L2SM) & RFC 9182 (L3SM) Realizer Payloads
+  - Realizer output: L2SM (RFC 8466) / L3SM (RFC 8299) sent to TeraFlowSDN (nsc/realizer.py)
   - RFC 8639 Subscribed Notifications (ietf-subscribed-notifications:establish-subscription)
   - RFC 8345 Topology & IETF TVR (Time-Variant Routing) Schedules
   - Telefónica Transport Energy Models (instantaneous-device-energy-tid & static-device-energy-tid)
@@ -12,6 +12,7 @@ Implements RFC 8040 RESTCONF interface for:
 import logging
 from flask import Blueprint, jsonify, request, current_app, Response
 
+from cer_intent.nsc import shared_controller
 from cer_intent.nsc.nsc_controller import NetworkSliceController
 from cer_intent.nsc.ietf_models import SLOSLETemplate, ServiceDemarcationPoint
 
@@ -22,16 +23,24 @@ restconf_bp = Blueprint("restconf", __name__, url_prefix="/restconf")
 # Global singleton instance of NSC (attached to current_app when initialized)
 _nsc_instance: NetworkSliceController = None
 
+YANG_JSON = {"Content-Type": "application/yang-data+json"}
+
+
+def _slice_response(res, ok_status: int):
+    """201/200 with the slice, or 400 when the pipeline could not map or realize it."""
+    if isinstance(res, dict) and "error" in res and "nsc_pipeline" not in res:
+        return jsonify(res), int(res.get("status", 400))
+    return jsonify(res), ok_status, YANG_JSON
+
 
 def get_nsc() -> NetworkSliceController:
+    """The shared slice controller, wired to the adapter's TeraFlowSDN client when there is one."""
     global _nsc_instance
     if _nsc_instance is None:
-        tfs_client = current_app.config.get("adapter")
-        if hasattr(tfs_client, "tfs_client"):
-            tfs_client = tfs_client.tfs_client
         adapter = current_app.config.get("adapter")
+        tfs_client = getattr(adapter, "tfs_client", None) or getattr(adapter, "_tfs_client", None)
         audit_log = current_app.config.get("audit_log")
-        _nsc_instance = NetworkSliceController(tfs_client=tfs_client, adapter=adapter, audit_log=audit_log)
+        _nsc_instance = shared_controller(tfs_client=tfs_client, adapter=adapter, audit_log=audit_log)
     return _nsc_instance
 
 
@@ -61,15 +70,10 @@ def post_network_slice_services():
     nsc = get_nsc()
     body = request.get_json(silent=True) or {}
     
-    root_data = body.get("ietf-network-slice-service:network-slice-services", body)
-    if "slice-service" in root_data:
-        items = root_data["slice-service"]
-        if isinstance(items, list) and items:
-            res = nsc.create_or_update_slice_service(items[0])
-            return jsonify(res), 201, {"Content-Type": "application/yang-data+json"}
-    
+    # The mapper accepts the RFC 9543 tree with or without the module prefix,
+    # a bare slice-service object, or CER-Intent's compact form.
     res = nsc.create_or_update_slice_service(body)
-    return jsonify(res), 201, {"Content-Type": "application/yang-data+json"}
+    return _slice_response(res, 201)
 
 
 @restconf_bp.route("/data/ietf-network-slice-service:network-slice-services/slo-sle-templates/slo-sle-template", methods=["GET", "POST"])
@@ -108,7 +112,7 @@ def manage_slice_services():
     if isinstance(slice_data, list) and slice_data:
         slice_data = slice_data[0]
     res = nsc.create_or_update_slice_service(slice_data)
-    return jsonify(res), 201, {"Content-Type": "application/yang-data+json"}
+    return _slice_response(res, 201)
 
 
 @restconf_bp.route("/data/ietf-network-slice-service:network-slice-services/slice-service=<slice_id>", methods=["GET", "PUT", "DELETE"])
@@ -127,16 +131,18 @@ def slice_service_instance(slice_id: str):
         }), 200, {"Content-Type": "application/yang-data+json"}
 
     if request.method == "DELETE":
-        if slice_id in nsc.slices:
-            del nsc.slices[slice_id]
-            return Response(status=204)
-        return jsonify({"error": f"Slice '{slice_id}' not found"}), 404
+        result = nsc.delete_slice_service(slice_id)
+        if result is None:
+            return jsonify({"error": f"Slice '{slice_id}' not found"}), 404
+        if result.get("status") == "failed":
+            return jsonify(result), 502
+        return Response(status=204)
 
     # PUT
     body = request.get_json(silent=True) or {}
     body["id"] = slice_id
     res = nsc.create_or_update_slice_service(body)
-    return jsonify(res), 200, {"Content-Type": "application/yang-data+json"}
+    return _slice_response(res, 200)
 
 
 @restconf_bp.route("/data/ietf-network-slice-service:network-slice-services/slice-service=<slice_id>/sdps", methods=["GET", "POST"])
@@ -158,10 +164,12 @@ def slice_service_sdps(slice_id: str):
 
     body = request.get_json(silent=True) or {}
     sdp_data = body.get("sdp", body)
+    if not sdp_data.get("node-id") or not sdp_data.get("tp-id"):
+        return jsonify({"error": "an SDP needs node-id and tp-id"}), 400
     new_sdp = ServiceDemarcationPoint(
         sdp_id=sdp_data.get("id", f"sdp-{len(svc.sdps)+1}"),
-        node_id=sdp_data.get("node-id", "ctu-96"),
-        tp_id=sdp_data.get("tp-id", "eth0"),
+        node_id=sdp_data["node-id"],
+        tp_id=sdp_data["tp-id"],
         ip_address=sdp_data.get("ip_address"),
         vlan_id=sdp_data.get("vlan_id")
     )
@@ -332,8 +340,10 @@ def compute_path_operation():
     body = request.get_json(silent=True) or {}
     input_data = body.get("ietf-pce:input", body)
     
-    src = input_data.get("source_node", "ctu-96")
-    dst = input_data.get("dest_node", "edge-router-02")
+    src = input_data.get("source_node")
+    dst = input_data.get("dest_node")
+    if not src or not dst:
+        return jsonify({"error": "source_node and dest_node are required"}), 400
     max_lat = input_data.get("max_latency_ms")
     min_bw = input_data.get("min_bandwidth_mbps")
     isolation = input_data.get("isolation_policy", "logical")

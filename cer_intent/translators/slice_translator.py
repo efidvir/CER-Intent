@@ -13,6 +13,37 @@ SST_MAP = {"eMBB": 1, "URLLC": 2, "mMTC": 3, "custom": 4}
 # D3.1 Table 2-1: DSCP midhaul socket mapping for per-slice F1u traffic separation
 DSCP_MIDHAUL_MAP = {1: 6, 2: 7, 3: 8, 4: 9}
 
+# Actuation target for end-to-end slices: the transport slice controller (RFC 9543),
+# which realizes them on TeraFlowSDN through its standard interfaces.
+SLICE_CONTROLLER_TARGET = "transport-slice-controller"
+
+
+def slice_service_request(intent: Intent, slice_name: str, slice_type: str, vlan: int) -> dict:
+    """Compact RFC 9543 request for the slice controller, from an intent that names its endpoints."""
+    params = intent.parameters
+    sdps = []
+    for i, sdp in enumerate(params["sdps"]):
+        sdps.append({
+            "id": str(sdp.get("id") or sdp.get("sdp_id") or i + 1),
+            "node_id": sdp.get("node_id") or sdp.get("node"),
+            "tp_id": sdp.get("tp_id") or sdp.get("port"),
+            "ip_address": sdp.get("ip_address"),
+            "peer_address": sdp.get("peer_address"),
+            "vlan_id": sdp.get("vlan_id", vlan),
+        })
+    request = {
+        "id": params.get("slice_id") or f"slice-{slice_name}",
+        "description": f"{slice_type} slice {slice_name}",
+        "sdps": sdps,
+    }
+    for key in ("slo_sle_template_ref", "realization_technology", "bandwidth_mbps", "max_latency_ms",
+                "packet_loss_pct", "jitter_ms", "radio", "acm"):
+        if params.get(key) is not None:
+            request[key] = params[key]
+    if intent.raw_input:
+        request["intent_text"] = intent.raw_input
+    return request
+
 
 class SliceTranslator(BaseTranslator):
 
@@ -31,6 +62,24 @@ class SliceTranslator(BaseTranslator):
         five_qi = params.get("five_qi", 9 if sst == 1 else 82)
         min_prb = params.get("min_prb_ratio", 0)
         max_prb = params.get("max_prb_ratio", 30 if sst == 1 else 70)
+
+        if len(params.get("sdps") or []) >= 2:
+            # End-to-end slice: one request to the slice controller instead of per-device rules.
+            request = slice_service_request(intent, slice_name, slice_type, vlan)
+            config = DeviceConfig(
+                device_id=SLICE_CONTROLLER_TARGET,
+                config_type="slice_service",
+                yang_module="ietf-network-slice-service",
+                parameters=request,
+                intent_id=intent.intent_id,
+                yang_xml="<!-- realized by the slice controller as RFC 9543 -> L2SM/L3SM -->",
+            )
+            endpoints = " and ".join(f"{s['node_id']}:{s['tp_id']}" for s in request["sdps"])
+            explanation = (
+                f"{slice_type} slice '{slice_name}' between {endpoints} (VLAN {vlan}) handed to the "
+                f"transport slice controller, which realizes it on TeraFlowSDN as an L2VPN or L3VPN."
+            )
+            return self._finalize(intent, [config], explanation)
 
         configs = []
         for device in target_devices:

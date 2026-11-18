@@ -6,7 +6,8 @@ Defines standard-compliant data structures corresponding to:
      - SLOs (Directly Measurable: bandwidth, latency, jitter, loss)
      - SLEs (Non-Measurable: security, isolation, geographic constraints)
      - SDPs (Service Demarcation Points) & Connectivity Constructs
-  2. IETF RFC 9291 (L2SM) & IETF RFC 9182 (L3SM) Service Models
+  2. L2SM (RFC 8466) / L3SM (RFC 8299) service models (the payloads the realizer sends
+     to TeraFlowSDN are built in nsc/realizer.py)
   3. IETF RFC 8345: Network Topology & draft-ietf-teas-network-slice-topology-yang
   4. IETF TVR (Time-Variant Routing): ietf-tvr-topology
   5. Telefónica Transport Energy YANG Models (D3.1 Section 4.2.5):
@@ -135,7 +136,7 @@ class IETFSliceService:
     
     # Realizer & Planner Outputs (D3.1 Figure 2-18)
     computed_path: List[str] = field(default_factory=list)  # Populated by NDT PCE Planner
-    realization_technology: str = "L2SM"  # "L2SM" (RFC 9291) or "L3SM" (RFC 9182)
+    realization_technology: str = "L2SM"  # "L2SM" (RFC 8466) or "L3SM" (RFC 8299)
     controller_reference: str = "TeraFlowSDN"
     created_at: float = field(default_factory=time.time)
 
@@ -174,12 +175,12 @@ class IETFSliceService:
 
 
 # ---------------------------------------------------------------------------
-# 2. IETF RFC 9291 (L2SM) & IETF RFC 9182 (L3SM) Service Realization
+# 2. Earlier L2SM / L3SM sketches (superseded by nsc/realizer.py, kept for existing callers)
 # ---------------------------------------------------------------------------
 
 def generate_ietf_l2sm_payload(slice_service: IETFSliceService, dscp: int = 46) -> Dict[str, Any]:
     """
-    Generate an IETF RFC 9291 Layer 2 Service Model (L2SM) configuration payload
+    Earlier L2SM (RFC 8466) sketch; nsc/realizer.build_l2sm produces the payload TeraFlowSDN accepts
     to be ingested by TeraFlowSDN L2VPN NBI.
     """
     vpn_id = f"l2vpn-{slice_service.slice_id}"
@@ -227,7 +228,7 @@ def generate_ietf_l2sm_payload(slice_service: IETFSliceService, dscp: int = 46) 
 
 def generate_ietf_l3sm_payload(slice_service: IETFSliceService, dscp: int = 46) -> Dict[str, Any]:
     """
-    Generate an IETF RFC 9182 Layer 3 Service Model (L3SM) configuration payload
+    Earlier L3SM (RFC 8299) sketch; nsc/realizer.build_l3sm produces the payload TeraFlowSDN accepts
     to be ingested by TeraFlowSDN L3VPN NBI.
     """
     vpn_id = f"l3vpn-{slice_service.slice_id}"
