@@ -45,7 +45,8 @@ class TFSClient:
         self._session = requests.Session()
         self._session.headers.update({
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "User-Agent": "CER-Intent/1.0",
         })
         token = os.getenv("TERAFLOW_TOKEN")
         if token:

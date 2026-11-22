@@ -14,6 +14,7 @@ from cer_intent.intent_schema import Intent
 from cer_intent.architect.strategy import NetworkContext
 from cer_intent.architect.skills.base_skill import BaseSkill
 from cer_intent.architect.skills.low_latency_skill import LowLatencySkill
+from cer_intent.architect.skills.transport_slice_skill import TransportSliceSkill
 from cer_intent.architect.skills.high_capacity_skill import HighCapacitySkill
 from cer_intent.architect.skills.radio_optimization_skill import RadioOptimizationSkill
 from cer_intent.architect.skills.traffic_engineering_skill import TrafficEngineeringSkill, ResilienceSkill
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 # All 17 available AI Architect skills
 _ALL_SKILLS: List[BaseSkill] = [
+    TransportSliceSkill(),
     LowLatencySkill(),
     HighCapacitySkill(),
     RadioOptimizationSkill(),
@@ -57,6 +59,16 @@ _ALL_SKILLS: List[BaseSkill] = [
 
 # Enriched metadata for each skill so users know what they can ask the Intent Architect to achieve
 _SKILL_ENRICHMENT: Dict[str, dict] = {
+    "transport_slice_controller": {
+        "title": "End-to-End Transport Slice (Slice Controller)",
+        "category": "Deterministic QoS & Slicing",
+        "standards": ["IETF RFC 9543 (Network Slice Service)", "IETF RFC 8466 (L2SM)", "IETF RFC 8299 (L3SM)"],
+        "what_it_achieves": "Turns an intent that names two endpoints into one RFC 9543 request; the slice controller maps it, selects L2VPN or L3VPN and realizes it on TeraFlowSDN, with radio settings applied by the Ceragon handler.",
+        "example_prompts": [
+            "Connect region-a and edge over VLAN 300 with 500 Mbps and at most 10 ms latency; keep the radio link at MCS4 or better",
+            "Create an L3VPN slice between region-a 192.0.2.1/24 and edge 198.51.100.1/24, 500 Mbps, 10 ms max latency",
+        ],
+    },
     "low_latency": {
         "title": "Ultra-Low Latency & Sub-ms QoS",
         "category": "Deterministic QoS & Slicing",

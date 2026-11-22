@@ -440,7 +440,13 @@ class TeraFlowAdapter(AdapterBase):
         """
         from cer_intent.nsc import shared_controller
         nsc = shared_controller(self._tfs_client)
+        t0 = time.time()
         res = nsc.create_or_update_slice_service(config.parameters)
+        try:  # the flow dashboard shows this in-process RFC 9543 hand-over on its wire panel
+            from cer_intent.flow.wiretap import slice_request_handled
+            slice_request_handled("create", config.parameters.get("id"), config.parameters, res, t0)
+        except ImportError:
+            pass
         if "nsc_pipeline" not in res:
             return ApplyResult(
                 device_id=config.device_id,

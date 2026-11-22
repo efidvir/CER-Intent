@@ -253,7 +253,38 @@ class NetworkSliceController:
         if realization.status == "failed" and realization.payload == {}:
             return {"error": realization.error, "status": 400, "stage": "realizer"}
 
-        slice_svc = IETFSliceService(
+        slice_svc = self._slice_record(mapped, choice, computed_path,
+                                       self._slice_status(realization.status, pce_result.get("feasible", True)))
+        self.slices[mapped.slice_id] = slice_svc
+        self.realizations[mapped.slice_id] = realization
+        self._notify_subscribers(mapped.slice_id, slice_svc, pce_result)
+        return self._pipeline_result(slice_svc, mapped, pce_result, choice, realization)
+
+    def preview_slice_service(self, raw_req: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        The same pipeline as create_or_update_slice_service, stopping before the
+        controller: the L2SM / L3SM request is built but neither sent nor stored.
+        """
+        try:
+            mapped = map_request(raw_req, self.templates)
+        except MappingError as e:
+            return {"error": str(e), "status": 400, "stage": "mapper"}
+        pce_result = self.planner.compute_constrained_path(
+            src_node=mapped.endpoints[0].node_id,
+            dst_node=mapped.endpoints[1].node_id,
+            max_latency_ms=mapped.slos.max_latency_ms,
+            bandwidth_mbps=mapped.slos.bandwidth_mbps,
+            isolation_policy=str(mapped.sles.get("isolation", "logical")),
+            tvr_schedules=list(self.tvr_schedules.values()),
+        )
+        computed_path = pce_result.get("computed_path", [ep.node_id for ep in mapped.endpoints])
+        choice = select_technology(mapped, skill=self.technology_skill)
+        realization = Realizer(mode="dry-run").build(mapped, choice.technology)
+        slice_svc = self._slice_record(mapped, choice, computed_path, "planned")
+        return self._pipeline_result(slice_svc, mapped, pce_result, choice, realization)
+
+    def _slice_record(self, mapped, choice, computed_path: List[str], status: str) -> IETFSliceService:
+        return IETFSliceService(
             slice_id=mapped.slice_id,
             description=mapped.description,
             slo_sle_template_ref=mapped.template_ref or "",
@@ -270,15 +301,15 @@ class NetworkSliceController:
                 )
                 for group in mapped.connection_groups for cc in group.constructs
             ],
-            status=self._slice_status(realization.status, pce_result.get("feasible", True)),
+            status=status,
             computed_path=computed_path,
             realization_technology="L3SM" if choice.technology == "L3VPN" else "L2SM",
             controller_reference="TeraFlowSDN",
         )
-        self.slices[mapped.slice_id] = slice_svc
-        self.realizations[mapped.slice_id] = realization
-        self._notify_subscribers(mapped.slice_id, slice_svc, pce_result)
 
+    @staticmethod
+    def _pipeline_result(slice_svc: IETFSliceService, mapped, pce_result: Dict[str, Any], choice,
+                         realization) -> Dict[str, Any]:
         return {
             "ietf-network-slice-service:network-slice-services": {
                 "slice-service": [slice_svc.to_ietf_dict()]
