@@ -46,7 +46,8 @@ python emulation/e2e_demo.py --tfs http://<tfs> --cer-intent http://<cer-intent>
 | `vnet.py` | In-process HTTP between the components, for the tests and the browser copy. |
 | `flow/topology.json` | region-a – radio-1 ~ air ~ radio-2 – edge (MH-T261 radios on ports 8101 / 8102). |
 | `flow/record_ns3.py`, `flow/ns3_recordings.json` | NS-3.45 runs recorded for places without an ns-3 build (the twin's `NS3_TWIN_MODE=replay`): the demo's intents in every order, and a grid of slice rates. |
-| `browser/build_site.py` | Builds the browser copy: Pyodide and the whole stack in a static site. |
+| `browser/build_site.py` | Builds the in-browser copy: Pyodide and the whole stack in a static site that runs any intent live in the visitor's browser (serve the folder with any static web server). |
+| `browser/record_session.py`, `browser/build_replay.py` | Record a session on the live stack (every example intent from every state the demo reaches), and build a page that replays it call for call, with each call's recorded timing: the hosted copy. |
 
 ```bash
 # ns-3.45 with contrib/ceragon built (see the twin repository); without it the twin replays recorded runs

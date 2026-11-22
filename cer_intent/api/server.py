@@ -161,7 +161,12 @@ def create_app(registry, audit_log) -> Flask:
             _emit_intent_update(intent)
             
             # Populate active intents for conflict check
-            intent.context_intents = [i.to_dict() for i in _intent_store.values() if i.intent_id != intent.intent_id]
+            # Other intents as the conflict check needs them; their own context, plan and applied
+            # configuration stay out, or every intent would carry all earlier ones, nested.
+            intent.context_intents = [
+                i.model_dump(mode="json", exclude={"context_intents", "architect_plan", "applied_config"})
+                for i in _intent_store.values() if i.intent_id != intent.intent_id
+            ]
             
             # Fetch current telemetry from simulator (passed via app.config if possible or mock)
             # For PoC, we'll try to get it from the reconciler's reference if available
