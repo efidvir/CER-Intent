@@ -42,10 +42,13 @@ CER-Intent now has a slice controller with the same three stages and the same in
 * `integrations/openslice/`, `docs/etsi/TMF921_QUESTIONS.md`, `docs/etsi/OPENCAPIF.md`.
 * `Dockerfile`, `deploy/helm/cer-intent`, `.github/workflows/ci.yml`.
 * `emulation/`: radio emulator, Containerlab topology, TFS descriptors, end-to-end demo script.
+* Dashboard view `dashboard/slice-controller.html` ("Slice Controller" in both dashboards): the chain, an RFC 9543 request form, the pipeline result stage by stage, the VPN request and service settings, the path over the topology, slices, MCP tools and a twin what-if labelled simulated. Backed by `GET /api/v1/etsi/status` and `POST /api/v1/etsi/what-if`.
+* `CER_INTENT_TOPOLOGY_FILE`: without TeraFlowSDN the planner reads a TFS descriptor file (e.g. the testbed's) instead of the built-in reference topology.
 
 ### Digital twin (`efidvir/tfs-ns3-digital-twin`)
 
 * `src/rfc8345_import.py` and `TWIN_TOPOLOGY_SOURCE=rfc8345` (falls back to the TFS API).
+* The basis of a what-if names `descriptors` when the twin's topology came from its offline descriptor file.
 * What-if answers carry `"insight": "simulated"` and their basis; `POST /what-if`, `GET /healthz`.
 * `src/twin_mcp.py`: twin as MCP tools; shares the HTTP twin when `TWIN_URL` is set.
 * `Dockerfile`, `deploy/helm/transport-twin`, `.github/workflows/ci.yml`.
@@ -55,8 +58,8 @@ CER-Intent now has a slice controller with the same three stages and the same in
 | Repository | Result |
 | :--- | :--- |
 | TeraFlowSDN fork | 23 driver tests (fake RESTCONF device: MultiHaul TG and CeraOS), 8 handler tests (fake task executor). Driver also run over HTTP against the radio emulator. |
-| CER-Intent | 50 tests in `tests/` (slice controller, MCP, OpenSlice, emulator, demo) and 51 adapter tests; on Python 3.11 with the pinned requirements and on 3.13. |
-| Twin | 34 tests (9 new), on Python 3.11 (MCP SDK 1.x) and 3.13 (SDK 2.x). |
+| CER-Intent | 58 tests in `tests/` (slice controller, MCP, OpenSlice, emulator, demo, dashboard view) and 51 adapter tests; on Python 3.11 with the pinned requirements and on 3.13. |
+| Twin | 35 tests (10 new), on Python 3.11 (MCP SDK 1.x) and 3.13 (SDK 2.x). |
 
 The L2SM/L3SM/RFC 9543 payloads are checked against the fields TeraFlowSDN's interface code reads; they have not been posted to a running TeraFlowSDN.
 
@@ -81,5 +84,6 @@ The L2SM/L3SM/RFC 9543 payloads are checked against the fields TeraFlowSDN's int
 | `TFS_REALIZATION` | CER-Intent | `ietf` (L2SM/L3SM), `nsc` (RFC 9543 to a TFS slice controller), `tfs-api` (earlier behaviour), `dry-run` |
 | `NSC_DEFAULT_TECHNOLOGY`, `NSC_DEFAULT_LATENCY_MS`, `NSC_DEFAULT_MTU` | CER-Intent | Defaults the realizer records when it uses them |
 | `CER_INTENT_MCP_MODE`, `CER_INTENT_MCP_PROXY`, `CER_INTENT_URL` | CER-Intent MCP | `advise`/`act`; share the API's slice datastore |
+| `CER_INTENT_TOPOLOGY_FILE` | CER-Intent | TFS descriptor file the planner reads when no TeraFlowSDN is configured |
 | `TWIN_TOPOLOGY_SOURCE`, `TWIN_URL`, `TWIN_PORT`, `TWIN_DESCRIPTORS` | twin | `rfc8345`/`tfs-api`; shared twin for MCP; port; offline descriptors |
 | `_connect/settings`: `scheme`, `verify_tls`, `timeout`, `model` | TFS device record | Ceragon driver connection |

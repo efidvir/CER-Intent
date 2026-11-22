@@ -27,6 +27,21 @@ cd emulation/containerlab && sudo containerlab deploy -t ceragon-xhaul.clab.yml 
 python emulation/e2e_demo.py --tfs http://<tfs> --cer-intent http://<cer-intent>:5000 --fade-mbps 400
 ```
 
+## Dashboard without a controller
+
+The dashboard's slice-controller view (`/slice-controller.html`) runs on a laptop: CER-Intent builds the L3SM/L2SM request without sending it, the planner checks paths over this testbed's topology, and the twin answers what-ifs on the same topology.
+
+```bash
+# twin (tfs-ns3-digital-twin repository)
+TWIN_PORT=9100 TWIN_DESCRIPTORS=<cer-intent>/emulation/containerlab/tfs-topology.json python src/tfs_digital_twin_api.py
+# CER-Intent
+ADAPTER_BACKEND=simulated TFS_REALIZATION=dry-run \
+CER_INTENT_TOPOLOGY_FILE=emulation/containerlab/tfs-topology.json TWIN_URL=http://localhost:9100 python run.py
+# open http://localhost:5000/slice-controller.html
+```
+
+With `TERAFLOW_URL` set and `TFS_REALIZATION=ietf`, the same view sends the request and the chain shows TeraFlowSDN's answer.
+
 ## Status
 
 The emulator is tested against the Ceragon RESTCONF client (`tests/test_radio_emulator.py`) and was driven by the TeraFlowSDN fork's native driver over HTTP (discovery, one commit per request, slice deletion, RFC 8561 view, capacity KPI). The Containerlab topology, the router configs and a full run against a live TeraFlowSDN have not been run yet: Containerlab and TeraFlowSDN need a Docker/Kubernetes host.

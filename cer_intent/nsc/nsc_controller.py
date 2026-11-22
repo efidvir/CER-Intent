@@ -36,6 +36,7 @@ from cer_intent.nsc.mapper import MappingError, map_request
 from cer_intent.nsc.pce_planner import NDTPathComputationEngine
 from cer_intent.nsc.realizer import Realization, Realizer
 from cer_intent.nsc.technology_selector import SelectorSkill, select_technology
+from cer_intent.nsc.topology_file import load_topology_file
 
 logger = logging.getLogger("NetworkSliceController")
 
@@ -53,6 +54,7 @@ class NetworkSliceController:
         self.realizer = Realizer(tfs_client=tfs_client, mode=realization_mode)
         self.technology_skill = technology_skill
         self.realizations: Dict[str, Realization] = {}
+        self.topology_source = "not read yet"
 
         # Datastores
         self.templates: Dict[str, SLOSLETemplate] = {}
@@ -70,12 +72,22 @@ class NetworkSliceController:
         self._init_default_energy_records()
 
     def _get_current_topology(self) -> Dict[str, Any]:
-        """Fetch live topology from TFS client if available, or return fallback."""
+        """
+        The planner's topology: TeraFlowSDN when a client is configured, else the
+        descriptor file in $CER_INTENT_TOPOLOGY_FILE, else the built-in reference.
+        """
         if self.tfs_client:
             try:
-                return self.tfs_client.fetch_normalized_topology()
+                topo = self.tfs_client.fetch_normalized_topology()
+                self.topology_source = "TeraFlowSDN"
+                return topo
             except Exception as e:
                 logger.warning(f"Could not fetch topology from TFS: {e}")
+        topo = load_topology_file()
+        if topo:
+            self.topology_source = topo["source"]
+            return topo
+        self.topology_source = "reference"
         return self.planner._get_default_6g_topology()
 
     def _init_default_templates(self):

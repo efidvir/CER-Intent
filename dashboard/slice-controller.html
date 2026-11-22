@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CER-Intent · Network slice controller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-0: #040814;
+      --card: rgba(12, 21, 42, 0.92);
+      --card-2: rgba(17, 29, 56, 0.95);
+      --border: rgba(56, 189, 248, 0.22);
+      --border-strong: rgba(0, 212, 255, 0.55);
+      --cyan: #00d4ff;
+      --sky: #38bdf8;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --purple: #a855f7;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --dim: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      background: radial-gradient(circle at 20% 0%, #0e1e3f 0%, #040814 70%) fixed;
+      color: var(--text);
+      font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .mono { font-family: 'JetBrains Mono', 'DejaVu Sans Mono', monospace; }
+    button, input, select { font: inherit; color: inherit; }
+
+    /* ── Header ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 10px 20px; background: rgba(5, 10, 24, 0.96); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 5;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--cyan), var(--purple)); font-weight: 800; font-size: 17px;
+      box-shadow: 0 0 18px rgba(0, 212, 255, 0.45);
+    }
+    .brand-title { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 12px; color: var(--emerald); }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 8px;
+      background: rgba(15, 25, 48, 0.9); border: 1px solid rgba(148, 163, 184, 0.22); font-size: 12px; color: var(--muted);
+      white-space: nowrap;
+    }
+    .chip b { color: var(--text); font-weight: 600; }
+    .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+    .chip.ok .dot { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
+    .chip.warn .dot { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .chip.info .dot { background: var(--sky); box-shadow: 0 0 8px var(--sky); }
+    .links { display: flex; gap: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px; cursor: pointer;
+      background: rgba(15, 25, 48, 0.9); border: 1px solid rgba(148, 163, 184, 0.3); color: var(--text);
+      text-decoration: none; font-weight: 600; font-size: 12.5px; transition: all .15s;
+    }
+    .btn:hover { border-color: var(--cyan); }
+    .btn-primary { background: linear-gradient(135deg, #0891b2, #0e7490); border-color: var(--cyan); box-shadow: 0 0 14px rgba(0, 212, 255, 0.3); }
+    .btn-amber { background: rgba(245, 158, 11, 0.16); border-color: var(--amber); }
+    .btn-small { padding: 4px 9px; font-size: 11.5px; }
+    .btn:disabled { opacity: .5; cursor: default; }
+
+    main { padding: 12px 20px 14px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── Chain ── */
+    .chain {
+      display: grid; align-items: stretch; gap: 0;
+      grid-template-columns: 1.05fr 92px 3.4fr 128px 1.35fr 86px 1.35fr;
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 11px 16px 11px;
+    }
+    .chain-title { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .h { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .h b { color: var(--cyan); }
+    .node {
+      border-radius: 12px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, 0.25);
+      background: var(--card-2); position: relative; transition: all .35s;
+    }
+    .node .t { font-weight: 800; font-size: 14px; }
+    .node .s { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+    .node .st { margin-top: 7px; font-size: 11.5px; font-weight: 600; color: var(--dim); }
+    .node.c-purple { border-color: rgba(168, 85, 247, 0.45); }
+    .node.c-cyan { border-color: rgba(0, 212, 255, 0.45); }
+    .node.c-sky { border-color: rgba(56, 189, 248, 0.45); }
+    .node.c-emerald { border-color: rgba(16, 185, 129, 0.45); }
+    .node.active { box-shadow: 0 0 0 2px var(--cyan), 0 0 22px rgba(0, 212, 255, 0.45); }
+    .node.done .st { color: var(--emerald); }
+    .node.held .st { color: var(--amber); }
+    .node.fail .st { color: var(--rose); }
+    .arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; }
+    .arrow .lbl { font-size: 11px; font-weight: 700; color: var(--sky); text-align: center; line-height: 1.25; }
+    .arrow .lbl small { display: block; color: var(--dim); font-weight: 500; }
+    .arrow svg { width: 100%; height: 14px; overflow: visible; }
+    .arrow line { stroke: rgba(148, 163, 184, 0.45); stroke-width: 2; }
+    .arrow polygon { fill: rgba(148, 163, 184, 0.6); }
+    .arrow.lit line { stroke: var(--cyan); stroke-dasharray: 6 5; animation: flow .6s linear infinite; }
+    .arrow.lit polygon { fill: var(--cyan); }
+    @keyframes flow { to { stroke-dashoffset: -11; } }
+    .nsc { border-color: rgba(0, 212, 255, 0.5); background: linear-gradient(180deg, rgba(0, 212, 255, 0.07), rgba(17, 29, 56, 0.95)); }
+    .nsc-head { display: flex; justify-content: space-between; align-items: baseline; }
+    .stages { display: grid; grid-template-columns: 1fr 22px 1fr 22px 1fr; align-items: center; margin-top: 8px; }
+    .stg {
+      border-radius: 9px; padding: 7px 9px; background: rgba(4, 8, 20, 0.6); border: 1px solid rgba(148, 163, 184, 0.2);
+      transition: all .35s; text-align: center;
+    }
+    .stg .n { font-weight: 700; font-size: 12.5px; }
+    .stg .d { font-size: 11px; color: var(--muted); }
+    .stg.active { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0, 212, 255, 0.45); }
+    .stg.done { border-color: var(--emerald); }
+    .stg.fail { border-color: var(--rose); }
+    .mini-arrow { text-align: center; color: var(--dim); font-size: 14px; }
+    .twin-tag {
+      display: inline-block; margin-top: 7px; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      border: 1px dashed var(--amber); color: var(--amber); background: rgba(245, 158, 11, 0.08);
+    }
+
+    /* ── Grid ── */
+    .grid3 { display: grid; grid-template-columns: 440px 1fr 1fr; gap: 12px; align-items: stretch; }
+    .grid3b { display: grid; grid-template-columns: 1.25fr 0.9fr 1fr; gap: 12px; align-items: stretch; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+    /* form */
+    .seg { display: inline-flex; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; overflow: hidden; }
+    .seg button { background: transparent; border: 0; padding: 5px 11px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .seg button.on { background: rgba(0, 212, 255, 0.16); color: var(--text); }
+    .form { display: grid; grid-template-columns: 74px 1fr 1fr; gap: 6px 8px; align-items: center; }
+    .form .lab { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+    .form .full { grid-column: 2 / -1; }
+    .ep { grid-column: 1 / -1; display: grid; grid-template-columns: 74px 1fr 0.7fr; gap: 6px 8px; align-items: center;
+          padding: 6px 0; border-top: 1px solid rgba(148, 163, 184, 0.12); }
+    .ep .tag { font-size: 11.5px; font-weight: 700; color: var(--cyan); }
+    input[type=text], input[type=number], select {
+      width: 100%; background: rgba(4, 8, 20, 0.75); border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 7px;
+      padding: 5px 8px; font-size: 12.5px; outline: none;
+    }
+    input:focus, select:focus { border-color: var(--cyan); }
+    .unit { display: flex; align-items: center; gap: 6px; }
+    .unit span { color: var(--muted); font-size: 11.5px; }
+    .ext { font-size: 10.5px; color: var(--amber); font-weight: 600; }
+    .actions { display: flex; gap: 8px; align-items: center; }
+    pre.code {
+      background: rgba(2, 5, 14, 0.85); border: 1px solid rgba(148, 163, 184, 0.16); border-radius: 9px; padding: 10px 12px;
+      font-family: 'JetBrains Mono', 'DejaVu Sans Mono', monospace; font-size: 11.5px; line-height: 1.5; overflow: auto; color: #cbd5e1;
+      white-space: pre;
+    }
+    .jk { color: #7dd3fc; } .js { color: #86efac; } .jn { color: #fcd34d; } .jb { color: #f0abfc; } .jz { color: #94a3b8; }
+
+    /* pipeline */
+    .pipe { display: flex; flex-direction: column; gap: 8px; }
+    .pcard { border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 11px; padding: 8px 12px; background: var(--card-2);
+             opacity: .45; transition: all .35s; }
+    .pcard.show { opacity: 1; }
+    .pcard.done { border-color: rgba(16, 185, 129, 0.55); }
+    .pcard.fail { border-color: var(--rose); }
+    .pcard.twin { border-style: dashed; }
+    .pcard.twin.done { border-color: rgba(245, 158, 11, 0.7); }
+    .phead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .pname { font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+    .num { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800;
+           background: rgba(0, 212, 255, 0.18); color: var(--cyan); }
+    .pcard.twin .num { background: rgba(245, 158, 11, 0.18); color: var(--amber); }
+    .badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .03em;
+             background: rgba(100, 116, 139, 0.2); color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+    .badge.ok { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+    .badge.warn { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+    .badge.bad { background: rgba(244, 63, 94, 0.18); color: #fda4af; }
+    .badge.info { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
+    .pbody { margin-top: 7px; font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 5px; }
+    .pbody .muted { color: var(--muted); }
+    .kv { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill { display: inline-flex; gap: 5px; align-items: center; padding: 2px 8px; border-radius: 7px; background: rgba(4, 8, 20, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.2); font-size: 11.5px; white-space: nowrap; }
+    .pill b { color: var(--text); }
+    .path { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 11.5px; }
+    .path .hop { padding: 2px 7px; border-radius: 6px; background: rgba(4, 8, 20, 0.7); border: 1px solid rgba(148, 163, 184, 0.22); }
+    .path .hop.radio { border-color: var(--emerald); color: #6ee7b7; }
+    .path .sep { color: var(--dim); }
+    .tech { font-size: 22px; font-weight: 800; color: var(--cyan); letter-spacing: -0.02em; }
+    .err { color: #fda4af; }
+
+    /* output */
+    .tabs { display: flex; gap: 6px; }
+    .tab { padding: 5px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted);
+           border: 1px solid transparent; background: transparent; }
+    .tab.on { color: var(--text); border-color: var(--border-strong); background: rgba(0, 212, 255, 0.1); }
+    .out-pre { flex: 1; min-height: 200px; max-height: 300px; }
+    .topo { width: 100%; height: 104px; background: rgba(2, 5, 14, 0.55); border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.14); }
+
+    /* slices */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+         padding: 5px 6px; border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+    td { padding: 6px 6px; border-bottom: 1px solid rgba(148, 163, 184, 0.1); vertical-align: middle; }
+    .empty { color: var(--dim); font-style: italic; padding: 8px 0; }
+
+    /* tools */
+    .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
+    .tool { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 8px;
+            background: rgba(4, 8, 20, 0.6); border: 1px solid rgba(148, 163, 184, 0.15); }
+    .tool .nm { font-family: 'JetBrains Mono', 'DejaVu Sans Mono', monospace; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* twin */
+    .twin-card { border-color: rgba(245, 158, 11, 0.45); }
+    .sim { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 3px 9px; border-radius: 999px;
+           color: #1f1300; background: var(--amber); }
+    .slider { display: flex; align-items: center; gap: 10px; }
+    .slider input { flex: 1; accent-color: var(--amber); }
+    .slider .val { width: 82px; text-align: right; font-weight: 700; }
+    .gauge { position: relative; height: 20px; margin-top: 14px; border-radius: 7px; background: rgba(4, 8, 20, 0.7); border: 1px solid rgba(148, 163, 184, 0.2); }
+    .gauge .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0.85)); transition: width .5s; }
+    .gauge .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+    .gauge .mark span { position: absolute; top: -17px; left: 50%; transform: translateX(-50%); font-size: 10.5px; color: var(--cyan); white-space: nowrap; font-weight: 700; }
+    .verdict { font-size: 13px; font-weight: 700; }
+    .verdict.ok { color: #6ee7b7; } .verdict.bad { color: #fda4af; }
+    .note { font-size: 11px; color: var(--dim); }
+    @media (max-width: 1500px) {
+      .grid3 { grid-template-columns: 1fr 1fr; }
+      .grid3b { grid-template-columns: 1fr 1fr; }
+      .chain { grid-template-columns: 1fr; }
+      .arrow { flex-direction: row; padding: 6px 0; }
+      .arrow svg { width: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo">⬡</div>
+    <div>
+      <div class="brand-title">CER-Intent · Network slice controller</div>
+      <div class="brand-sub">RFC 9543 in · L3SM / L2SM out · TeraFlowSDN · Ceragon driver</div>
+    </div>
+  </div>
+  <div class="chips">
+    <span class="chip" id="chip-mode"><i class="dot"></i>Realization <b id="v-mode">…</b></span>
+    <span class="chip" id="chip-ctrl"><i class="dot"></i>TeraFlowSDN <b id="v-ctrl">…</b></span>
+    <span class="chip" id="chip-topo"><i class="dot"></i>Topology <b id="v-topo">…</b></span>
+    <span class="chip" id="chip-mcp"><i class="dot"></i>Agent tools <b id="v-mcp">…</b></span>
+  </div>
+  <nav class="links">
+    <a class="btn" href="/">Flow studio</a>
+    <a class="btn" href="/?view=expert">Expert view</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- The chain -->
+  <section class="chain" id="chain">
+    <div class="chain-title">
+      <span class="h">Programmable connectivity · <b>where CER-Intent sits</b></span>
+      <span class="note" id="chain-note">Send a request to follow it down the chain</span>
+    </div>
+
+    <div class="node c-purple" id="n-os">
+      <div class="t">OpenSlice</div>
+      <div class="s">Service order · TMF633 / TMF638</div>
+      <div class="st" id="st-os">waiting</div>
+    </div>
+    <div class="arrow" id="a-1">
+      <div class="lbl">RFC 9543<small>slice service</small></div>
+      <svg viewBox="0 0 80 14" preserveAspectRatio="none"><line x1="2" y1="7" x2="70" y2="7"/><polygon points="70,1 80,7 70,13"/></svg>
+    </div>
+    <div class="node nsc" id="n-nsc">
+      <div class="nsc-head">
+        <div><div class="t">CER-Intent · slice controller</div><div class="s">Same stages as the TeraFlowSDN slice controller</div></div>
+        <div class="st" id="st-nsc" style="margin-top:0">waiting</div>
+      </div>
+      <div class="stages">
+        <div class="stg" id="g-map"><div class="n">Mapper</div><div class="d">endpoints · SLOs · ACs</div></div>
+        <div class="mini-arrow">→</div>
+        <div class="stg" id="g-sel"><div class="n">Technology selector</div><div class="d">L3VPN · L2VPN</div></div>
+        <div class="mini-arrow">→</div>
+        <div class="stg" id="g-rea"><div class="n">Realizer</div><div class="d">L3SM · L2SM</div></div>
+      </div>
+      <div style="text-align:center"><span class="twin-tag" id="g-twin">path check on the twin · simulated</span></div>
+    </div>
+    <div class="arrow" id="a-2">
+      <div class="lbl">L3SM · RFC 8299<small>or L2SM · RFC 8466</small></div>
+      <svg viewBox="0 0 80 14" preserveAspectRatio="none"><line x1="2" y1="7" x2="70" y2="7"/><polygon points="70,1 80,7 70,13"/></svg>
+    </div>
+    <div class="node c-sky" id="n-tfs">
+      <div class="t">TeraFlowSDN</div>
+      <div class="s">L3VPN / L2VPN service · Ceragon handler</div>
+      <div class="st" id="st-tfs">waiting</div>
+    </div>
+    <div class="arrow" id="a-3">
+      <div class="lbl">RESTCONF<small>get · set</small></div>
+      <svg viewBox="0 0 80 14" preserveAspectRatio="none"><line x1="2" y1="7" x2="70" y2="7"/><polygon points="70,1 80,7 70,13"/></svg>
+    </div>
+    <div class="node c-emerald" id="n-radio">
+      <div class="t">Ceragon driver → radios</div>
+      <div class="s">Slice · ACM · KPIs · RFC 8561 view</div>
+      <div class="st" id="st-radio">waiting</div>
+    </div>
+  </section>
+
+  <section class="grid3">
+
+    <!-- Request -->
+    <div class="card">
+      <div class="card-head">
+        <span class="h">RFC 9543 request</span>
+        <div class="seg" id="presets">
+          <button data-p="l3vpn" class="on">L3VPN</button>
+          <button data-p="auto">Auto</button>
+          <button data-p="l2vpn">L2VPN</button>
+        </div>
+      </div>
+      <div class="form">
+        <span class="lab">Slice</span>
+        <input class="full mono" type="text" id="f-id" />
+        <div class="ep">
+          <span class="tag">Endpoint A</span>
+          <div class="unit"><input type="text" id="f-a-node" title="node-id" /><input type="text" id="f-a-tp" title="attachment circuit (ac-tp-id)" /></div>
+          <input type="text" id="f-a-vlan" placeholder="VLAN" title="VLAN match criterion" />
+          <span class="lab">address</span>
+          <input type="text" id="f-a-ip" class="mono" title="sdp-ip-address" />
+          <input type="text" id="f-a-peer" class="mono" placeholder="peer" title="customer side address" />
+        </div>
+        <div class="ep">
+          <span class="tag">Endpoint B</span>
+          <div class="unit"><input type="text" id="f-b-node" /><input type="text" id="f-b-tp" /></div>
+          <input type="text" id="f-b-vlan" placeholder="VLAN" />
+          <span class="lab">address</span>
+          <input type="text" id="f-b-ip" class="mono" />
+          <input type="text" id="f-b-peer" class="mono" placeholder="peer" />
+        </div>
+        <span class="lab">SLOs</span>
+        <div class="unit"><input type="number" id="f-bw" min="1" /><span>Mbps</span></div>
+        <div class="unit"><input type="number" id="f-lat" min="0.1" step="0.1" /><span>ms</span></div>
+        <span class="lab">Technology</span>
+        <select id="f-tech" class="full">
+          <option value="">Auto (the selector decides)</option>
+          <option value="L3VPN">L3VPN</option>
+          <option value="L2VPN">L2VPN</option>
+        </select>
+        <span class="lab">Radio</span>
+        <select id="f-acm">
+          <option value="">ACM floor: none</option>
+          <option value="MCS2">ACM floor MCS2</option>
+          <option value="MCS4">ACM floor MCS4</option>
+          <option value="MCS6">ACM floor MCS6</option>
+        </select>
+        <span class="ext">CER-Intent extension · travels as service settings</span>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-send">▶ Send to the slice controller</button>
+        <button class="btn" id="btn-json">{ } Request</button>
+      </div>
+      <pre class="code" id="req-json" style="display:none; max-height:230px"></pre>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="card">
+      <div class="card-head">
+        <span class="h">Inside the slice controller</span>
+        <span class="badge" id="pipe-badge">idle</span>
+      </div>
+      <div class="pipe">
+        <div class="pcard" id="p-map">
+          <div class="phead"><span class="pname"><span class="num">1</span>Mapper</span><span class="badge" id="b-map">waiting</span></div>
+          <div class="pbody" id="o-map"><span class="muted">Endpoints, SLOs, connectivity and attachment circuits from the request.</span></div>
+        </div>
+        <div class="pcard twin" id="p-plan">
+          <div class="phead"><span class="pname"><span class="num">·</span>Path check on the twin</span><span class="badge" id="b-plan">waiting</span></div>
+          <div class="pbody" id="o-plan"><span class="muted">Advisory: a constrained path over the topology the twin holds.</span></div>
+        </div>
+        <div class="pcard" id="p-sel">
+          <div class="phead"><span class="pname"><span class="num">2</span>Technology selector</span><span class="badge" id="b-sel">waiting</span></div>
+          <div class="pbody" id="o-sel"><span class="muted">L3VPN or L2VPN, with the reason.</span></div>
+        </div>
+        <div class="pcard" id="p-rea">
+          <div class="phead"><span class="pname"><span class="num">3</span>Realizer</span><span class="badge" id="b-rea">waiting</span></div>
+          <div class="pbody" id="o-rea"><span class="muted">The L3SM or L2SM request for TeraFlowSDN, plus radio settings.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="card">
+      <div class="card-head">
+        <span class="h">Towards TeraFlowSDN</span>
+        <div class="tabs" id="tabs">
+          <button class="tab on" data-t="payload">VPN request</button>
+          <button class="tab" data-t="settings">Service settings</button>
+          <button class="tab" data-t="slice">RFC 9543 reply</button>
+        </div>
+      </div>
+      <pre class="code out-pre" id="out"><span class="jz">The Realizer's request appears here.</span></pre>
+      <div class="card-head"><span class="h">Path over the topology</span><span class="note" id="topo-note"></span></div>
+      <svg class="topo" id="topo" viewBox="0 0 760 104" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </section>
+
+  <section class="grid3b">
+    <div class="card">
+      <div class="card-head"><span class="h">Slices</span><button class="btn btn-small" id="btn-refresh">↻ Refresh</button></div>
+      <table>
+        <thead><tr><th>Slice</th><th>Technology</th><th>Status</th><th>Realization</th><th>Path</th><th></th></tr></thead>
+        <tbody id="slices"><tr><td colspan="6" class="empty">No slices yet</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="h">Agent tools (MCP)</span><span class="badge info" id="mcp-mode">advise</span></div>
+      <div class="tools" id="tools"></div>
+      <div class="note" id="mcp-note"></div>
+    </div>
+
+    <div class="card twin-card">
+      <div class="card-head"><span class="h">Twin what-if · rain on the radio hop</span><span class="sim">SIMULATED</span></div>
+      <div class="slider">
+        <span class="lab" style="color:var(--muted);font-size:11.5px;font-weight:600">Rain</span>
+        <input type="range" id="rain" min="0" max="60" step="5" value="25" />
+        <span class="val mono" id="rain-v">25 mm/h</span>
+        <button class="btn btn-amber btn-small" id="btn-whatif">Run what-if</button>
+      </div>
+      <div class="gauge" id="gauge"><div class="fill" id="g-fill"></div><div class="mark" id="g-mark" style="left:50%"><span id="g-mark-l">slice 500 Mbps</span></div></div>
+      <div class="kv" id="w-kv"><span class="note">Predicted capacity of the radio hop against the slice's bandwidth.</span></div>
+      <div class="verdict" id="w-verdict"></div>
+      <div class="note" id="w-basis"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = {
+  status: '/api/v1/etsi/status',
+  slices: '/restconf/data/ietf-network-slice-service:network-slice-services',
+  whatIf: '/api/v1/etsi/what-if',
+};
+
+const BASE = {
+  id: 'slice-dc1-dc2',
+  a: { node: 'dc1', tp: 'eth1', ip: '172.16.1.1/24', peer: '172.16.1.10', vlan: '' },
+  b: { node: 'dc2', tp: 'eth1', ip: '172.16.2.1/24', peer: '172.16.2.10', vlan: '' },
+  bw: 500, lat: 10, tech: 'L3VPN', acm: 'MCS4',
+};
+const PRESETS = {
+  l3vpn: { ...BASE },
+  auto:  { ...BASE, tech: '' },
+  l2vpn: { ...BASE, id: 'slice-dc1-dc2-l2', tech: 'L2VPN', a: { ...BASE.a, vlan: '300' }, b: { ...BASE.b, vlan: '300' } },
+};
+
+let state = { status: null, last: null, tab: 'payload', bw: 500, radios: [] };
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function hl(obj) {
+  const json = esc(JSON.stringify(obj, null, 2));
+  return json.replace(/(&quot;|")((?:\\.|[^"\\])*?)"(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?/g, (m, q, body, colon, bool) => {
+    if (q) return colon ? `<span class="jk">"${body}"</span>${colon}` : `<span class="js">"${body}"</span>`;
+    if (bool) return `<span class="jb">${m}</span>`;
+    if (m === 'null') return `<span class="jz">${m}</span>`;
+    return `<span class="jn">${m}</span>`;
+  });
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+function fill(p) {
+  $('f-id').value = p.id;
+  for (const s of ['a', 'b']) {
+    $(`f-${s}-node`).value = p[s].node; $(`f-${s}-tp`).value = p[s].tp; $(`f-${s}-ip`).value = p[s].ip;
+    $(`f-${s}-peer`).value = p[s].peer; $(`f-${s}-vlan`).value = p[s].vlan;
+  }
+  $('f-bw').value = p.bw; $('f-lat').value = p.lat; $('f-tech').value = p.tech; $('f-acm').value = p.acm;
+  renderRequest();
+}
+
+function sdp(id, s, group) {
+  const vlan = $(`f-${s}-vlan`).value.trim();
+  const node = $(`f-${s}-node`).value.trim();
+  const out = {
+    id, 'node-id': node,
+    'attachment-circuits': { 'attachment-circuit': [{ id: `ac-${id}`, 'ac-node-id': node, 'ac-tp-id': $(`f-${s}-tp`).value.trim() }] },
+    'service-match-criteria': { 'match-criterion': [{ index: 1, 'target-connection-group-id': group,
+      'match-type': vlan ? [{ type: 'ietf-network-slice-service:vlan', value: [vlan] }] : [] }] },
+  };
+  const ip = $(`f-${s}-ip`).value.trim();
+  if (ip) out['sdp-ip-address'] = [ip];
+  const peer = $(`f-${s}-peer`).value.trim();
+  if (peer) out.peer_address = peer;
+  return out;
+}
+
+function buildRequest() {
+  const id = $('f-id').value.trim() || 'slice-1';
+  const group = `${id}-cg`;
+  const bounds = [
+    { 'metric-type': 'ietf-network-slice-service:one-way-bandwidth', 'metric-unit': 'Mbps', bound: Number($('f-bw').value) },
+    { 'metric-type': 'ietf-network-slice-service:one-way-delay-maximum', 'metric-unit': 'milliseconds', bound: Number($('f-lat').value) },
+  ];
+  const svc = {
+    id, description: `${$('f-a-node').value} to ${$('f-b-node').value} across the radio hop`,
+    sdps: { sdp: [sdp('1', 'a', group), sdp('2', 'b', group)] },
+    'connection-groups': { 'connection-group': [{ id: group, 'connectivity-type': 'point-to-point',
+      'connectivity-construct': [{ id: 1, 'p2p-sender-sdp': '1', 'p2p-receiver-sdp': '2',
+        'service-slo-sle-policy': { 'slo-policy': { 'metric-bound': bounds } } }] }] },
+  };
+  const tech = $('f-tech').value;
+  if (tech) svc.realization_technology = tech;
+  const acm = $('f-acm').value;
+  if (acm) svc.acm = { min_modulation: acm };
+  return { 'ietf-network-slice-service:network-slice-services': { 'slice-service': [svc] } };
+}
+
+function renderRequest() { $('req-json').innerHTML = hl(buildRequest()); }
+
+// ── Chain animation ───────────────────────────────────────────────────────────
+const PLACEHOLDER = {};
+function chainReset() {
+  for (const k of ['map', 'plan', 'sel', 'rea']) {
+    if (!(k in PLACEHOLDER)) PLACEHOLDER[k] = $(`o-${k}`).innerHTML;
+    $(`o-${k}`).innerHTML = PLACEHOLDER[k];
+  }
+  drawTopo([], null);
+  for (const id of ['n-os', 'n-nsc', 'n-tfs', 'n-radio']) $(id).classList.remove('active', 'done', 'held', 'fail');
+  for (const id of ['g-map', 'g-sel', 'g-rea']) $(id).classList.remove('active', 'done', 'fail');
+  for (const id of ['a-1', 'a-2', 'a-3']) $(id).classList.remove('lit');
+  for (const id of ['st-os', 'st-nsc', 'st-tfs', 'st-radio']) $(id).textContent = 'waiting';
+  for (const k of ['map', 'plan', 'sel', 'rea']) {
+    $(`p-${k}`).classList.remove('show', 'done', 'fail'); $(`b-${k}`).className = 'badge'; $(`b-${k}`).textContent = 'waiting';
+  }
+}
+
+function setNode(id, cls, text) {
+  const n = $(id); n.classList.remove('active', 'done', 'held', 'fail'); if (cls) n.classList.add(cls);
+  $(`st-${id.slice(2)}`).textContent = text;
+}
+
+function stage(k, cls, badgeCls, badge, html) {
+  const c = $(`p-${k}`); c.classList.add('show'); if (cls) c.classList.add(cls);
+  const b = $(`b-${k}`); b.className = `badge ${badgeCls}`; b.textContent = badge;
+  if (html !== undefined) $(`o-${k}`).innerHTML = html;
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+async function send() {
+  const btn = $('btn-send'); btn.disabled = true;
+  chainReset();
+  $('pipe-badge').className = 'badge info'; $('pipe-badge').textContent = 'running';
+  const body = buildRequest();
+  setNode('n-os', 'active', 'order → slice request');
+  await sleep(350);
+  $('a-1').classList.add('lit'); setNode('n-os', 'done', '✓ RFC 9543 sent');
+  setNode('n-nsc', 'active', 'mapping…'); $('g-map').classList.add('active');
+
+  let res, data;
+  try {
+    res = await fetch(API.slices, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    data = await res.json();
+  } catch (e) {
+    data = { error: String(e), stage: 'mapper' }; res = { ok: false };
+  }
+  state.last = data;
+  await sleep(300);
+
+  if (!res.ok || !data.nsc_pipeline) {
+    const st = data.stage || 'mapper';
+    const map = { mapper: ['map', 'g-map'], realizer: ['rea', 'g-rea'] }[st] || ['map', 'g-map'];
+    if (st === 'realizer') {
+      stage('map', 'done', 'ok', 'mapped'); stage('sel', 'done', 'ok', 'chosen');
+      $('g-map').classList.add('done'); $('g-sel').classList.add('done');
+    }
+    stage(map[0], 'fail', 'bad', 'rejected', `<span class="err">${esc(data.error)}</span>`);
+    $(map[1]).classList.remove('active'); $(map[1]).classList.add('fail');
+    setNode('n-nsc', 'fail', `✗ 400 · ${st}`);
+    $('chain-note').textContent = `rejected by the ${st}`;
+    $('pipe-badge').className = 'badge bad'; $('pipe-badge').textContent = 'rejected';
+    $('out').innerHTML = hl(data); btn.disabled = false; return;
+  }
+
+  const p = data.nsc_pipeline;
+  // 1 Mapper
+  const eps = p.mapper.endpoints.map(e =>
+    `<span class="pill">SDP ${esc(e.sdp)} <b>${esc(e.node)}:${esc(e.tp)}</b>${e.ip ? ' ' + esc(e.ip) : ''}${e.vlan ? ' · VLAN ' + esc(e.vlan) : ''}</span>`).join('');
+  const s = p.mapper.slos;
+  const slos = [s.bandwidth_mbps != null ? `<span class="pill">bandwidth <b>${s.bandwidth_mbps} Mbps</b></span>` : '',
+                s.max_latency_ms != null ? `<span class="pill">latency ≤ <b>${s.max_latency_ms} ms</b></span>` : '',
+                ...p.mapper.connectivity.map(c => `<span class="pill">${esc(c.type)}</span>`)].join('');
+  stage('map', 'done', 'ok', 'mapped', `<div class="kv">${eps}</div><div class="kv">${slos}</div>`);
+  $('g-map').classList.replace('active', 'done');
+  await sleep(450);
+
+  // · Path check
+  const pl = p.planner;
+  const radios = new Set(state.radios);
+  const path = (pl.computed_path || []).map(n => `<span class="hop ${radios.has(n) ? 'radio' : ''}">${esc(n)}</span>`).join('<span class="sep">→</span>');
+  let planBadge = ['warn', 'not checked'];
+  if (pl.feasible === true) planBadge = ['ok', 'feasible'];
+  if (pl.feasible === false) planBadge = ['bad', 'infeasible'];
+  const lat = pl.total_predicted_latency_ms != null && pl.total_predicted_latency_ms >= 0
+    ? `<span class="pill">predicted <b>${pl.total_predicted_latency_ms} ms</b> of ${s.max_latency_ms ?? '–'} ms</span>` : '';
+  const hops = pl.hop_count != null ? `<span class="pill"><b>${pl.hop_count}</b> hops</span>` : '';
+  stage('plan', 'done', planBadge[0], planBadge[1],
+    `<div class="path">${path}</div><div class="kv">${hops}${lat}<span class="pill muted">advisory · simulated</span></div>` +
+    (pl.feasible == null ? `<span class="muted">${esc(pl.explanation || '')}</span>` : ''));
+  drawTopo(pl.computed_path || [], pl.feasible);
+  await sleep(450);
+
+  // 2 Selector
+  $('g-sel').classList.add('active'); setNode('n-nsc', 'active', 'selecting…');
+  await sleep(250);
+  const t = p.technology_selector;
+  stage('sel', 'done', 'ok', `by ${t.decided_by}`,
+    `<div style="display:flex;align-items:baseline;gap:12px"><span class="tech">${esc(t.technology)}</span><span>${esc(t.reason)}</span></div>`);
+  $('g-sel').classList.replace('active', 'done');
+  await sleep(450);
+
+  // 3 Realizer
+  $('g-rea').classList.add('active'); setNode('n-nsc', 'active', 'realizing…');
+  await sleep(250);
+  const r = p.realizer;
+  const settings = Object.entries(r.service_settings || {}).map(([k, v]) =>
+    `<span class="pill">${esc(k)} <b>${esc(typeof v === 'object' ? Object.entries(v).map(([a, b]) => `${a} ${b}`).join(', ') : v)}</b></span>`).join('');
+  const defaults = Object.keys(r.defaults_used || {}).length
+    ? `<span class="pill">defaults <b>${esc(Object.entries(r.defaults_used).map(([a, b]) => `${a} ${b}`).join(', '))}</b></span>` : '';
+  const rBadge = r.status === 'sent' ? ['ok', 'sent'] : r.status === 'failed' ? ['bad', 'failed'] : ['warn', `built · ${r.mode}`];
+  stage('rea', r.status === 'failed' ? 'fail' : 'done', rBadge[0], rBadge[1],
+    `<div class="kv"><span class="pill"><b>${esc(r.model)}</b></span><span class="pill">mode <b>${esc(r.mode)}</b></span>${defaults}</div>` +
+    (settings ? `<div class="kv"><span class="muted" style="align-self:center">service settings</span>${settings}</div>` : '') +
+    (r.error ? `<span class="err">${esc(r.error)}</span>` : ''));
+  $('g-rea').classList.replace('active', r.status === 'failed' ? 'fail' : 'done');
+  setNode('n-nsc', 'done', `✓ ${t.technology} · ${r.model.split(' ')[0]}`);
+  showOut();
+  await sleep(350);
+
+  // Down the chain
+  $('a-2').classList.add('lit');
+  if (r.status === 'sent') {
+    setNode('n-tfs', 'done', `✓ ${t.technology} service created`);
+    await sleep(350); $('a-3').classList.add('lit');
+    setNode('n-radio', 'done', r.service_settings && r.service_settings.acm ? '✓ slice + ACM floor via handler' : '✓ slice via handler');
+  } else if (r.status === 'failed') {
+    setNode('n-tfs', 'fail', '✗ controller error');
+  } else {
+    setNode('n-tfs', 'held', `${r.model.split(' ')[0]} ready · ${r.mode}`);
+    setNode('n-radio', 'held', 'applies when TeraFlowSDN receives it');
+  }
+  $('pipe-badge').className = 'badge ok'; $('pipe-badge').textContent = 'done';
+  $('chain-note').textContent = `${data['ietf-network-slice-service:network-slice-services']['slice-service'][0].id} · status ${data['ietf-network-slice-service:network-slice-services']['slice-service'][0].status}`;
+  state.bw = s.bandwidth_mbps || state.bw;
+  btn.disabled = false;
+  await loadStatus();
+}
+
+const KEY_ORDER = ['vpn-services', 'vpn-service', 'vpn-id', 'sites', 'site', 'site-id', 'site-network-accesses',
+  'site-network-access', 'site-network-access-id', 'device-reference', 'bearer', 'connection', 'ip-connection', 'service',
+  'vpn-attachment', 'locations', 'devices', 'management'];
+function ordered(v) {
+  if (Array.isArray(v)) return v.map(ordered);
+  if (!v || typeof v !== 'object') return v;
+  const keys = Object.keys(v).sort((a, b) => {
+    const ia = KEY_ORDER.findIndex(k => a.endsWith(k) && (a === k || a.endsWith(':' + k)));
+    const ib = KEY_ORDER.findIndex(k => b.endsWith(k) && (b === k || b.endsWith(':' + k)));
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  return Object.fromEntries(keys.map(k => [k, ordered(v[k])]));
+}
+
+function showOut() {
+  const d = state.last; if (!d || !d.nsc_pipeline) return;
+  const r = d.nsc_pipeline.realizer;
+  const view = state.tab === 'payload' ? ordered(r.payload)
+             : state.tab === 'settings' ? { '/settings (TeraFlowSDN service)': r.service_settings }
+             : d['ietf-network-slice-service:network-slice-services'];
+  $('out').innerHTML = hl(view);
+}
+
+// ── Topology drawing ──────────────────────────────────────────────────────────
+// A line topology is drawn in its own order, from an end node (a data centre first).
+function chainOrder(topo) {
+  const adj = {}; for (const n of topo.nodes) adj[n.id] = new Set();
+  for (const l of topo.links) if (adj[l.source] && adj[l.target]) { adj[l.source].add(l.target); adj[l.target].add(l.source); }
+  const ids = Object.keys(adj);
+  if (!ids.length || ids.some(n => adj[n].size > 2)) return [];
+  const ends = ids.filter(n => adj[n].size === 1);
+  if (ends.length !== 2) return [];
+  let cur = ends.find(n => /^dc/.test(n)) || ends[0], prev = null; const out = [];
+  while (cur && !out.includes(cur)) { out.push(cur); const nxt = [...adj[cur]].find(x => x !== prev); prev = cur; cur = nxt; }
+  return out.length === ids.length ? out : [];
+}
+function drawTopo(path, feasible) {
+  const svg = $('topo'); const st = state.status; if (!st) return;
+  const nodes = st.topology.nodes.map(n => n.id);
+  const order = path && path.length > 1 && path.every(n => nodes.includes(n)) ? [...path] : chainOrder(st.topology);
+  for (const n of nodes) if (!order.includes(n)) order.push(n);
+  const W = 760, y = 40, pad = 46, step = order.length > 1 ? (W - 2 * pad) / (order.length - 1) : 0;
+  const pos = {}; order.forEach((n, i) => pos[n] = [pad + i * step, y]);
+  const onPath = new Set(); for (let i = 0; i + 1 < (path || []).length; i++) onPath.add([path[i], path[i + 1]].sort().join('|'));
+  const role = Object.fromEntries(st.topology.nodes.map(n => [n.id, n.role]));
+  let g = '';
+  for (const l of st.topology.links) {
+    const a = pos[l.source], b = pos[l.target]; if (!a || !b) continue;
+    const hot = onPath.has([l.source, l.target].sort().join('|'));
+    const col = hot ? (feasible === false ? '#f43f5e' : '#00d4ff') : 'rgba(148,163,184,0.35)';
+    if (l.type && l.type.startsWith('wireless')) {
+      const mx = (a[0] + b[0]) / 2;
+      g += `<path d="M${a[0] + 14},${y} Q${mx - 18},${y - 16} ${mx},${y} T${b[0] - 14},${y}" fill="none" stroke="${hot ? '#10b981' : col}" stroke-width="2.5" stroke-dasharray="5 4"/>`;
+    } else {
+      g += `<line x1="${a[0]}" y1="${y}" x2="${b[0]}" y2="${y}" stroke="${col}" stroke-width="${hot ? 3 : 2}"/>`;
+    }
+  }
+  for (const n of order) {
+    const [x] = pos[n]; const r = role[n];
+    const hot = (path || []).includes(n);
+    if (r === 'radio') {
+      g += `<circle cx="${x}" cy="${y}" r="13" fill="#04140f" stroke="${hot ? '#10b981' : '#475569'}" stroke-width="2"/>` +
+           `<path d="M${x - 5},${y + 6} L${x},${y - 7} L${x + 5},${y + 6} M${x},${y - 7} L${x},${y + 7}" stroke="${hot ? '#6ee7b7' : '#94a3b8'}" stroke-width="1.6" fill="none"/>`;
+    } else if (/^dc/.test(n) || /datacenter/.test((st.topology.nodes.find(z => z.id === n) || {}).type || '')) {
+      g += `<rect x="${x - 13}" y="${y - 13}" width="26" height="26" rx="5" fill="#0b1226" stroke="${hot ? '#a855f7' : '#475569'}" stroke-width="2"/>`;
+    } else {
+      g += `<circle cx="${x}" cy="${y}" r="12" fill="#0b1226" stroke="${hot ? '#38bdf8' : '#475569'}" stroke-width="2"/>` +
+           `<path d="M${x - 6},${y} H${x + 6} M${x},${y - 6} V${y + 6}" stroke="${hot ? '#7dd3fc' : '#94a3b8'}" stroke-width="1.6"/>`;
+    }
+    g += `<text x="${x}" y="${y + 32}" text-anchor="middle" fill="${hot ? '#e2e8f0' : '#94a3b8'}" font-size="12" font-family="Inter, sans-serif" font-weight="600">${esc(n)}</text>`;
+  }
+  svg.innerHTML = g;
+  $('topo-note').textContent = `${st.topology.source}`;
+}
+
+// ── Status, slices, tools ─────────────────────────────────────────────────────
+async function loadStatus() {
+  let st;
+  try { st = await (await fetch(API.status)).json(); } catch (e) { return; }
+  state.status = st;
+  state.radios = st.topology.nodes.filter(n => n.role === 'radio').map(n => n.id);
+
+  const mode = st.realization.mode;
+  $('v-mode').textContent = mode === 'dry-run' ? 'dry-run · built here' : mode;
+  $('chip-mode').className = `chip ${mode === 'dry-run' ? 'warn' : 'ok'}`;
+  $('v-ctrl').textContent = st.realization.controller_configured ? 'connected' : 'not configured';
+  $('chip-ctrl').className = `chip ${st.realization.controller_configured ? 'ok' : 'warn'}`;
+  $('v-topo').textContent = st.topology.source;
+  $('chip-topo').className = 'chip info';
+  $('v-mcp').textContent = `${st.mcp.tools.length} tools · ${st.mcp.mode}`;
+  $('chip-mcp').className = 'chip info';
+
+  // slices
+  const rows = st.slices.map(s => `<tr>
+      <td class="mono">${esc(s.id)}</td>
+      <td><b>${esc(s.technology)}</b> <span class="note">${esc(s.model)}</span></td>
+      <td><span class="badge ${s.status === 'active' ? 'ok' : s.status === 'planned' ? 'warn' : s.status === 'failed' ? 'bad' : 'info'}">${esc(s.status)}</span></td>
+      <td>${esc(s.realization_status || '–')} <span class="note">${esc(s.mode || '')}</span></td>
+      <td class="note">${s.path && s.path.length ? esc(s.path.length - 1) + ' hops' : '–'}</td>
+      <td><button class="btn btn-small" data-del="${esc(s.id)}">Delete</button></td></tr>`).join('');
+  $('slices').innerHTML = rows || '<tr><td colspan="6" class="empty">No slices yet</td></tr>';
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => del(b.dataset.del));
+
+  // tools
+  $('tools').innerHTML = st.mcp.tools.map(t => {
+    const kind = t.read_only ? ['info', t.name === 'run_what_if' ? 'twin' : 'read'] : t.destructive ? ['bad', 'act'] : ['ok', 'act'];
+    return `<div class="tool" title="${esc(t.description)}"><span class="nm">${esc(t.name)}</span><span class="badge ${kind[0]}">${kind[1]}</span></div>`;
+  }).join('');
+  $('mcp-mode').textContent = st.mcp.mode;
+  $('mcp-mode').className = `badge ${st.mcp.mode === 'act' ? 'ok' : 'info'}`;
+  $('mcp-note').textContent = st.mcp.mode === 'act'
+    ? 'Act: slice and intent tools change TeraFlowSDN.'
+    : 'Advise: act tools map, select and build the request and return it.';
+  if (!state.last) drawTopo([], null);
+}
+
+async function del(id) {
+  await fetch(`${API.slices}/slice-service=${encodeURIComponent(id)}`, { method: 'DELETE' });
+  await loadStatus();
+}
+
+// ── Twin what-if ──────────────────────────────────────────────────────────────
+async function whatIf() {
+  const rain = Number($('rain').value);
+  const target = state.radios[0] || 'radio-a';
+  const body = { scenario_id: `rain-${rain}`, engine: 'analytical', domain: 'radio-hop',
+                 perturbations: [{ type: 'rain_fade', device_uuid: target, rain_rate_mm_hr: rain, link_distance_km: 0.8 }] };
+  $('btn-whatif').disabled = true;
+  let res, d;
+  try { res = await fetch(API.whatIf, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); d = await res.json(); }
+  catch (e) { d = { error: String(e) }; res = { ok: false }; }
+  $('btn-whatif').disabled = false;
+  if (!res.ok || !d.predicted_impacts) {
+    $('w-kv').innerHTML = `<span class="err">${esc(d.error || 'no answer')}</span>`; $('w-verdict').textContent = ''; return;
+  }
+  const i = d.predicted_impacts[0] || {};
+  const bw = state.bw || 500, cap = i.predicted_throughput_mbps ?? 0, max = 1000;
+  $('g-fill').style.width = `${Math.min(100, cap / max * 100)}%`;
+  $('g-mark').style.left = `${Math.min(98, bw / max * 100)}%`;
+  $('g-mark-l').textContent = `slice ${bw} Mbps`;
+  $('w-kv').innerHTML = [
+    `<span class="pill">fade <b>${i.attenuation_db} dB</b></span>`,
+    `<span class="pill">SNR <b>${i.predicted_snr_db} dB</b></span>`,
+    `<span class="pill">MCS <b>${i.predicted_mcs}</b></span>`,
+    `<span class="pill">capacity <b>${cap} Mbps</b></span>`,
+    `<span class="pill">latency <b>${i.predicted_latency_ms} ms</b></span>`].join('');
+  const holds = cap >= bw;
+  $('w-verdict').className = `verdict ${holds ? 'ok' : 'bad'}`;
+  $('w-verdict').textContent = holds ? `Slice holds at ${rain} mm/h · ${cap} ≥ ${bw} Mbps`
+                                     : `Below the slice at ${rain} mm/h · ${cap} < ${bw} Mbps`;
+  const b = d.basis || {};
+  $('w-basis').textContent = `insight ${d.insight} · engine ${b.engine || d.engine} · twin topology ${b.topology_source || '–'}`;
+}
+
+// ── Wiring ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('#presets button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#presets button').forEach(x => x.classList.toggle('on', x === b));
+  fill(PRESETS[b.dataset.p]);
+});
+document.querySelectorAll('#tabs .tab').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#tabs .tab').forEach(x => x.classList.toggle('on', x === b));
+  state.tab = b.dataset.t; showOut();
+});
+document.querySelectorAll('.form input, .form select').forEach(el => el.addEventListener('input', renderRequest));
+$('btn-send').onclick = send;
+$('btn-json').onclick = () => { const p = $('req-json'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; };
+$('btn-refresh').onclick = loadStatus;
+$('btn-whatif').onclick = whatIf;
+$('rain').oninput = () => { $('rain-v').textContent = `${$('rain').value} mm/h`; };
+
+fill(PRESETS.l3vpn);
+loadStatus();
+</script>
+</body>
+</html>
