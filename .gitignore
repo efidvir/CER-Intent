@@ -37,3 +37,10 @@ Thumbs.db
 # Intent manager state (records and audit), written at run time
 data/imf_intents.json
 data/imf_audit.jsonl
+data/imf_auto_policy.json
+data/flow-logs/
+
+# Deployment settings: only the examples are kept in git (site details and tokens stay local)
+deploy/config/*
+!deploy/config/*.example.*
+!deploy/config/README.md

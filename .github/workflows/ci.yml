@@ -3,22 +3,59 @@ name: ci
 on:
   push:
     branches: [main, "feat/**"]
+    tags: ["v*"]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Push the images to ghcr.io (otherwise build and test only)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+env:
+  DEPS: _deps
+
 jobs:
+  # Unit, corpus and end-to-end tests; the twin and the fork's Ceragon parts are checked out next
+  # to the code at the refs in deploy/sources.env, so the in-process end-to-end tests run too.
   tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: grep -E '^[A-Z_]+=' deploy/sources.env >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          repository: efidvir/tfs-ns3-digital-twin
+          ref: ${{ env.TWIN_REF }}
+          path: ${{ env.DEPS }}/tfs-ns3-digital-twin
+      - uses: actions/checkout@v4
+        with:
+          repository: efidvir/teraflowsdn
+          ref: ${{ env.TFS_FORK_REF }}
+          path: ${{ env.DEPS }}/teraflowsdn
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /src/common/
+            /src/device/__init__.py
+            /src/device/service/__init__.py
+            /src/device/service/driver_api/
+            /src/device/service/drivers/ceragon/
+            /src/service/__init__.py
+            /src/service/service/__init__.py
+            /src/service/service/service_handlers/ceragon_transport/
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt pytest
+      - run: pip install -r requirements.txt -r $DEPS/tfs-ns3-digital-twin/requirements.txt pytest pyflakes
       - run: pip install ./ceragon_tfs_adapter
-      - run: python -m pytest tests ceragon_tfs_adapter/tests -q
+      - run: python -m pyflakes cer_intent/imf cer_intent/auth.py cer_intent/ops.py emulation/flow_stack.py
+      - run: python -m pytest tests ceragon_tfs_adapter/tests -q -rs
+        env:
+          TWIN_SRC: ${{ github.workspace }}/${{ env.DEPS }}/tfs-ns3-digital-twin
+          TFS_FORK_SRC: ${{ github.workspace }}/${{ env.DEPS }}/teraflowsdn/src
 
   chart:
     runs-on: ubuntu-latest
@@ -27,8 +64,20 @@ jobs:
       - uses: azure/setup-helm@v4
       - run: helm lint deploy/helm/cer-intent
       - run: helm template cer deploy/helm/cer-intent > /dev/null
-      - run: helm template cer deploy/helm/cer-intent --set teraflow.credentialsSecret=tfs,llm.secret=llm,twin.url=http://twin:9100 > /dev/null
+      - run: >
+          helm template cer deploy/helm/cer-intent
+          --set teraflow.credentialsSecret=tfs,llm.secret=llm,llm.provider=gemini,twin.url=http://twin:9100
+          --set auth.mode=token,auth.tokensSecret=cer-tokens,auth.sessionSecret=cer-session,mcp.tokenSecret=cer-mcp
+          --set autoApproval.enabled=true,autoApproval.max_bandwidth_mbps=300,readiness.require=teraflow
+          --set ingress.enabled=true,ingress.className=nginx,persistence.storageClass=microk8s-hostpath
+          --set-json 'intentManager.sitePlan={"design_rain_mmh":60,"links":{"radio-1|radio-2":{"distance_m":250}}}'
+          --set-json 'intentManager.aliases={"headquarters":"region-a"}' > rendered.yaml
+      - run: helm template cer deploy/helm/cer-intent --set persistence.enabled=false,mcp.enabled=false > /dev/null
+      - run: |
+          grep -q '"max_bandwidth_mbps": 300' rendered.yaml
+          grep -q 'kind: Ingress' rendered.yaml
 
+  # The service image, started on its own (no TeraFlowSDN): probes, a reading, both sign-in modes
   image:
     runs-on: ubuntu-latest
     needs: tests
@@ -38,5 +87,175 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
+          target: app
+          load: true
           tags: cer-intent:ci
+          cache-from: type=gha,scope=cer-app
+          cache-to: type=gha,mode=max,scope=cer-app
+      - name: Smoke test
+        run: |
+          set -e
+          docker volume create cer-data
+          docker run -d --name cer -p 5000:5000 -v cer-data:/app/data -e CER_IMF_DEMO=1 -e CER_IMF_TWIN=0 cer-intent:ci
+          for i in $(seq 1 45); do curl -fs localhost:5000/healthz >/dev/null && break; sleep 2; done
+          curl -fs localhost:5000/healthz
+          curl -fs localhost:5000/readyz | tee ready.json
+          curl -fs localhost:5000/intent-studio.html > /dev/null
+          curl -fs -X POST localhost:5000/api/v2/converse -H 'Content-Type: application/json' -H 'X-Role: operator' \
+               -d '{"session":"ci","text":"Connect region-a and edge with 50 Mbps"}' | tee said.json
+          python3 -c "import json; d = json.load(open('said.json')); assert d['intent']['state'] in ('checked', 'active'), d"
+          docker exec cer test -s /app/data/imf_intents.json
+          docker exec cer test -s /app/data/6g_transport_tfs_descriptors.json
+      - name: Smoke test, sign-in with tokens
+        run: |
+          set -e
+          docker run -d --name cer-token -p 5001:5000 -e CER_IMF_DEMO=1 -e CER_IMF_TWIN=0 -e CER_AUTH=token \
+               -e CER_AUTH_TOKENS='[{"user":"ci","role":"operator","token":"ci-token"}]' cer-intent:ci
+          for i in $(seq 1 45); do curl -fs localhost:5001/healthz >/dev/null && break; sleep 2; done
+          body='{"session":"ci","text":"Connect region-a and edge with 50 Mbps"}'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:5001/api/v2/converse -H 'Content-Type: application/json' -d "$body")" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:5001/api/v2/converse -H 'Content-Type: application/json' -H 'Authorization: Bearer ci-token' -d "$body")" = 200
+          curl -fs localhost:5001/api/v2/whoami -H 'Authorization: Bearer ci-token' | python3 -c "import json,sys; d = json.load(sys.stdin); assert (d['user'], d['role']) == ('ci', 'operator'), d"
+      - if: failure()
+        run: docker logs cer || true; docker logs cer-token || true
+
+  # The emulated demo deployed with compose.demo.yaml: the twin's image runs NS-3, and a small
+  # slice is applied automatically once every guardrail holds.
+  demo:
+    runs-on: ubuntu-latest
+    needs: tests
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: grep -E '^[A-Z_]+=' deploy/sources.env >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          repository: efidvir/tfs-ns3-digital-twin
+          ref: ${{ env.TWIN_REF }}
+          path: ${{ env.DEPS }}/tfs-ns3-digital-twin
+      - uses: actions/checkout@v4
+        with:
+          repository: efidvir/teraflowsdn
+          ref: ${{ env.TFS_FORK_REF }}
+          path: ${{ env.DEPS }}/teraflowsdn
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /src/common/
+            /src/device/__init__.py
+            /src/device/service/__init__.py
+            /src/device/service/driver_api/
+            /src/device/service/drivers/ceragon/
+            /src/service/__init__.py
+            /src/service/service/__init__.py
+            /src/service/service/service_handlers/ceragon_transport/
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the twin (NS-3.45; cached after the first run)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DEPS }}/tfs-ns3-digital-twin
+          load: true
+          tags: transport-twin:0.2.0
+          cache-from: type=gha,scope=twin
+          cache-to: type=gha,mode=max,scope=twin
+      - name: Build the demo image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: demo
+          build-contexts: fork=${{ env.DEPS }}/teraflowsdn
+          load: true
+          tags: cer-intent-demo:0.2.0
+          cache-from: type=gha,scope=cer-demo
+          cache-to: type=gha,mode=max,scope=cer-demo
+      - name: Deploy and drive it
+        env:
+          TWIN_SRC: ${{ env.DEPS }}/tfs-ns3-digital-twin
+          TFS_FORK_SRC: ${{ env.DEPS }}/teraflowsdn
+        run: |
+          set -e
+          docker compose -f compose.demo.yaml up -d --no-build
+          for i in $(seq 1 90); do curl -fs localhost:5000/readyz >/dev/null && break; sleep 2; done
+          curl -fs localhost:5000/readyz | tee ready.json
+          python3 -c "import json; c = json.load(open('ready.json'))['checks']; assert c['twin']['ok'] and c['teraflow']['ok'], c"
+          curl -fs -X POST localhost:5000/api/v2/converse -H 'Content-Type: application/json' -H 'X-User: ci' -H 'X-Role: operator' \
+               --max-time 600 -d '{"session":"ci","text":"Connect region-a and edge with 100 Mbps"}' | tee said.json
+          python3 - <<'EOF'
+          import json
+          d = json.load(open("said.json"))
+          rec = d["intent"]
+          held = [g for g in rec["links"].get("guardrails", []) if not g["ok"]]
+          assert rec["state"] == "active" and not held, (rec["state"], held, d["reply"])
+          print(d["reply"])
+          EOF
+      - if: failure()
+        run: docker compose -f compose.demo.yaml logs --tail 200
+
+  # Published only from a version tag (v*) or a manual run with "publish" ticked
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    runs-on: ubuntu-latest
+    needs: [image, chart, demo]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: grep -E '^[A-Z_]+=' deploy/sources.env >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          repository: efidvir/teraflowsdn
+          ref: ${{ env.TFS_FORK_REF }}
+          path: ${{ env.DEPS }}/teraflowsdn
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /src/common/
+            /src/device/__init__.py
+            /src/device/service/__init__.py
+            /src/device/service/driver_api/
+            /src/device/service/drivers/ceragon/
+            /src/service/__init__.py
+            /src/service/service/__init__.py
+            /src/service/service/service_handlers/ceragon_transport/
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/cer-intent
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha
+      - id: meta-demo
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/cer-intent-demo
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: app
+          push: true
+          build-args: VERSION=${{ steps.meta.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=cer-app
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: demo
+          push: true
+          build-contexts: fork=${{ env.DEPS }}/teraflowsdn
+          build-args: VERSION=${{ steps.meta-demo.outputs.version }}
+          tags: ${{ steps.meta-demo.outputs.tags }}
+          labels: ${{ steps.meta-demo.outputs.labels }}
+          cache-from: type=gha,scope=cer-demo

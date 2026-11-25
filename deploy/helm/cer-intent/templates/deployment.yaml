@@ -4,28 +4,48 @@ metadata:
   name: {{ include "cer-intent.name" . }}
   labels: {{- include "cer-intent.labels" . | nindent 4 }}
 spec:
-  replicas: 1                      # the slice datastore is in memory: one replica
+  replicas: 1                      # one writer: the slice datastore and the intent records
+  strategy: {type: Recreate}       # the data volume is ReadWriteOnce
   selector:
     matchLabels: {{- include "cer-intent.labels" . | nindent 6 }}
   template:
     metadata:
       labels: {{- include "cer-intent.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
-      securityContext: {runAsNonRoot: true, runAsUser: 10001}
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 0, fsGroup: 10001}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: api
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ include "cer-intent.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env: {{- include "cer-intent.env" . | nindent 12 }}
           {{- include "cer-intent.envFrom" . | nindent 10 }}
-          ports: [{name: http, containerPort: {{ .Values.service.port }}}]
+          ports: [{name: http, containerPort: 5000}]
+          startupProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 2
+            failureThreshold: 60
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
           readinessProbe:
-            httpGet: {path: /restconf/data/ietf-network-slice-service:network-slice-services, port: http}
+            httpGet: {path: /readyz, port: http}
             periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - {name: data, mountPath: /app/data}
+            - {name: config, mountPath: /etc/cer-intent, readOnly: true}
+            {{- if .Values.auth.tokensSecret }}
+            - {name: auth, mountPath: /etc/cer-intent-auth, readOnly: true}
+            {{- end }}
           resources: {{- toYaml .Values.resources | nindent 12 }}
         {{- if .Values.mcp.enabled }}
         - name: mcp
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: {{ include "cer-intent.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python", "-m", "cer_intent.mcp", "--transport", "streamable-http", "--host", "0.0.0.0",
                     "--port", {{ .Values.mcp.port | quote }}]
@@ -33,10 +53,27 @@ spec:
             {{- include "cer-intent.env" . | nindent 12 }}
             # slice tools use the API container's slice controller: one slice datastore
             - name: CER_INTENT_URL
-              value: "http://127.0.0.1:{{ .Values.service.port }}"
+              value: "http://127.0.0.1:5000"
             - name: CER_INTENT_MCP_PROXY
               value: "1"
+            {{- if .Values.mcp.tokenSecret }}
+            - name: CER_INTENT_TOKEN
+              valueFrom: {secretKeyRef: {name: {{ .Values.mcp.tokenSecret }}, key: CER_INTENT_TOKEN}}
+            {{- end }}
           {{- include "cer-intent.envFrom" . | nindent 10 }}
           ports: [{name: mcp, containerPort: {{ .Values.mcp.port }}}]
           resources: {{- toYaml .Values.resources | nindent 12 }}
+        {{- end }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim: {claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" (include "cer-intent.name" .)) }}}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: config
+          configMap: {name: {{ include "cer-intent.name" . }}-config}
+        {{- if .Values.auth.tokensSecret }}
+        - name: auth
+          secret: {secretName: {{ .Values.auth.tokensSecret }}, items: [{key: tokens.yaml, path: tokens.yaml}]}
         {{- end }}

@@ -1,7 +1,8 @@
 image:
   repository: ghcr.io/efidvir/cer-intent
-  tag: "0.1.0"
+  tag: ""                          # default: the chart's appVersion
   pullPolicy: IfNotPresent
+imagePullSecrets: []               # e.g. [{name: ghcr}] for a private registry
 
 teraflow:
   # TeraFlowSDN NBI inside the cluster; check the service name and port of your TFS deployment
@@ -13,18 +14,71 @@ sliceController:
   defaultTechnology: L3VPN         # used when the request does not decide it
 
 llm:
-  secret: ""                       # optional Secret with the LLM API key used by the intent parser
+  provider: none                   # none | gemini | anthropic | openai: a model's reading next to the rules'
+  secret: ""                       # optional Secret with the provider's key (GEMINI_API_KEY, ANTHROPIC_API_KEY, ...)
 
 twin:
-  url: ""                          # e.g. http://twin-transport-twin:9100, for the run_what_if tool
+  url: ""                          # e.g. http://twin-transport-twin:9100 (the transport-twin chart); empty: no twin
+
+intentManager:
+  discovery: true                  # read device details and live radio state through TeraFlowSDN
+  discoveryTtlS: 15
+  tickS: 10                        # schedules, objectives and auto-approval watches
+  policy: {}                       # operator defaults merged into imf_policy.json (vlan_pool, approval_roles, profiles, ...)
+  sitePlan: {}                     # site_plan.json, shared with the twin: {design_rain_mmh, hop_distance_m, links: {...}}
+  aliases: {}                      # imf_aliases.json: {"headquarters": "region-a"}
+
+# Applied without a person when every guardrail holds, then watched and rolled back if an objective
+# breaks. Keys as in imf_policy.json's "auto_approve"; an admin can change them in the studio (kept
+# in the data volume, and those changes win over these values).
+autoApproval:
+  enabled: false
+  kinds: [deliver, change, lifecycle, optimise, keep, observe]
+  lifecycle_ops: [suspend, resume]
+  max_bandwidth_mbps: 200
+  max_increase_pct: 100
+  max_hop_load_pct: 80
+  require_twin: true
+  require_clear_now: true
+  channels: [text, chat, form, tmf921, 3gpp, mcp]
+  roles: [operator, approver, admin]
+  per_hour: 10
+  per_user_hour: 5
+  watch_s: 600
+  windows: []
+
+auth:
+  mode: headers                    # headers: X-User / X-Role as sent (behind your own access control) | token
+  tokensSecret: ""                 # token mode: Secret with a tokens.yaml key (deploy/config/tokens.example.yaml)
+  openRead: true                   # token mode: reading without a token
+  sessionSecret: ""                # Secret with a CER_SECRET_KEY key, so sign-ins survive restarts
+  cookieSecure: false              # true when served over HTTPS
+
+readiness:
+  require: ""                      # "teraflow,twin": unready while they are down
+
+persistence:
+  enabled: true                    # intents, audit records, the admin's auto-approval changes
+  size: 1Gi
+  storageClass: ""
+  existingClaim: ""
 
 mcp:
   enabled: true
   port: 8765
   mode: advise                     # advise | act
+  tokenSecret: ""                  # token mode: Secret with a CER_INTENT_TOKEN key for the agent
 
 service:
+  type: ClusterIP
   port: 5000
+
+ingress:
+  enabled: false
+  className: ""
+  host: cer-intent.example.org
+  annotations: {}
+  tls: []                          # [{secretName: cer-intent-tls, hosts: [cer-intent.example.org]}]
 
 resources:
   requests: {cpu: 100m, memory: 256Mi}

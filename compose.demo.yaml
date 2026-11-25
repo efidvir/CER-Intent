@@ -1,0 +1,49 @@
+# The whole flow emulated, nothing else needed: two radios, a TeraFlowSDN stand-in with the
+# fork's Ceragon driver and handler, CER-Intent, and the digital twin running NS-3.45.
+#
+#   deploy/get-sources.sh                               ../tfs-ns3-digital-twin and ../teraflowsdn
+#   docker compose -f compose.demo.yaml up --build      first build of the twin compiles NS-3 (~15 min)
+#
+#   studio http://localhost:5000/intent-studio.html     flow  http://localhost:5000/intent-flow.html
+#
+# Auto-approval is on here (CER_IMF_AUTO=1): small changes the twin passes are applied at once and
+# watched; the studio's chip shows the limits. Set CER_IMF_AUTO=0 to approve everything by hand.
+
+name: cer-intent-demo
+
+services:
+  cer-intent:
+    build:
+      context: .
+      target: demo
+      additional_contexts:
+        fork: ${TFS_FORK_SRC:-../teraflowsdn}
+      args:
+        VERSION: ${CER_INTENT_VERSION:-0.2.0}
+    image: ${CER_INTENT_IMAGE:-cer-intent}-demo:${CER_INTENT_VERSION:-0.2.0}
+    environment:
+      FLOW_TWIN_URL: http://twin:9100
+      CER_IMF_AUTO: ${CER_IMF_AUTO:-1}
+      CER_IMF_LLM: ${CER_IMF_LLM:-none}
+    ports:
+      - "${CER_INTENT_PORT:-5000}:5000"
+    volumes:
+      - demo-data:/app/data
+    depends_on: [twin]
+
+  twin:
+    build:
+      context: ${TWIN_SRC:-../tfs-ns3-digital-twin}
+    image: ${TWIN_IMAGE:-transport-twin}:${TWIN_VERSION:-0.2.0}
+    environment:
+      TERAFLOW_URL: http://cer-intent:8088              # the stand-in, inside the demo container
+      TWIN_TOPOLOGY_SOURCE: rfc8345
+      TWIN_SITE_PLAN: /flow/site_plan.json
+      NS3_TWIN_RECORDINGS: /flow/ns3_recordings.json
+      NS3_TWIN_MODE: ${NS3_TWIN_MODE:-local}
+    volumes:
+      - ./emulation/flow:/flow:ro
+    expose: ["9100"]
+
+volumes:
+  demo-data:

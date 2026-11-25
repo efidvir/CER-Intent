@@ -1,0 +1,15 @@
+{
+  "_comment": "Planning data the twin and the intent manager add to what TeraFlowSDN reports. Copy to site_plan.json in this folder and describe your hops; every key is optional.",
+  "design_rain_mmh": 60,
+  "rain_window_s": [
+    2,
+    6
+  ],
+  "sim_time_s": 8,
+  "hop_distance_m": 250,
+  "links": {
+    "radio-1|radio-2": {
+      "distance_m": 250
+    }
+  }
+}

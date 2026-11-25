@@ -1,0 +1,14 @@
+{{- $policy := deepCopy .Values.intentManager.policy -}}
+{{- $_ := set $policy "auto_approve" .Values.autoApproval -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cer-intent.name" . }}-config
+  labels: {{- include "cer-intent.labels" . | nindent 4 }}
+data:
+  imf_policy.json: |
+    {{- toPrettyJson $policy | nindent 4 }}
+  site_plan.json: |
+    {{- toPrettyJson .Values.intentManager.sitePlan | nindent 4 }}
+  imf_aliases.json: |
+    {{- toPrettyJson .Values.intentManager.aliases | nindent 4 }}

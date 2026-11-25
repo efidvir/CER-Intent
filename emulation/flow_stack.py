@@ -25,6 +25,8 @@ twin has existing traffic to protect.
 Environment:
   TFS_FORK_SRC          TeraFlowSDN fork src/      (default ../teraflowsdn/src)
   TWIN_SRC              twin repository            (default ../tfs-ns3-digital-twin)
+  FLOW_TWIN_URL         a twin already running (its own container, say): not started here;
+                        same as --twin-url
   CERAGON_TWIN_BINARY   ns3.45-ceragon-twin; without it the twin replays recorded runs
   NS3_TWIN_RECORDINGS   recorded runs for replay   (default emulation/flow/ns3_recordings.json)
   PYTHON                interpreter for the processes (default: this one)
@@ -97,6 +99,12 @@ def cer_env(tfs_url: str, twin_url: str) -> Dict[str, str]:
         "CER_INTENT_MCP_MODE": "advise",
         "TERAFLOW_TIMEOUT_SEC": "10",
     }
+
+
+def _cer_overrides() -> Dict[str, str]:
+    """Settings for CER-Intent given to the launcher (a container's environment): they win over the flow's."""
+    keep = ("TERAFLOW_URL", "TWIN_URL", "ADAPTER_BACKEND", "TFS_REALIZATION")
+    return {k: v for k, v in os.environ.items() if k.startswith("CER_") and k not in keep}
 
 
 def provision_existing(cer_url: str) -> Dict[str, Any]:
@@ -288,17 +296,20 @@ def _wait(url: str, timeout: float = 60.0) -> bool:
     return False
 
 
-def up(paths: Dict[str, str], python: str, logs: Path) -> List[subprocess.Popen]:
-    logs.mkdir(parents=True, exist_ok=True)
+def up(paths: Dict[str, str], python: str, logs: Optional[Path], twin_url: Optional[str] = None) -> List[subprocess.Popen]:
+    """Start the stack; logs=None sends every component's output to this console (containers)."""
+    if logs is not None:
+        logs.mkdir(parents=True, exist_ok=True)
     procs: List[subprocess.Popen] = []
-    tfs_url, twin_url, cer_url = (f"http://localhost:{TFS_PORT}", f"http://localhost:{TWIN_PORT}",
-                                  f"http://localhost:{CER_PORT}")
+    external_twin = bool(twin_url)
+    tfs_url, cer_url = f"http://localhost:{TFS_PORT}", f"http://localhost:{CER_PORT}"
+    twin_url = (twin_url or f"http://localhost:{TWIN_PORT}").rstrip("/")
 
     def start(name: str, args: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> None:
-        out = open(logs / f"{name}.log", "w", encoding="utf-8")
+        out = open(logs / f"{name}.log", "w", encoding="utf-8") if logs is not None else None
         procs.append(subprocess.Popen(args, cwd=str(cwd), env={**os.environ, **(env or {})},
-                                      stdout=out, stderr=subprocess.STDOUT))
-        print(f"  started {name:<12} (log: {logs / (name + '.log')})")
+                                      stdout=out, stderr=subprocess.STDOUT if out else None))
+        print(f"  started {name:<12}" + (f" (log: {logs / (name + '.log')})" if logs is not None else ""), flush=True)
 
     for name, port in RADIOS:
         start(name, [python, str(HERE / "radio_emulator.py"), "--port", str(port), "--node-name", name,
@@ -310,12 +321,17 @@ def up(paths: Dict[str, str], python: str, logs: Path) -> List[subprocess.Popen]
                           "--fork-src", paths["fork_src"], "--port", str(TFS_PORT)], ROOT)
     if not _wait(f"{tfs_url}/tfs-api/contexts", 30):
         raise SystemExit("TeraFlowSDN stand-in did not start")
-    start("twin", [python, "tfs_digital_twin_api.py", str(TWIN_PORT)], Path(paths["twin_src"]),
-          twin_env(paths, tfs_url))
-    if not _wait(f"{twin_url}/healthz", 30):
-        raise SystemExit("digital twin did not start")
+    if external_twin:
+        print(f"  twin         {twin_url} (running on its own)", flush=True)
+        if not _wait(f"{twin_url}/healthz", 300):
+            raise SystemExit(f"the digital twin at {twin_url} does not answer")
+    else:
+        start("twin", [python, "tfs_digital_twin_api.py", str(TWIN_PORT)], Path(paths["twin_src"]),
+              twin_env(paths, tfs_url))
+        if not _wait(f"{twin_url}/healthz", 30):
+            raise SystemExit("digital twin did not start")
     start("cer-intent", [python, "run.py"], ROOT,
-          {**cer_env(tfs_url, twin_url), "FLASK_PORT": str(CER_PORT), "FLASK_DEBUG": "false"})
+          {**cer_env(tfs_url, twin_url), "FLASK_PORT": str(CER_PORT), "FLASK_DEBUG": "false", **_cer_overrides()})
     if not _wait(f"{cer_url}/api/v1/flow/status", 60):
         raise SystemExit("CER-Intent did not start")
     existing = provision_existing(cer_url)
@@ -326,7 +342,10 @@ def up(paths: Dict[str, str], python: str, logs: Path) -> List[subprocess.Popen]
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["up", "check", "imf"])
-    parser.add_argument("--logs", default=str(ROOT / "data" / "flow-logs"))
+    parser.add_argument("--logs", default=str(ROOT / "data" / "flow-logs"),
+                        help="directory for each component's log; '-' sends them to this console")
+    parser.add_argument("--twin-url", default=os.getenv("FLOW_TWIN_URL", ""),
+                        help="a twin already running (its own container): used instead of starting one")
     args = parser.parse_args(argv)
     paths = default_paths()
     if args.command == "check":
@@ -336,10 +355,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(json.dumps(imf_check(paths), indent=1))
         return 0
     python = os.getenv("PYTHON", sys.executable)
-    mode = "NS-3.45 local binary" if paths["ns3_binary"] and Path(paths["ns3_binary"]).exists() else "recorded NS-3 runs"
-    print(f"Starting the flow stack (twin: {mode})")
-    procs = up(paths, python, Path(args.logs))
-    print(f"\n  Flow dashboard: http://localhost:{CER_PORT}/intent-flow.html   (Ctrl+C stops everything)\n")
+    mode = ("the twin at " + args.twin_url if args.twin_url else
+            "NS-3.45 local binary" if paths["ns3_binary"] and Path(paths["ns3_binary"]).exists() else "recorded NS-3 runs")
+    print(f"Starting the flow stack (twin: {mode})", flush=True)
+    procs = up(paths, python, None if args.logs == "-" else Path(args.logs), args.twin_url or None)
+    print(f"\n  Intent studio:  http://localhost:{CER_PORT}/intent-studio.html"
+          f"\n  Flow dashboard: http://localhost:{CER_PORT}/intent-flow.html   (Ctrl+C stops everything)\n", flush=True)
 
     def stop(*_a: Any) -> None:
         for p in reversed(procs):

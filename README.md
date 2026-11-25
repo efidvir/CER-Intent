@@ -87,6 +87,23 @@ python run.py
 
 ---
 
+## Deploy
+
+| | |
+|---|---|
+| everything emulated, any machine with Docker | `deploy/get-sources.sh && docker compose -f compose.demo.yaml up --build` |
+| next to your TeraFlowSDN | `cp .env.example .env` (set `TERAFLOW_URL`), `deploy/get-sources.sh`, `docker compose up -d --build` |
+| on TeraFlowSDN's MicroK8s | `deploy/get-sources.sh && deploy/microk8s/deploy.sh` (Helm charts in `deploy/helm/`) |
+| Windows, no Docker | `deploy\windows\run-demo.ps1` |
+
+Then open `http://<host>:5000/intent-studio.html`; `/healthz` and `/readyz` are the probes.
+The digital twin runs NS-3.45 inside its own image, so pre-flight verdicts come from real
+runs. Auto-approval, once switched on, applies a checked intent at once when every guardrail
+holds and rolls it back if an objective breaks while it is watched; sign-in with tokens is
+`CER_AUTH=token`. Details: [docs/DEPLOY.md](docs/DEPLOY.md).
+
+---
+
 ## Supported Intent Types (12 Domains)
 
 | Type | Example Input | Ceragon Config Generated |
@@ -283,6 +300,7 @@ CER_Intent/
 
 ## Documentation
 
+- **Deployment**: [docs/DEPLOY.md](docs/DEPLOY.md) — the emulated demo with Docker, CER-Intent and the NS-3 twin next to your TeraFlowSDN, Helm on TeraFlowSDN's MicroK8s, sign-in, auto-approval, probes.
 - **Intent manager and intent studio**: [docs/INTENT_MANAGER.md](docs/INTENT_MANAGER.md) — one intent record for words, forms, TMF921 v5, 3GPP TS 28.312 and MCP; questions, checks on the twin, alternatives, approval, schedules, objectives and reports. Studio: `http://localhost:5000/intent-studio.html`.
 - **TeraFlowSDN Adapter Guide**: [Ceragon TeraFlowSDN Adapter Guide](file:///c:/CER_Intent/docs/CERAGON_TFS_ADAPTER_GUIDE.md) — Complete portfolio, YANG 1.1 schema closure, and bidirectional control/telemetry reference.
 - **NS-3 Functional Twin Guide**: [Ceragon Functional Digital Twin for NS-3 (`contrib/ceragon`)](file:///c:/CER_Intent/docs/CERAGON_NS3_FUNCTIONAL_TWIN_GUIDE.md) — Architecture, ITU-R PHY/MAC/QoS/TSN mathematical models, `.twin` grammar, and validation suite.

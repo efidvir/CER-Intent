@@ -1,10 +1,24 @@
 .git
+.github
+.env
+.venv
 **/__pycache__
+**/.pytest_cache
 *.docx
 *.pptx
 scratch
 tests
+docs
 tfs_upstream_contribution
 tfs_unity
+deploy/helm
 ceragon_tfs_adapter/dist
 ceragon_tfs_adapter/*.egg-info
+# runtime state and logs: never baked into an image
+data/audit_log.jsonl
+data/topology_state.json
+data/imf_*.json
+data/imf_*.jsonl
+data/test_*.jsonl
+data/flow-logs
+data/*.tmp

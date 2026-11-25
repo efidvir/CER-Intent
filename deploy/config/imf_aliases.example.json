@@ -1,0 +1,5 @@
+{
+  "_comment": "Names people use for your sites and devices. Copy to imf_aliases.json in this folder.",
+  "headquarters": "region-a",
+  "the edge site": "edge"
+}

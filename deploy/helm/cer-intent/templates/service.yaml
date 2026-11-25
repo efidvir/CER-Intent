@@ -4,6 +4,7 @@ metadata:
   name: {{ include "cer-intent.name" . }}
   labels: {{- include "cer-intent.labels" . | nindent 4 }}
 spec:
+  type: {{ .Values.service.type }}
   selector: {{- include "cer-intent.labels" . | nindent 4 }}
   ports:
     - {name: http, port: {{ .Values.service.port }}, targetPort: http}
