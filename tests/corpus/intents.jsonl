@@ -1,0 +1,419 @@
+{"text": "Connect region-a and edge over VLAN 300 with 500 Mbps and at most 10 ms latency; keep the radio link at MCS4 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 500], "latency": ["le", 10], "modulation_floor": ["ge", "MCS4"], "vlan": ["eq", 300]}}}
+{"text": "Routed L3VPN slice between region-a 192.0.2.1/30 and edge 198.51.100.1/30 with 50 Mbps and at most 5 ms latency; keep the radio at MCS6 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 5], "technology": ["eq", "L3VPN"], "modulation_floor": ["ge", "MCS6"]}}}
+{"text": "Gold slice from region A to the edge, 300 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "availability": ["ge", 99.99]}, "profile": "gold"}}
+{"text": "I need 200 Mbps between region-a and edge", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200]}}}
+{"text": "Set up a 1 Gbps link from edge to region-a", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000]}}}
+{"text": "Provision half a gig between region-a and edge for video", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 500]}, "profile": "video"}}
+{"text": "Create a URLLC slice region-a to edge, 20 Mbps, 1 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 20], "latency": ["le", 1]}, "profile": "urllc"}}
+{"text": "Give the edge 150 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 150]}}}
+{"text": "A best-effort slice from region-a to edge for 100 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 100]}, "strictness": "best_effort"}}
+{"text": "Connect region-a and edge with 300 Mbps, latency under 8 ms and loss below 0.1%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "latency": ["le", 8], "loss": ["le", 0.1]}}}
+{"text": "Bridge region-a to edge on VLAN 410, 80 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 80], "vlan": ["eq", 410]}}}
+{"text": "connect region-a <-> edge 250mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}}}
+{"text": "Connect region-a and edge with 300 Mbps at 99.99% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "availability": ["ge", 99.99]}}}
+{"text": "Connect region-a and edge with 300 Mbps and four nines", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "availability": ["ge", 99.99]}}}
+{"text": "Connect HQ and edge with 100 Mbps", "expect": {"kinds": ["deliver"], "question": "endpoint[0]"}}
+{"text": "Connect region-a and edge", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "question": "bandwidth"}}
+{"text": "Stadium event Saturday 18:00-23:00: north 400 Mbps, south 300 Mbps, press 100 Mbps", "expect": {"kinds": ["deliver", "deliver", "deliver"], "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"]}}
+{"text": "Tonight from 20:00 to 23:00 give region-a to edge an extra 200 Mbps slice", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200]}, "contexts": ["window"]}}
+{"text": "For the next 2 hours, a 100 Mbps slice between region-a and edge", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 100]}, "contexts": ["window"]}}
+{"text": "Platinum service from region-a to edge, 50 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 2]}, "profile": "platinum"}}
+{"text": "Voice slice region-a to edge 30 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 30], "jitter": ["le", 5]}, "profile": "voice"}}
+{"text": "Hook up the edge to region-a with 600 Mbps, top priority", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 600]}, "priority": 8}}
+{"text": "Connect region-a and edge, 300 Mbps, called cctv-feed", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "name": "cctv-feed"}}
+{"text": "Connect region-a and edge over VLAN 100 with 50 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "question": "vlan"}}
+{"text": "New slice from regiona to edge with 120 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}}}
+{"text": "Double the backhaul tonight 20:00-23:00, then restore it", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "action": "scale", "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"], "revert": true}}
+{"text": "Increase backhaul-ran to 300 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Add 100 Mbps to the backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "action": "add", "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Halve the RAN backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "action": "scale", "targets": {"bandwidth": ["ge", 100]}}}
+{"text": "Bump backhaul-ran by 50%", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Move backhaul-ran to VLAN 320", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "action": "set", "targets": {"vlan": ["eq", 320]}}}
+{"text": "Set the backhaul's modulation floor to MCS6", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"modulation_floor": ["ge", "MCS6"]}}}
+{"text": "Make the RAN backhaul faster", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "question": "improve"}}
+{"text": "Improve the backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "question": "improve"}}
+{"text": "Lower the backhaul's latency to 3 ms", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"latency": ["le", 3]}}}
+{"text": "Change backhaul-ran to 250 Mbps during business hours", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "Raise the backhaul by 0.1 Gbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Suspend the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Pause backhaul-ran until tomorrow", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Resume the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "resume"}}
+{"text": "Remove backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Tear down the backhaul slice", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Delete every slice except the backhaul", "expect": {"kinds": ["lifecycle"], "action": "delete"}}
+{"text": "Turn off backhaul-ran tonight", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend", "contexts": ["window"]}}
+{"text": "Decommission the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Never let the backhaul drop below 150 Mbps; take it from best effort first", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 150]}, "shed": "best_effort"}}
+{"text": "Keep backhaul-ran under 5 ms latency at all times", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"latency": ["le", 5]}}}
+{"text": "Make sure the backhaul stays above 99.99% availability", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"availability": ["ge", 99.99]}}}
+{"text": "Keep the backhaul healthy", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 200]}}}
+{"text": "Always keep the radio link at MCS4 or better", "expect": {"kinds": ["keep"], "targets": {"modulation_floor": ["ge", "MCS4"]}}}
+{"text": "Guarantee 200 Mbps for the backhaul even in heavy rain", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 200]}, "contexts": ["weather"]}}
+{"text": "Don't let latency on the backhaul exceed 10 ms", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"latency": ["le", 10]}}}
+{"text": "Ensure loss on backhaul-ran stays below 0.5%", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"loss": ["le", 0.5]}}}
+{"text": "Save energy on the hop at night when traffic is below 100 Mbps, keep MCS4", "expect": {"kinds": ["optimise"], "action": "minimize", "targets": {"modulation_floor": ["ge", "MCS4"]}, "contexts": ["window", "condition"]}}
+{"text": "Minimise power consumption on the radio link", "expect": {"kinds": ["optimise"], "action": "minimize"}}
+{"text": "Reduce energy use overnight", "expect": {"kinds": ["optimise"], "action": "minimize", "contexts": ["window"]}}
+{"text": "Go green on the radios during off-peak", "expect": {"kinds": ["optimise"], "action": "minimize", "contexts": ["window"]}}
+{"text": "Minimise latency for the backhaul", "expect": {"kinds": ["optimise"], "action": "minimize"}}
+{"text": "Maximise capacity on the hop", "expect": {"kinds": ["optimise"], "action": "maximize"}}
+{"text": "No changes during business hours without approval", "expect": {"kinds": ["guard"], "rule": "approval", "contexts": ["window"]}}
+{"text": "Freeze all changes this weekend", "expect": {"kinds": ["guard"], "rule": "freeze", "contexts": ["window"]}}
+{"text": "Never let any hop go below MCS4", "expect": {"kinds": ["guard"], "rule": "floor", "targets": {"modulation_floor": ["ge", "MCS4"]}}}
+{"text": "Always keep 20% headroom on the radio link", "expect": {"kinds": ["guard"], "rule": "headroom", "targets": {"headroom": ["ge", 20]}}}
+{"text": "Don't touch the backhaul", "expect": {"kinds": ["guard"], "rule": "freeze", "ids": ["backhaul-ran"]}}
+{"text": "Changes to the backhaul need approval", "expect": {"kinds": ["guard"], "rule": "approval", "ids": ["backhaul-ran"]}}
+{"text": "No maintenance on the hop during peak hours", "expect": {"kinds": ["guard"], "rule": "freeze", "contexts": ["window"]}}
+{"text": "Report the lowest modulation on the radio link every hour", "expect": {"kinds": ["observe"], "action": "report", "contexts": ["schedule"], "metric": "lowest_modulation"}}
+{"text": "Alert me when the radio link drops below MCS6", "expect": {"kinds": ["observe"], "action": "alert", "contexts": ["condition"], "metric": "lowest_modulation"}}
+{"text": "Send me the backhaul's throughput every 15 minutes", "expect": {"kinds": ["observe"], "action": "report", "ids": ["backhaul-ran"], "contexts": ["schedule"], "metric": "throughput"}}
+{"text": "Notify me if latency on the backhaul goes above 8 ms", "expect": {"kinds": ["observe"], "action": "alert", "ids": ["backhaul-ran"], "contexts": ["condition"]}}
+{"text": "Weekly availability report for the hop", "expect": {"kinds": ["observe"], "action": "report", "metric": "availability"}}
+{"text": "Watch the backhaul's SLA", "expect": {"kinds": ["observe"], "action": "report", "ids": ["backhaul-ran"], "metric": "status"}}
+{"text": "Tell me when it starts raining more than 30 mm/h", "expect": {"kinds": ["observe"], "action": "alert", "contexts": ["weather"]}}
+{"text": "How much more can the hop carry in heavy rain?", "expect": {"kinds": ["explore"], "question_type": "headroom", "contexts": ["weather"]}}
+{"text": "How much headroom is left on the radio link?", "expect": {"kinds": ["explore"], "question_type": "headroom"}}
+{"text": "What if radio-1 fails?", "expect": {"kinds": ["explore"], "question_type": "whatif"}}
+{"text": "What happens if we remove the backhaul?", "expect": {"kinds": ["explore"], "question_type": "whatif"}}
+{"text": "Could I add 200 Mbps between region-a and edge in heavy rain?", "expect": {"kinds": ["explore"], "question_type": "feasible", "targets": {"bandwidth": ["ge", 200]}}}
+{"text": "Can the hop take another 300 Mbps?", "expect": {"kinds": ["explore"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "What is the most I can add between region-a and edge?", "expect": {"kinds": ["explore"], "question_type": "headroom"}}
+{"text": "Simulate 100 mm/h of rain on the hop", "expect": {"kinds": ["explore"], "question_type": "whatif", "contexts": ["weather"]}}
+{"text": "Is there room for a 500 Mbps slice?", "expect": {"kinds": ["explore"], "targets": {"bandwidth": ["ge", 500]}}}
+{"text": "Would the backhaul survive torrential rain?", "expect": {"kinds": ["explore"], "contexts": ["weather"]}}
+{"text": "What runs over radio-1?", "expect": {"kinds": ["ask"], "question_type": "inventory"}}
+{"text": "Which slices use the hop?", "expect": {"kinds": ["ask"], "question_type": "inventory"}}
+{"text": "Why is the backhaul degraded?", "expect": {"kinds": ["ask"], "question_type": "explain"}}
+{"text": "Show me all intents", "expect": {"kinds": ["ask"], "question_type": "list"}}
+{"text": "List the slices", "expect": {"kinds": ["ask"], "question_type": "list"}}
+{"text": "What can you do?", "expect": {"kinds": ["ask"], "question_type": "capability"}}
+{"text": "How is the network doing?", "expect": {"kinds": ["ask"], "question_type": "status"}}
+{"text": "Is the backhaul OK?", "expect": {"kinds": ["ask"], "question_type": "status"}}
+{"text": "What's the current capacity of the hop?", "expect": {"kinds": ["ask"], "question_type": "metric"}}
+{"text": "Connect region-a and edge with 300 Mbps and report its throughput every hour", "expect": {"kinds": ["deliver", "observe"], "endpoints": ["region-a", "edge"]}}
+{"text": "Suspend the backhaul tonight 22:00-02:00, then resume it", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "contexts": ["window"], "revert": true}}
+{"text": "Connect region-a and edge with 100 Mbps; also alert me if the hop drops below MCS5", "expect": {"kinds": ["deliver", "observe"], "endpoints": ["region-a", "edge"]}}
+{"text": "Give region-a to edge 200 Mbps and never let it fall below 150 Mbps", "expect": {"kinds": ["deliver", "keep"], "endpoints": ["region-a", "edge"]}}
+{"text": "Auto-approve deliveries up to 300 Mbps", "expect": {"kinds": ["guard"], "rule": "auto_approve", "targets": {"bandwidth": ["le", 300]}}}
+{"text": "Auto-approve slices of no more than 300 Mbps", "expect": {"kinds": ["guard"], "rule": "auto_approve", "targets": {"bandwidth": ["le", 300]}}}
+{"text": "Apply changes up to 100 Mbps without asking", "expect": {"kinds": ["guard"], "rule": "auto_approve", "targets": {"bandwidth": ["le", 100]}}}
+{"text": "Approve suspensions automatically at night", "expect": {"kinds": ["guard"], "rule": "auto_approve", "contexts": ["window"]}}
+{"text": "Never auto-approve deliveries", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "Don't approve changes automatically", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "Stop auto-approving slices on radio-1", "expect": {"kinds": ["guard"], "rule": "approval", "ids": ["radio-1"]}}
+{"text": "Turn off auto-approval", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "No auto-approval for suspensions", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "Double the slice on VLAN 100", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "action": "scale", "targets": {"bandwidth": ["ge", 400]}}}
+{"text": "Suspend the VLAN 100 slice", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Keep the 200 Mbps slice under 5 ms", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"latency": ["le", 5]}}}
+{"text": "Report the busiest hop every hour", "expect": {"kinds": ["observe"], "ids": ["radio-1|radio-2"], "contexts": ["schedule"]}}
+{"text": "How is the 60 GHz link doing?", "expect": {"kinds": ["ask"], "ids": ["radio-1|radio-2"]}}
+{"text": "Alert me when the hop to edge drops below MCS6", "expect": {"kinds": ["observe"], "ids": ["radio-1|radio-2"], "contexts": ["condition"]}}
+{"text": "What is the radio at edge doing?", "expect": {"kinds": ["ask"], "ids": ["radio-2"]}}
+{"text": "Which slices use the V-band hop?", "expect": {"kinds": ["ask"], "ids": ["radio-1|radio-2"]}}
+{"text": "What runs over the region-a hop?", "expect": {"kinds": ["ask"], "ids": ["backhaul-ran"]}}
+{"text": "Save energy on the V-band link at night, keep MCS4", "expect": {"kinds": ["optimise"], "ids": ["radio-1|radio-2"], "action": "minimize"}}
+{"text": "Freeze the 60 GHz hop during peak hours", "expect": {"kinds": ["guard"], "ids": ["radio-1|radio-2"], "rule": "freeze"}}
+{"text": "Never let the edge hop go below MCS5", "expect": {"kinds": ["keep"], "ids": ["radio-1|radio-2"], "targets": {"modulation_floor": ["ge", "MCS5"]}}}
+{"text": "How much more can the 60 GHz hop carry?", "expect": {"kinds": ["explore"], "ids": ["radio-1|radio-2"], "question_type": "headroom"}}
+{"text": "Remove the biggest slice", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Give the VLAN 100 slice 50% more", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Watch the hop to region-a", "expect": {"kinds": ["observe"], "ids": ["radio-1|radio-2"]}}
+{"text": "Suspend every slice over radio-2", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Configure BGP on the core routers", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Order pizza for the NOC", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Reset my laptop password", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Update the firmware on the office printer", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "What's the weather in Paris tomorrow?", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Write me a poem about networks", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Configure OSPF area 0 on the routers", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Open a ticket with the vendor's support desk", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Book a meeting room for 3pm", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Install Kubernetes on the servers", "expect": {"kinds": [], "out_of_scope": true}}
+{"text": "Create a 250Mbps slice between region-a and edge at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Set up 300 mbps from region-a to edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Provision a slice from region-a to edge with 250Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": []}}
+{"text": "Can you set up 50 Mbps between region-a and Edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Create a 0.2 Gbps slice between edge and region-a, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 200], "latency": ["le", 10]}, "contexts": []}}
+{"text": "400 Mbit/s from edge to region-a, please, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 120 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Can you set up 75 Mbps between edge and region-a", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75]}, "contexts": []}}
+{"text": "Connect region-a and edge with 400 Mbit/s, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Provision a slice from Region A to the edge with 250Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "Provision a slice from Region A to the edge with 50 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Connect region-a and edge with 300 mbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Connect Region A and the edge with 250Mbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Provision a slice from edge to region-a with 1 Gbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Connect edge and region-a with 300 mbps", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 300 mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Please connect Region A to the edge, 250Mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "Can you set up 0.2 Gbps between region-a and Edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Can you set up 120 Mbps between region-a and Edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Set up 250Mbps from edge to region-a, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 250], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Create a 300 mbps slice between region-a and edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Link region-a to Edge at 50 Mbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Connect Region A and the edge with 300 mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "I need 400 Mbit/s between region-a and Edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"]}}
+{"text": "Set up 50 Mbps from region-a to Edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Link region-a to Edge at 50 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Link edge to region-a at 75 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Build a slice edge to region-a carrying 0.2 Gbps at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 200], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Create a 1 Gbps slice between edge and region-a with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Can you set up 400 Mbit/s between Region A and the edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"]}}
+{"text": "I need 50 Mbps between region-a and Edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Set up 50 Mbps from edge to region-a tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Set up 120 Mbps from Region A to the edge during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "120 Mbps from edge to region-a, please tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "0.2 Gbps from Region A to the edge, please, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Create a 300 mbps slice between region-a and Edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "contexts": ["window"]}}
+{"text": "Set up 400 Mbit/s from edge to region-a at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 400], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Create a 400 Mbit/s slice between region-a and Edge on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "I need 1 Gbps between region-a and Edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Connect region-a and edge with 400 Mbit/s tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"]}}
+{"text": "Please connect Region A to the edge, 1 Gbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 120 Mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Link region-a to edge at 250Mbps at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Provision a slice from region-a to edge with 400 Mbit/s, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Please connect edge to region-a, 75 Mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Provision a slice from region-a to edge with 50 Mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 5]}, "contexts": []}}
+{"text": "I need 1 Gbps between region-a and Edge on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 50 Mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Can you set up 400 Mbit/s between region-a and Edge", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": []}}
+{"text": "Can you set up 75 Mbps between edge and region-a, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Set up 0.2 Gbps from region-a to edge on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Please connect edge to region-a, 1 Gbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Build a slice region-a to Edge carrying 300 mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "contexts": []}}
+{"text": "400 Mbit/s from Region A to the edge, please", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": []}}
+{"text": "Build a slice region-a to edge carrying 300 mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "contexts": []}}
+{"text": "Connect region-a and edge with 1 Gbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Connect Region A and the edge with 50 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Set up 120 Mbps from region-a to edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 400 Mbit/s, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Can you set up 0.2 Gbps between edge and region-a with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 200], "latency": ["le", 5]}, "contexts": []}}
+{"text": "I need 250Mbps between region-a and edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "latency": ["le", 5]}, "contexts": []}}
+{"text": "I need 1 Gbps between Region A and the edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "latency": ["le", 5]}, "contexts": []}}
+{"text": "300 mbps from edge to region-a, please tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300]}, "contexts": ["window"]}}
+{"text": "Create a 120 Mbps slice between edge and region-a", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 120]}, "contexts": []}}
+{"text": "Provision a slice from Region A to the edge with 50 Mbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 10]}, "contexts": []}}
+{"text": "300 mbps from region-a to Edge, please on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Build a slice edge to region-a carrying 300 mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Please connect region-a to edge, 1 Gbps at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Link region-a to edge at 1 Gbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Create a 75 Mbps slice between region-a and Edge at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 0.2 Gbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Please connect Region A to the edge, 1 Gbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Provision a slice from edge to region-a with 300 mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300]}, "contexts": ["window"]}}
+{"text": "Build a slice region-a to edge carrying 0.2 Gbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "latency": ["le", 10]}, "contexts": []}}
+{"text": "I need 120 Mbps between edge and region-a tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Can you set up 1 Gbps between region-a and Edge on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Create a 1 Gbps slice between region-a and edge on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 250Mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "Create a 0.2 Gbps slice between region-a and Edge at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "I need 120 Mbps between Region A and the edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Set up 50 Mbps from region-a to Edge during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Create a 75 Mbps slice between edge and region-a, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Create a 75 Mbps slice between Region A and the edge at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Set up 50 Mbps from Region A to the edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "I need 50 Mbps between region-a and Edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Link Region A to the edge at 300 mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "contexts": ["window"]}}
+{"text": "Please connect region-a to Edge, 1 Gbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000]}, "contexts": ["window"]}}
+{"text": "Provision a slice from region-a to Edge with 0.2 Gbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "50 Mbps from edge to region-a, please during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Build a slice edge to region-a carrying 75 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Create a 50 Mbps slice between Region A and the edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Build a slice Region A to the edge carrying 300 mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 0.2 Gbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200]}, "contexts": ["window"]}}
+{"text": "Create a 50 Mbps slice between region-a and edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Link edge to region-a at 0.2 Gbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 200], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Build a slice region-a to edge carrying 400 Mbit/s during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"]}}
+{"text": "250Mbps from region-a to edge, please, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Create a 75 Mbps slice between region-a and Edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 75 Mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Please connect Region A to the edge, 0.2 Gbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Please connect Region A to the edge, 75 Mbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Connect edge and region-a with 250Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 250]}, "contexts": []}}
+{"text": "Create a 0.2 Gbps slice between region-a and Edge during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200]}, "contexts": ["window"]}}
+{"text": "Please connect edge to region-a, 250Mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "Connect region-a and edge with 1 Gbps at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Connect region-a and edge with 120 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": []}}
+{"text": "Set up 1 Gbps from edge to region-a tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000]}, "contexts": ["window"]}}
+{"text": "Set up 50 Mbps from Region A to the edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Link region-a to Edge at 120 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Provision a slice from region-a to Edge with 120 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Link Region A to the edge at 120 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Can you set up 50 Mbps between region-a and Edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Build a slice region-a to Edge carrying 75 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75]}, "contexts": ["window"]}}
+{"text": "Create a 400 Mbit/s slice between region-a and edge, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 10]}, "contexts": []}}
+{"text": "75 Mbps from region-a to edge, please, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 400 Mbit/s, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "120 Mbps from Region A to the edge, please at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Can you set up 75 Mbps between edge and region-a, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Link region-a to edge at 75 Mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75]}, "contexts": ["window"]}}
+{"text": "Link region-a to edge at 75 Mbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Please connect region-a to edge, 50 Mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "I need 120 Mbps between region-a and edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Connect Region A and the edge with 400 Mbit/s, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Can you set up 400 Mbit/s between region-a and edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Please connect Region A to the edge, 300 mbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Build a slice edge to region-a carrying 1 Gbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000]}, "contexts": ["window"]}}
+{"text": "Connect region-a and edge with 75 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75]}, "contexts": ["window"]}}
+{"text": "I need 75 Mbps between edge and region-a with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Connect region-a and edge with 400 Mbit/s, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 10]}, "contexts": []}}
+{"text": "I need 400 Mbit/s between region-a and edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "I need 400 Mbit/s between region-a and Edge on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Set up 250Mbps from region-a to edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Set up 75 Mbps from Region A to the edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75]}, "contexts": ["window"]}}
+{"text": "Can you set up 0.2 Gbps between edge and region-a tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 200]}, "contexts": ["window"]}}
+{"text": "I need 300 mbps between edge and region-a", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300]}, "contexts": []}}
+{"text": "Can you set up 120 Mbps between edge and region-a at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 120], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Set up 120 Mbps from region-a to edge at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 400 Mbit/s with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Set up 50 Mbps from region-a to Edge, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Connect region-a and edge with 75 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Provision a slice from edge to region-a with 50 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50]}, "contexts": []}}
+{"text": "Create a 400 Mbit/s slice between Region A and the edge during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"]}}
+{"text": "I need 250Mbps between region-a and Edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "I need 75 Mbps between Region A and the edge at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "I need 120 Mbps between region-a and edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Can you set up 50 Mbps between Region A and the edge", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": []}}
+{"text": "Can you set up 0.2 Gbps between region-a and Edge on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Can you set up 250Mbps between region-a and edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 400 Mbit/s with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Link region-a to Edge at 300 mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "I need 75 Mbps between region-a and edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 250Mbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Can you set up 250Mbps between edge and region-a, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 250], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Connect region-a and edge with 0.2 Gbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Build a slice edge to region-a carrying 1 Gbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Link region-a to edge at 400 Mbit/s at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Provision a slice from region-a to Edge with 300 mbps at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "400 Mbit/s from Region A to the edge, please, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Set up 75 Mbps from region-a to edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Create a 120 Mbps slice between region-a and edge during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Build a slice edge to region-a carrying 120 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 120], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Create a 50 Mbps slice between region-a and Edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50]}, "contexts": ["window"]}}
+{"text": "Provision a slice from region-a to edge with 1 Gbps at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Build a slice edge to region-a carrying 300 mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 300 mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Link region-a to Edge at 120 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Connect region-a and Edge with 50 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 1 Gbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000]}, "contexts": []}}
+{"text": "Connect edge and region-a with 1 Gbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Set up 50 Mbps from edge to region-a on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Provision a slice from Region A to the edge with 250Mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Create a 250Mbps slice between Region A and the edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Provision a slice from region-a to Edge with 250Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": []}}
+{"text": "Please connect region-a to edge, 75 Mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "I need 400 Mbit/s between edge and region-a with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Create a 400 Mbit/s slice between Region A and the edge", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 1 Gbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Connect region-a and edge with 300 mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Please connect edge to region-a, 250Mbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 250], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Build a slice region-a to Edge carrying 0.2 Gbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200]}, "contexts": ["window"]}}
+{"text": "Link edge to region-a at 1 Gbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 1000], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Create a 250Mbps slice between Region A and the edge tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "Please connect region-a to Edge, 1 Gbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "latency": ["le", 10]}, "contexts": []}}
+{"text": "I need 120 Mbps between Region A and the edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Link region-a to edge at 250Mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "Connect Region A and the edge with 120 Mbps during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Build a slice Region A to the edge carrying 250Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250]}, "contexts": ["window"]}}
+{"text": "I need 0.2 Gbps between region-a and Edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "75 Mbps from region-a to edge, please at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "Can you set up 0.2 Gbps between edge and region-a, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 200], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Link edge to region-a at 50 Mbps", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50]}, "contexts": []}}
+{"text": "I need 400 Mbit/s between edge and region-a, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 400], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Create a 120 Mbps slice between region-a and edge, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "latency": ["le", 10]}, "contexts": []}}
+{"text": "I need 250Mbps between Region A and the edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Build a slice Region A to the edge carrying 400 Mbit/s, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 400], "latency": ["le", 10]}, "contexts": []}}
+{"text": "I need 50 Mbps between edge and region-a, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Please connect region-a to edge, 120 Mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Link edge to region-a at 250Mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 250], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Provision a slice from Region A to the edge with 250Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Provision a slice from region-a to edge with 300 mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "contexts": ["window"]}}
+{"text": "Create a 1 Gbps slice between Region A and the edge at 99.9% availability", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "availability": ["ge", 99.9]}, "contexts": []}}
+{"text": "120 Mbps from Region A to the edge, please", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": []}}
+{"text": "Please connect region-a to edge, 50 Mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 5]}, "contexts": []}}
+{"text": "50 Mbps from edge to region-a, please, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Set up 75 Mbps from edge to region-a, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Please connect region-a to Edge, 250Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Link region-a to Edge at 50 Mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 5]}, "contexts": []}}
+{"text": "I need 250Mbps between region-a and edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 250], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Link edge to region-a at 50 Mbps, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 50], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Set up 120 Mbps from region-a to Edge, at most 10 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "latency": ["le", 10]}, "contexts": []}}
+{"text": "Create a 120 Mbps slice between edge and region-a on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 120], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Link region-a to Edge at 120 Mbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Provision a slice from region-a to edge with 50 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Provision a slice from edge to region-a with 300 mbps", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300]}, "contexts": []}}
+{"text": "Set up 50 Mbps from region-a to Edge, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Build a slice region-a to edge carrying 1 Gbps, loss below 0.5%", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "loss": ["le", 0.5]}, "contexts": []}}
+{"text": "Please connect edge to region-a, 300 mbps tonight 20:00-23:00", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 300]}, "contexts": ["window"]}}
+{"text": "Create a 75 Mbps slice between edge and region-a", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 75]}, "contexts": []}}
+{"text": "Link region-a to Edge at 50 Mbps on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 50], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Set up 0.2 Gbps from Region A to the edge during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 200]}, "contexts": ["window"]}}
+{"text": "Link region-a to edge at 1 Gbps with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 1000], "latency": ["le", 5]}, "contexts": []}}
+{"text": "120 Mbps from region-a to edge, please on VLAN 350", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120], "vlan": ["eq", 350]}, "contexts": []}}
+{"text": "Can you set up 120 Mbps between region-a and edge during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 120]}, "contexts": ["window"]}}
+{"text": "Link Region A to the edge at 300 mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "contexts": []}}
+{"text": "Can you set up 75 Mbps between region-a and Edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "latency": ["le", 5]}, "contexts": []}}
+{"text": "Connect region-a and Edge with 300 mbps", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300]}, "contexts": []}}
+{"text": "Connect edge and region-a with 400 Mbit/s during business hours", "expect": {"kinds": ["deliver"], "endpoints": ["edge", "region-a"], "targets": {"bandwidth": ["ge", 400]}, "contexts": ["window"]}}
+{"text": "Set up 300 mbps from region-a to Edge with latency under 5 ms", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "latency": ["le", 5]}, "contexts": []}}
+{"text": "I need 300 mbps between Region A and the edge, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 300], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Link region-a to Edge at 75 Mbps, keep MCS5 or better", "expect": {"kinds": ["deliver"], "endpoints": ["region-a", "edge"], "targets": {"bandwidth": ["ge", 75], "modulation_floor": ["ge", "MCS5"]}, "contexts": []}}
+{"text": "Double the backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 400]}, "action": "scale"}}
+{"text": "Double backhaul-ran", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 400]}, "action": "scale"}}
+{"text": "Double the RAN backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 400]}, "action": "scale"}}
+{"text": "Double Backhaul-RAN", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 400]}, "action": "scale"}}
+{"text": "Triple the backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 600]}, "action": "scale"}}
+{"text": "Triple backhaul-ran", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 600]}, "action": "scale"}}
+{"text": "Triple the RAN backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 600]}, "action": "scale"}}
+{"text": "Triple Backhaul-RAN", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 600]}, "action": "scale"}}
+{"text": "Halve the backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 100]}, "action": "scale"}}
+{"text": "Halve backhaul-ran", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 100]}, "action": "scale"}}
+{"text": "Halve the RAN backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 100]}, "action": "scale"}}
+{"text": "Halve Backhaul-RAN", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 100]}, "action": "scale"}}
+{"text": "Add 50 Mbps to the backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 250]}, "action": "add"}}
+{"text": "Add 50 Mbps to backhaul-ran", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 250]}, "action": "add"}}
+{"text": "Add 50 Mbps to the RAN backhaul", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 250]}, "action": "add"}}
+{"text": "Add 50 Mbps to Backhaul-RAN", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 250]}, "action": "add"}}
+{"text": "Increase the backhaul by 100 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}, "action": "add"}}
+{"text": "Increase backhaul-ran by 100 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}, "action": "add"}}
+{"text": "Increase the RAN backhaul by 100 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}, "action": "add"}}
+{"text": "Increase Backhaul-RAN by 100 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}, "action": "add"}}
+{"text": "Set the backhaul to 350 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 350]}, "action": "set"}}
+{"text": "Set backhaul-ran to 350 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 350]}, "action": "set"}}
+{"text": "Set the RAN backhaul to 350 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 350]}, "action": "set"}}
+{"text": "Set Backhaul-RAN to 350 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 350]}, "action": "set"}}
+{"text": "Give the backhaul 50% more", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Give backhaul-ran 50% more", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Give the RAN backhaul 50% more", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Give Backhaul-RAN 50% more", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Take the backhaul down to 120 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 120]}, "action": "set"}}
+{"text": "Take backhaul-ran down to 120 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 120]}, "action": "set"}}
+{"text": "Take the RAN backhaul down to 120 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 120]}, "action": "set"}}
+{"text": "Take Backhaul-RAN down to 120 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 120]}, "action": "set"}}
+{"text": "Make the backhaul 260 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 260]}, "action": "set"}}
+{"text": "Make backhaul-ran 260 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 260]}, "action": "set"}}
+{"text": "Make the RAN backhaul 260 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 260]}, "action": "set"}}
+{"text": "Make Backhaul-RAN 260 Mbps", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 260]}, "action": "set"}}
+{"text": "Suspend the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Suspend backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Suspend the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Pause the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Pause backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Pause the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Resume the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "resume"}}
+{"text": "Resume backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "resume"}}
+{"text": "Resume the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "resume"}}
+{"text": "Bring back the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "resume"}}
+{"text": "Bring back backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "resume"}}
+{"text": "Bring back the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "resume"}}
+{"text": "Remove the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Remove backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Remove the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Delete the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Delete backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Delete the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Tear down the backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Tear down backhaul-ran", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Tear down the RAN backhaul", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}

@@ -34,6 +34,7 @@ from cer_intent.api.digital_twin_routes import dt_bp
 from cer_intent.api.restconf_routes import restconf_bp
 from cer_intent.api.etsi_routes import etsi_bp
 from cer_intent.flow.routes import flow_bp
+from cer_intent.imf.api import imf_bp
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,16 @@ DASHBOARD_DIR = Path(__file__).parent.parent.parent / "dashboard"
 def create_app(registry, audit_log) -> Flask:
     app = Flask(__name__, static_folder=None)
     CORS(app)
+    from cer_intent.auth import install as install_auth
+    from cer_intent.ops import ops_bp
+    install_auth(app)
+    app.register_blueprint(ops_bp)
     socketio.init_app(app)
     app.register_blueprint(dt_bp)
     app.register_blueprint(restconf_bp)
     app.register_blueprint(etsi_bp)
     app.register_blueprint(flow_bp)
+    app.register_blueprint(imf_bp)
 
     # One-time init of shared components
     state_store = StateStore(os.getenv("STATE_FILE", "data/topology_state.json"))

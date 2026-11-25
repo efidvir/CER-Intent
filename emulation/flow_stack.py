@@ -25,6 +25,8 @@ twin has existing traffic to protect.
 Environment:
   TFS_FORK_SRC          TeraFlowSDN fork src/      (default ../teraflowsdn/src)
   TWIN_SRC              twin repository            (default ../tfs-ns3-digital-twin)
+  FLOW_TWIN_URL         a twin already running (its own container, say): not started here;
+                        same as --twin-url
   CERAGON_TWIN_BINARY   ns3.45-ceragon-twin; without it the twin replays recorded runs
   NS3_TWIN_RECORDINGS   recorded runs for replay   (default emulation/flow/ns3_recordings.json)
   PYTHON                interpreter for the processes (default: this one)
@@ -97,6 +99,12 @@ def cer_env(tfs_url: str, twin_url: str) -> Dict[str, str]:
         "CER_INTENT_MCP_MODE": "advise",
         "TERAFLOW_TIMEOUT_SEC": "10",
     }
+
+
+def _cer_overrides() -> Dict[str, str]:
+    """Settings for CER-Intent given to the launcher (a container's environment): they win over the flow's."""
+    keep = ("TERAFLOW_URL", "TWIN_URL", "ADAPTER_BACKEND", "TFS_REALIZATION")
+    return {k: v for k, v in os.environ.items() if k.startswith("CER_") and k not in keep}
 
 
 def provision_existing(cer_url: str) -> Dict[str, Any]:
@@ -211,6 +219,68 @@ def check(paths: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     return out
 
 
+def imf_check(paths: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """
+    The intent manager through the in-process stack, over its three interfaces:
+    a conversation (/api/v2/converse), TMF921 v5 and 3GPP TS 28.312. Returns what
+    each step answered and the exchanges on the wire.
+    """
+    os.environ.update({"CER_IMF_STORE": ":memory:", "CER_IMF_TICK_S": "0"})
+    stack = inprocess(paths)
+    import requests
+    s = requests.Session()
+    s.headers.update({"User-Agent": "intent-studio/1.0", "X-Flow-Client": "Operator", "X-User": "check", "X-Role": "approver"})
+    cer = stack["urls"]["cer"]
+    out: Dict[str, Any] = {"existing": stack["existing"]["status"]}
+    cursor = s.get(f"{cer}/api/v1/flow/wire", params={"since": "0:0"}).json()["cursor"]
+
+    def say(text: str) -> Dict[str, Any]:
+        r = s.post(f"{cer}/api/v2/converse", json={"session": "check", "text": text})
+        b = r.json()
+        rec = b.get("intent") or {}
+        return {"status": r.status_code, "how": b.get("how"), "state": rec.get("state"), "reply": b.get("reply"),
+                "id": rec.get("id"), "twin": ((rec.get("check") or {}).get("twin") or {}).get("verdict"),
+                "questions": [q["field"] for q in rec.get("questions", [])], "slices": (rec.get("links") or {}).get("slices")}
+
+    out["deliver"] = say("Connect region-a and edge over VLAN 300 with 500 Mbps and at most 10 ms latency; "
+                         "keep the radio link at MCS4 or better")
+    out["approve"] = say("approve")
+    out["radios"] = {name: sorted(st.running["bridges"]) for name, st in stack["radios"].items()}
+    out["clarify"] = say("Connect HQ and edge with 50 Mbps")
+    out["answer"] = say("region-a")
+    out["cancel"] = say("cancel")
+    out["headroom"] = say("How much more can the hop carry in heavy rain?")
+    out["inventory"] = say("What runs over radio-1?")
+    out["scope"] = say("Configure BGP on the core routers")
+    tmf = s.post(f"{cer}/tmf-api/intentManagement/v5/intent",
+                 json={"name": "cctv", "description": "Connect region-a and edge with 60 Mbps, at most 20 ms"}).json()
+    out["tmf_create"] = {"status": tmf.get("lifecycleStatus"), "id": tmf.get("id"), "type": tmf.get("@type"),
+                         "reply": s.get(f"{cer}/api/v2/intents/{tmf.get('id')}").json().get("reply")}
+    p = s.patch(f"{cer}/tmf-api/intentManagement/v5/intent/{tmf['id']}", json={"lifecycleStatus": "active"}).json()
+    out["tmf_active"] = p.get("lifecycleStatus")
+    rep = s.get(f"{cer}/tmf-api/intentManagement/v5/intent/{tmf['id']}/intentReport").json()
+    out["tmf_report"] = rep[0]["expression"]["expressionValue"]["icm:intentHandlingState"] if rep else None
+    g = s.put(f"{cer}/3gpp-intent/v1/IntentHandlingFunction=1/Intent=video-1", json={"Intent": {
+        "userLabel": "video", "intentAdminState": "ACTIVATED", "intentExpectations": [{
+            "expectationId": "e1", "expectationVerb": "DELIVER",
+            "expectationObject": {"objectType": "TransportNetworkSlice", "objectInstance": "slice-video",
+                                  "objectContexts": [{"contextAttribute": "serviceDemarcationPoints", "contextCondition": "IS_ALL_OF",
+                                                      "contextValueRange": [{"node": "region-a"}, {"node": "edge"}]}]},
+            "expectationTargets": [{"targetName": "oneWayBandwidth", "targetCondition": "IS_EQUAL_TO_OR_GREATER_THAN",
+                                    "targetValueRange": 10, "targetUnit": "Mbps"}]}]}}).json()
+    out["g3_put"] = {"state": g.get("cerState"), "id": g.get("id")}
+    r3 = s.get(f"{cer}/3gpp-intent/v1/IntentHandlingFunction=1/Intent=video-1/IntentReport").json()
+    out["g3_report"] = r3["intentFulfilmentReport"]["intentFulfilmentInfo"]["fulfilmentStatus"]
+    net = s.get(f"{cer}/api/v2/network").json()
+    out["network_slices"] = sorted(x["id"] for x in net["slices"])
+    out["withdraw"] = s.delete(f"{cer}/api/v2/intents/{out['approve']['id']}").json().get("state")
+    out["slices_after"] = sorted(x["id"] for x in s.get(f"{cer}/api/v2/network").json()["slices"])
+    wire = s.get(f"{cer}/api/v1/flow/wire", params={"since": cursor}).json()["items"]
+    out["wire"] = [{"src": e["src"], "dst": e["dst"], "method": e["method"], "path": e["path"].split("?")[0],
+                    "status": e["status"], "std": e["std"]["std"]} for e in wire]
+    return out
+
+
 # ── processes, real sockets ──────────────────────────────────────────────────
 
 def _wait(url: str, timeout: float = 60.0) -> bool:
@@ -226,17 +296,20 @@ def _wait(url: str, timeout: float = 60.0) -> bool:
     return False
 
 
-def up(paths: Dict[str, str], python: str, logs: Path) -> List[subprocess.Popen]:
-    logs.mkdir(parents=True, exist_ok=True)
+def up(paths: Dict[str, str], python: str, logs: Optional[Path], twin_url: Optional[str] = None) -> List[subprocess.Popen]:
+    """Start the stack; logs=None sends every component's output to this console (containers)."""
+    if logs is not None:
+        logs.mkdir(parents=True, exist_ok=True)
     procs: List[subprocess.Popen] = []
-    tfs_url, twin_url, cer_url = (f"http://localhost:{TFS_PORT}", f"http://localhost:{TWIN_PORT}",
-                                  f"http://localhost:{CER_PORT}")
+    external_twin = bool(twin_url)
+    tfs_url, cer_url = f"http://localhost:{TFS_PORT}", f"http://localhost:{CER_PORT}"
+    twin_url = (twin_url or f"http://localhost:{TWIN_PORT}").rstrip("/")
 
     def start(name: str, args: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> None:
-        out = open(logs / f"{name}.log", "w", encoding="utf-8")
+        out = open(logs / f"{name}.log", "w", encoding="utf-8") if logs is not None else None
         procs.append(subprocess.Popen(args, cwd=str(cwd), env={**os.environ, **(env or {})},
-                                      stdout=out, stderr=subprocess.STDOUT))
-        print(f"  started {name:<12} (log: {logs / (name + '.log')})")
+                                      stdout=out, stderr=subprocess.STDOUT if out else None))
+        print(f"  started {name:<12}" + (f" (log: {logs / (name + '.log')})" if logs is not None else ""), flush=True)
 
     for name, port in RADIOS:
         start(name, [python, str(HERE / "radio_emulator.py"), "--port", str(port), "--node-name", name,
@@ -248,12 +321,17 @@ def up(paths: Dict[str, str], python: str, logs: Path) -> List[subprocess.Popen]
                           "--fork-src", paths["fork_src"], "--port", str(TFS_PORT)], ROOT)
     if not _wait(f"{tfs_url}/tfs-api/contexts", 30):
         raise SystemExit("TeraFlowSDN stand-in did not start")
-    start("twin", [python, "tfs_digital_twin_api.py", str(TWIN_PORT)], Path(paths["twin_src"]),
-          twin_env(paths, tfs_url))
-    if not _wait(f"{twin_url}/healthz", 30):
-        raise SystemExit("digital twin did not start")
+    if external_twin:
+        print(f"  twin         {twin_url} (running on its own)", flush=True)
+        if not _wait(f"{twin_url}/healthz", 300):
+            raise SystemExit(f"the digital twin at {twin_url} does not answer")
+    else:
+        start("twin", [python, "tfs_digital_twin_api.py", str(TWIN_PORT)], Path(paths["twin_src"]),
+              twin_env(paths, tfs_url))
+        if not _wait(f"{twin_url}/healthz", 30):
+            raise SystemExit("digital twin did not start")
     start("cer-intent", [python, "run.py"], ROOT,
-          {**cer_env(tfs_url, twin_url), "FLASK_PORT": str(CER_PORT), "FLASK_DEBUG": "false"})
+          {**cer_env(tfs_url, twin_url), "FLASK_PORT": str(CER_PORT), "FLASK_DEBUG": "false", **_cer_overrides()})
     if not _wait(f"{cer_url}/api/v1/flow/status", 60):
         raise SystemExit("CER-Intent did not start")
     existing = provision_existing(cer_url)
@@ -263,18 +341,26 @@ def up(paths: Dict[str, str], python: str, logs: Path) -> List[subprocess.Popen]
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["up", "check"])
-    parser.add_argument("--logs", default=str(ROOT / "data" / "flow-logs"))
+    parser.add_argument("command", choices=["up", "check", "imf"])
+    parser.add_argument("--logs", default=str(ROOT / "data" / "flow-logs"),
+                        help="directory for each component's log; '-' sends them to this console")
+    parser.add_argument("--twin-url", default=os.getenv("FLOW_TWIN_URL", ""),
+                        help="a twin already running (its own container): used instead of starting one")
     args = parser.parse_args(argv)
     paths = default_paths()
     if args.command == "check":
         print(json.dumps(check(paths), indent=1))
         return 0
+    if args.command == "imf":
+        print(json.dumps(imf_check(paths), indent=1))
+        return 0
     python = os.getenv("PYTHON", sys.executable)
-    mode = "NS-3.45 local binary" if paths["ns3_binary"] and Path(paths["ns3_binary"]).exists() else "recorded NS-3 runs"
-    print(f"Starting the flow stack (twin: {mode})")
-    procs = up(paths, python, Path(args.logs))
-    print(f"\n  Flow dashboard: http://localhost:{CER_PORT}/intent-flow.html   (Ctrl+C stops everything)\n")
+    mode = ("the twin at " + args.twin_url if args.twin_url else
+            "NS-3.45 local binary" if paths["ns3_binary"] and Path(paths["ns3_binary"]).exists() else "recorded NS-3 runs")
+    print(f"Starting the flow stack (twin: {mode})", flush=True)
+    procs = up(paths, python, None if args.logs == "-" else Path(args.logs), args.twin_url or None)
+    print(f"\n  Intent studio:  http://localhost:{CER_PORT}/intent-studio.html"
+          f"\n  Flow dashboard: http://localhost:{CER_PORT}/intent-flow.html   (Ctrl+C stops everything)\n", flush=True)
 
     def stop(*_a: Any) -> None:
         for p in reversed(procs):

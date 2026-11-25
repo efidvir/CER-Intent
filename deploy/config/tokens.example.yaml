@@ -1,0 +1,14 @@
+# Sign-in tokens for CER_AUTH=token. Copy to tokens.yaml in this folder (git ignores it) and
+# replace every token. Prefer token_sha256 so the file holds no token itself:
+#   python -c "import hashlib,secrets; t=secrets.token_urlsafe(24); print(t); print(hashlib.sha256(t.encode()).hexdigest())"
+# Roles: viewer (reads, asks, files intents it cannot approve), operator (approves within policy),
+# approver (also what policy reserves for approvers, and rules), admin (also auto-approval settings).
+- user: admin
+  role: admin
+  token_sha256: replace-with-the-sha256-of-a-token
+- user: noc-operator
+  role: operator
+  token_sha256: replace-with-the-sha256-of-a-token
+- user: mcp-agent          # the MCP tools' token (CER_INTENT_TOKEN in their container)
+  role: viewer
+  token_sha256: replace-with-the-sha256-of-a-token

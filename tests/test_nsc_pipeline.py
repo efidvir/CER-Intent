@@ -420,3 +420,53 @@ def test_restconf_slice_interface(monkeypatch):
     assert client.delete(f"{base}/slice-service=slice-a").status_code == 204
     assert client.delete(f"{base}/slice-service=slice-a").status_code == 404
     reset_shared_controller()
+
+
+# ── one modulation floor per radio hop ─────────────────────────────────────────
+
+def _hop_slice(sid: str, vlan: int, floor: str = None) -> Dict[str, Any]:
+    svc = {"id": sid, "bandwidth_mbps": 100, "realization_technology": "L2VPN",
+           "sdps": [{"id": "1", "node_id": "region-a", "tp_id": "eth1", "vlan_id": vlan},
+                    {"id": "2", "node_id": "edge", "tp_id": "eth1", "vlan_id": vlan}]}
+    if floor:
+        svc["acm"] = {"min_modulation": floor}
+    return svc
+
+
+def test_radios_carry_the_highest_floor_asked_and_drop_back_when_slices_leave(monkeypatch):
+    from cer_intent.nsc.nsc_controller import floor_rank
+
+    assert floor_rank("MCS6") > floor_rank("MCS4") > 0 and floor_rank("256QAM") > floor_rank("16-QAM") > floor_rank("qpsk")
+    tfs = FakeTFS()
+    nsc = NetworkSliceController(tfs_client=tfs, realization_mode="ietf")
+    monkeypatch.setattr(nsc.planner, "compute_constrained_path",
+                        lambda **kw: {"computed_path": ["region-a", "radio-1", "radio-2", "edge"], "feasible": True})
+    monkeypatch.setenv("CER_ACM_BASELINE_FLOOR", "MCS1")
+
+    def settings_since(n):
+        return [(c[1][0], c[1][1]["acm"]["min_modulation"]) for c in tfs.calls[n:] if c[0] == "update_service_settings"]
+
+    nsc.create_or_update_slice_service(_hop_slice("a", 300, "MCS4"))
+    nsc.create_or_update_slice_service(_hop_slice("plain", 320))
+    n = len(tfs.calls)
+    res = nsc.create_or_update_slice_service(_hop_slice("b", 310, "MCS6"))
+    assert settings_since(n) == [("b", "MCS6"), ("a", "MCS6")]          # a carries the hop's floor; plain carries none
+    assert res["hop_floor"]["updated"] == ["a"]
+
+    n = len(tfs.calls)
+    res = nsc.create_or_update_slice_service(_hop_slice("c", 330, "MCS2"))
+    assert settings_since(n) == [("c", "MCS6")] and res["hop_floor"]["requested"] == "MCS2"
+    assert nsc.requests["c"]["acm"] == {"min_modulation": "MCS2"}          # what c asked is kept
+
+    n = len(tfs.calls)
+    res = nsc.delete_slice_service("b")
+    assert sorted(settings_since(n)) == [("a", "MCS4"), ("c", "MCS4")]   # back to the highest that remains
+    n = len(tfs.calls)
+    nsc.delete_slice_service("a")
+    assert settings_since(n) == [("c", "MCS2")]
+
+    n = len(tfs.calls)
+    res = nsc.delete_slice_service("c")                                   # the last floor hands back the baseline
+    assert settings_since(n) == [("c", "MCS1")] and res["hop_floor"]["applied"] == "MCS1"
+    assert [c[0] for c in tfs.calls[n:]][-1] == "delete_l2vpn"
+    assert nsc.hop_floors == {}

@@ -1,0 +1,84 @@
+# CER-Intent next to a TeraFlowSDN of your own, with the digital twin running NS-3.45.
+#
+#   cp .env.example .env              set TERAFLOW_URL (and the rest) for your network
+#   deploy/get-sources.sh             clones ../tfs-ns3-digital-twin; the twin's image is built from it
+#   deploy/config/                    optional: imf_policy.json, tokens.yaml, site_plan.json,
+#                                     imf_aliases.json (copy the *.example.* files)
+#   docker compose up -d --build
+#
+#   studio  http://<host>:5000/intent-studio.html        probes  /healthz  /readyz
+#
+# MCP tools for agents:        docker compose --profile mcp up -d
+# No TeraFlowSDN at hand?      docker compose -f compose.demo.yaml up --build    (everything emulated)
+
+name: cer-intent
+
+x-cer: &cer
+  build:
+    context: .
+    target: app
+    args:
+      VERSION: ${CER_INTENT_VERSION:-0.2.0}
+  image: ${CER_INTENT_IMAGE:-cer-intent}:${CER_INTENT_VERSION:-0.2.0}
+  env_file:
+    - path: .env
+      required: false
+  restart: unless-stopped
+
+# what the containers rely on, whatever a .env written for running natively says
+x-config: &config
+  ADAPTER_BACKEND: ${CER_ADAPTER_BACKEND:-teraflow}
+  TERAFLOW_URL: ${TERAFLOW_URL:?set TERAFLOW_URL in .env to your TeraFlowSDN NBI, as the containers reach it}
+  TWIN_URL: http://twin:9100
+  FLASK_HOST: 0.0.0.0
+  FLASK_PORT: "5000"
+  FLASK_DEBUG: "false"
+  STATE_FILE: /app/data/topology_state.json
+  AUDIT_LOG_FILE: /app/data/audit_log.jsonl
+  CER_IMF_POLICY: /etc/cer-intent/imf_policy.json
+  CER_IMF_ALIASES: /etc/cer-intent/imf_aliases.json
+  CER_SITE_PLAN: /etc/cer-intent/site_plan.json
+  CER_AUTH_TOKENS_FILE: /etc/cer-intent/tokens.yaml
+
+services:
+  cer-intent:
+    <<: *cer
+    ports:
+      - "${CER_INTENT_PORT:-5000}:5000"
+    environment:
+      <<: *config
+    volumes:
+      - cer-data:/app/data
+      - ./deploy/config:/etc/cer-intent:ro
+    depends_on: [twin]
+
+  twin:
+    build:
+      context: ${TWIN_SRC:-../tfs-ns3-digital-twin}
+    image: ${TWIN_IMAGE:-transport-twin}:${TWIN_VERSION:-0.2.0}
+    environment:
+      TERAFLOW_URL: ${TERAFLOW_URL:?set TERAFLOW_URL in .env to your TeraFlowSDN NBI, as the containers reach it}
+      TFS_USERNAME: ${TFS_USERNAME:-}
+      TFS_PASSWORD: ${TFS_PASSWORD:-}
+      TWIN_TOPOLOGY_SOURCE: ${TWIN_TOPOLOGY_SOURCE:-rfc8345}
+      TWIN_SITE_PLAN: /etc/cer-intent/site_plan.json
+      NS3_TWIN_MODE: ${NS3_TWIN_MODE:-local}
+    volumes:
+      - ./deploy/config:/etc/cer-intent:ro
+    expose: ["9100"]
+    restart: unless-stopped
+
+  mcp:
+    <<: *cer
+    profiles: ["mcp"]
+    command: ["python", "-m", "cer_intent.mcp", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8765"]
+    environment:
+      <<: *config
+      CER_INTENT_URL: http://cer-intent:5000
+      CER_INTENT_MCP_PROXY: "1"
+    ports:
+      - "${CER_INTENT_MCP_PORT:-8765}:8765"
+    depends_on: [cer-intent]
+
+volumes:
+  cer-data:

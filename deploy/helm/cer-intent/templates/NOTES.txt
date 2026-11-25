@@ -1,0 +1,22 @@
+CER-Intent {{ .Chart.AppVersion }} is deploying as {{ include "cer-intent.name" . }} in {{ .Release.Namespace }}.
+
+The studio:
+{{- if .Values.ingress.enabled }}
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}/intent-studio.html
+{{- else }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "cer-intent.name" . }} 5000:{{ .Values.service.port }}
+  then open http://localhost:5000/intent-studio.html
+{{- end }}
+
+Readiness, with what it reaches (TeraFlowSDN at {{ .Values.teraflow.url }}{{ if .Values.twin.url }}, the twin at {{ .Values.twin.url }}{{ end }}):
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "cer-intent.name" . }} -c api -- python -c "import urllib.request;print(urllib.request.urlopen('http://127.0.0.1:5000/readyz').read().decode())"
+{{- if not .Values.twin.url }}
+
+No twin is set (twin.url): intents are checked on the analytic radio screen only, and with
+autoApproval.require_twin nothing that adds load is applied without a person.
+{{- end }}
+{{- if eq .Values.auth.mode "headers" }}
+
+Sign-in is off (auth.mode=headers): who acts is taken from the X-User / X-Role headers. Keep the
+service behind your own access control, or set auth.mode=token with auth.tokensSecret.
+{{- end }}

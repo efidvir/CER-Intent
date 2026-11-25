@@ -94,10 +94,10 @@ class TFSClient:
         data = resp.json()
         return data.get("devices", [])
 
-    def get_device(self, device_uuid: str) -> Dict[str, Any]:
-        """Fetch a specific device by UUID from TFS."""
+    def get_device(self, device_uuid: str, fresh: bool = False) -> Dict[str, Any]:
+        """Fetch a specific device by UUID from TFS (fresh: ask for a read-back from the device, not the cached view)."""
         url = f"{self.base_url}/tfs-api/device/{device_uuid}"
-        resp = self._session.get(url, timeout=self.timeout)
+        resp = self._session.get(url, timeout=self.timeout, headers={"Cache-Control": "no-cache"} if fresh else None)
         resp.raise_for_status()
         return resp.json()
 
@@ -220,6 +220,50 @@ class TFSClient:
         resp = self._session.get(url, timeout=self.timeout)
         resp.raise_for_status()
         return resp.json()
+
+    def update_service_constraints(
+        self, service_uuid: str, capacity_gbps: Optional[float] = None, latency_ms: Optional[float] = None,
+        settings: Optional[Dict[str, Any]] = None, context_uuid: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Change a TFS service's committed bandwidth and latency (its SLA constraints)
+        in place, and optionally merge keys into its "/settings" rule. TeraFlowSDN
+        re-applies the service on its devices.
+        """
+        ctx = context_uuid or self.context_name
+        service = self.get_service(service_uuid, ctx)
+        constraints = service.setdefault("service_constraints", [])
+        def _set(kind: str, key: str, value: float) -> None:
+            for c in constraints:
+                if kind in c:
+                    c[kind][key] = value
+                    return
+            constraints.append({"action": 1, kind: {key: value}})
+        if capacity_gbps is not None:
+            _set("sla_capacity", "capacity_gbps", float(capacity_gbps))
+        if latency_ms is not None:
+            _set("sla_latency", "e2e_latency_ms", float(latency_ms))
+        if settings:
+            rules = service.setdefault("service_config", {}).setdefault("config_rules", [])
+            for rule in rules:
+                custom = rule.get("custom") or {}
+                if custom.get("resource_key") == "/settings":
+                    value = custom.get("resource_value") or "{}"
+                    current = json.loads(value) if isinstance(value, str) else dict(value)
+                    current.update(settings)
+                    custom["resource_value"] = json.dumps(current, sort_keys=True)
+                    break
+            else:
+                rules.append({"action": 1, "custom": {"resource_key": "/settings",
+                                                       "resource_value": json.dumps(settings, sort_keys=True)}})
+        sid = service.get("service_id", {})
+        put_ctx = sid.get("context_id", {}).get("context_uuid", {}).get("uuid", ctx)
+        put_uuid = sid.get("service_uuid", {}).get("uuid", service_uuid)
+        url = f"{self.base_url}/tfs-api/context/{put_ctx}/service/{put_uuid}"
+        logger.info(f"[TFS] PUT {url} (service constraints)")
+        resp = self._session.put(url, json=service, timeout=self.timeout)
+        resp.raise_for_status()
+        return resp.json() if resp.content else {"status": "success"}
 
     def update_service_settings(
         self, service_uuid: str, settings: Dict[str, Any], context_uuid: Optional[str] = None

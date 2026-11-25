@@ -133,9 +133,9 @@ def test_proxy_mode_uses_the_api_slice_datastore(monkeypatch):
     def path(url):
         return url.split("localhost:5000", 1)[1]
 
-    monkeypatch.setattr(tools.requests, "post", lambda url, json=None, timeout=None: Resp(client.post(path(url), json=json)))
-    monkeypatch.setattr(tools.requests, "get", lambda url, timeout=None: Resp(client.get(path(url))))
-    monkeypatch.setattr(tools.requests, "delete", lambda url, timeout=None: Resp(client.delete(path(url))))
+    monkeypatch.setattr(tools.requests, "post", lambda url, json=None, timeout=None, headers=None: Resp(client.post(path(url), json=json, headers=headers)))
+    monkeypatch.setattr(tools.requests, "get", lambda url, timeout=None, headers=None: Resp(client.get(path(url), headers=headers)))
+    monkeypatch.setattr(tools.requests, "delete", lambda url, timeout=None, headers=None: Resp(client.delete(path(url), headers=headers)))
 
     created = tools.create_network_slice(rfc9543())
     assert created["pipeline"]["realizer"]["status"] == "built"   # dry-run in the API process
@@ -144,3 +144,10 @@ def test_proxy_mode_uses_the_api_slice_datastore(monkeypatch):
     assert tools.delete_network_slice("slice-a")["applied"] is True
     assert "error" in tools.get_network_slice("slice-a")
     reset_shared_controller()
+
+
+def test_the_agent_sends_its_token_when_cer_intent_asks_for_one(monkeypatch):
+    monkeypatch.delenv("CER_INTENT_TOKEN", raising=False)
+    assert tools._auth() == {}
+    monkeypatch.setenv("CER_INTENT_TOKEN", "agent-token")
+    assert tools._auth() == {"Authorization": "Bearer agent-token"}

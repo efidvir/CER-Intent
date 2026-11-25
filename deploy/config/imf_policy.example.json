@@ -1,0 +1,55 @@
+{
+  "_comment": "The intent manager's operator policy. Copy to imf_policy.json in this folder (it is mounted at /etc/cer-intent). Every key is optional.",
+  "vlan_pool": [
+    300,
+    3999
+  ],
+  "require_approval_above_mbps": null,
+  "approval_roles": [
+    "approver",
+    "admin"
+  ],
+  "act_roles": [
+    "operator",
+    "approver",
+    "admin"
+  ],
+  "auto_approve": {
+    "_comment": "Applied without a person when every guardrail holds; watched for watch_s and rolled back if an objective breaks. An admin can change these in the studio; those changes are kept in the data volume and win over this file.",
+    "enabled": false,
+    "kinds": [
+      "deliver",
+      "change",
+      "lifecycle",
+      "optimise",
+      "keep",
+      "observe"
+    ],
+    "lifecycle_ops": [
+      "suspend",
+      "resume"
+    ],
+    "max_bandwidth_mbps": 200,
+    "max_increase_pct": 100,
+    "max_hop_load_pct": 80,
+    "require_twin": true,
+    "require_clear_now": true,
+    "channels": [
+      "text",
+      "chat",
+      "form",
+      "tmf921",
+      "3gpp",
+      "mcp"
+    ],
+    "roles": [
+      "operator",
+      "approver",
+      "admin"
+    ],
+    "per_hour": 10,
+    "per_user_hour": 5,
+    "watch_s": 600,
+    "windows": []
+  }
+}
