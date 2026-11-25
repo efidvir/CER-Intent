@@ -394,7 +394,8 @@ async function refreshStatus() {
   chip("chip-radios", up === radios.length && radios.length ? "ok" : "bad", `Radios ${up}/${radios.length} · ${esc(radios[0]?.model || "")}`);
   $("ulFoot").textContent = tfs.standin ? "southbound visible: the stand-in runs the fork's Ceragon handler and driver"
                                         : "TeraFlowSDN's southbound side is visible with the stand-in only";
-  $("topoFoot").textContent = `${st.topology.nodes.length} devices · ${st.topology.links.length} links · ${st.services.length} services in TeraFlowSDN`;
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  $("topoFoot").textContent = `${plural(st.topology.nodes.length, "device")} · ${plural(st.topology.links.length, "link")} · ${plural(st.services.length, "service")} in TeraFlowSDN`;
   layoutTopology();
 }
 function chip(id, cls, html) { const el = $(id); el.className = "chip " + cls; el.innerHTML = `<span class="dot"></span>${html}`; }
@@ -404,12 +405,22 @@ async function primeWire() {
   const r = await api("GET", "/api/v1/flow/wire?since=0:0");
   S.cursor = r.body ? r.body.cursor : "0:0";
 }
-async function pollWire() {
+// polls run one after another, so two of them never read the same cursor; ids guard the rest
+let wirePolls = Promise.resolve();
+const wireSeen = new Set();
+function pollWire() {
+  wirePolls = wirePolls.then(pollWireOnce, pollWireOnce);
+  return wirePolls;
+}
+async function pollWireOnce() {
   if (S.cursor === null) return;
   const r = await api("GET", `/api/v1/flow/wire?since=${S.cursor}`);
   if (r.status !== 200 || !r.body) return;
   S.cursor = r.body.cursor;
-  for (const e of r.body.items) S.queue.push(e);
+  for (const e of r.body.items) {
+    if (e.id) { if (wireSeen.has(e.id)) continue; wireSeen.add(e.id); }
+    S.queue.push(e);
+  }
 }
 function wireLoop() {
   const n = S.queue.length;
