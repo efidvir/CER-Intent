@@ -1,0 +1,26 @@
+{
+  "id": "slice-dc1-dc2",
+  "description": "dc1 to dc2 across the radio hop",
+  "sdps": [
+    {
+      "id": "1",
+      "node_id": "dc1",
+      "tp_id": "eth1",
+      "ip_address": "172.16.1.1/24",
+      "peer_address": "172.16.1.10"
+    },
+    {
+      "id": "2",
+      "node_id": "dc2",
+      "tp_id": "eth1",
+      "ip_address": "172.16.2.1/24",
+      "peer_address": "172.16.2.10"
+    }
+  ],
+  "bandwidth_mbps": 500,
+  "max_latency_ms": 10,
+  "realization_technology": "L3VPN",
+  "acm": {
+    "min_modulation": "MCS4"
+  }
+}

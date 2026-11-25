@@ -32,6 +32,8 @@ from cer_intent.architect.agent import IntentArchitectAgent
 from cer_intent.architect.executor import ArchitectExecutor
 from cer_intent.api.digital_twin_routes import dt_bp
 from cer_intent.api.restconf_routes import restconf_bp
+from cer_intent.api.etsi_routes import etsi_bp
+from cer_intent.flow.routes import flow_bp
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +53,8 @@ def create_app(registry, audit_log) -> Flask:
     socketio.init_app(app)
     app.register_blueprint(dt_bp)
     app.register_blueprint(restconf_bp)
+    app.register_blueprint(etsi_bp)
+    app.register_blueprint(flow_bp)
 
     # One-time init of shared components
     state_store = StateStore(os.getenv("STATE_FILE", "data/topology_state.json"))
@@ -157,7 +161,12 @@ def create_app(registry, audit_log) -> Flask:
             _emit_intent_update(intent)
             
             # Populate active intents for conflict check
-            intent.context_intents = [i.to_dict() for i in _intent_store.values() if i.intent_id != intent.intent_id]
+            # Other intents as the conflict check needs them; their own context, plan and applied
+            # configuration stay out, or every intent would carry all earlier ones, nested.
+            intent.context_intents = [
+                i.model_dump(mode="json", exclude={"context_intents", "architect_plan", "applied_config"})
+                for i in _intent_store.values() if i.intent_id != intent.intent_id
+            ]
             
             # Fetch current telemetry from simulator (passed via app.config if possible or mock)
             # For PoC, we'll try to get it from the reconciler's reference if available
@@ -801,6 +810,19 @@ def create_app(registry, audit_log) -> Flask:
                 intent.readback_evidence = last_res.readback_evidence
             else:
                 intent.actuation_outcome = ActuationOutcomeType.ACKNOWLEDGED_VERIFIED
+
+            failures = [r for r in apply_results if not r.success]
+            if failures:  # the network did not take the configuration: say so
+                intent.status = IntentStatus.FAILED
+                intent.error_message = failures[0].message
+                _emit_intent_update(intent)
+                return jsonify({
+                    **_intent_to_dict(intent),
+                    "status": "failed",
+                    "error": failures[0].message,
+                    "apply_errors": [{"device": r.device_id, "reason": r.reason_code, "message": r.message}
+                                     for r in failures],
+                }), 502
 
             intent.status = IntentStatus.APPLIED
             intent.state_3gpp = IntentLifecycle3GPP.OPERATION

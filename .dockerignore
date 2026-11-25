@@ -1,0 +1,10 @@
+.git
+**/__pycache__
+*.docx
+*.pptx
+scratch
+tests
+tfs_upstream_contribution
+tfs_unity
+ceragon_tfs_adapter/dist
+ceragon_tfs_adapter/*.egg-info

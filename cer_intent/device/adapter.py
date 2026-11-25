@@ -428,7 +428,84 @@ class TeraFlowAdapter(AdapterBase):
                 ))
         return results
 
+    @property
+    def tfs_client(self):
+        return self._tfs_client
+
+    def _apply_slice_service(self, config: DeviceConfig, conflict_token: Optional[str]) -> ApplyResult:
+        """
+        End-to-end slice: hand the RFC 9543 request to the transport slice controller,
+        which realizes it on TeraFlowSDN (L2SM / L3SM, radio decisions as service
+        settings). Verified only when TeraFlowSDN reports the resulting service.
+        """
+        from cer_intent.nsc import shared_controller
+        nsc = shared_controller(self._tfs_client)
+        t0 = time.time()
+        res = nsc.create_or_update_slice_service(config.parameters)
+        try:  # the flow dashboard shows this in-process RFC 9543 hand-over on its wire panel
+            from cer_intent.flow.wiretap import slice_request_handled
+            slice_request_handled("create", config.parameters.get("id"), config.parameters, res, t0)
+        except ImportError:
+            pass
+        if "nsc_pipeline" not in res:
+            return ApplyResult(
+                device_id=config.device_id,
+                success=False,
+                outcome=ActuationOutcomeType.REJECTED,
+                conflict_token=conflict_token,
+                reason_code="actuation.precondition_failed",
+                message=f"Slice controller ({res.get('stage', 'nsc')}): {res.get('error')}",
+            )
+
+        pipeline = res["nsc_pipeline"]
+        realization = pipeline["realizer"]
+        slice_id = realization["slice_id"]
+        verified = False
+        if realization["status"] == "sent":
+            try:
+                self._tfs_client.get_service(slice_id)
+                verified = True
+            except Exception as e:  # read-back failed: accepted, not verified
+                logger.warning(f"[TeraFlow] Read-back of service {slice_id} failed: {e}")
+
+        self._store.update_device_config(
+            device_id=config.device_id,
+            config_type=config.config_type,
+            parameters=config.parameters,
+            intent_id=config.intent_id,
+            yang_xml=config.yang_xml,
+        )
+        if realization["status"] == "failed":
+            outcome, success, reason = ActuationOutcomeType.REJECTED, False, "actuation.controller_rejected"
+        elif verified:
+            outcome, success, reason = ActuationOutcomeType.ACKNOWLEDGED_VERIFIED, True, "actuation.verified"
+        else:
+            outcome, success, reason = ActuationOutcomeType.ACKNOWLEDGED_UNVERIFIED, True, "actuation.unverified"
+        return ApplyResult(
+            device_id=config.device_id,
+            success=success,
+            outcome=outcome,
+            conflict_token=conflict_token,
+            reason_code=reason,
+            message=(
+                f"Slice {slice_id}: {pipeline['technology_selector']['technology']} "
+                f"({pipeline['technology_selector']['reason']}), realization {realization['status']}"
+                + (f": {realization['error']}" if realization.get("error") else "")
+            ),
+            readback_evidence={
+                "readback_path": "tfs_service_query" if verified else "nsc_realization",
+                "verified": verified,
+                "target": config.device_id,
+                "slice_id": slice_id,
+                "technology": pipeline["technology_selector"]["technology"],
+                "mode": realization["mode"],
+            },
+            response_data=pipeline,
+        )
+
     def apply(self, config: DeviceConfig, conflict_token: Optional[str] = None, _skip_sync: bool = False) -> ApplyResult:
+        if config.config_type == "slice_service":
+            return self._apply_slice_service(config, conflict_token)
         device_uuid = self._resolve_device_uuid(config.device_id)
 
         # Portfolio capability gate: never push hardware-incompatible config (e.g. beamforming

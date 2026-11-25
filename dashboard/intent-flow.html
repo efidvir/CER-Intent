@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CER-Intent · Intent to radio, end to end</title>
+<style>
+:root {
+  --bg-0: #040814; --bg-1: #091124;
+  --card: rgba(12, 21, 42, 0.94); --card-2: rgba(17, 29, 56, 0.96);
+  --border: rgba(56, 189, 248, 0.20); --border-2: rgba(0, 212, 255, 0.55);
+  --text: #f1f5f9; --muted: #94a3b8; --dim: #64748b;
+  --cyan: #00d4ff; --sky: #38bdf8; --emerald: #10b981; --amber: #f59e0b; --rose: #f43f5e; --violet: #a78bfa;
+  --c-intent: #a78bfa; --c-slice: #22d3ee; --c-service: #34d399; --c-controller: #fbbf24;
+  --c-topology: #60a5fa; --c-device: #fb923c; --c-twin: #f472b6; --c-other: #94a3b8;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: radial-gradient(circle at 18% 0%, #0e1e3f 0%, #040814 68%);
+  color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.45;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.mono { font-family: var(--mono); }
+button { font-family: inherit; }
+
+/* ── top bar ── */
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 8px 16px; background: rgba(5, 10, 24, 0.96); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--cyan), var(--violet)); display: grid; place-items: center;
+  font-weight: 800; color: #fff; box-shadow: 0 0 18px rgba(0, 212, 255, .45); }
+.brand h1 { font-size: 15px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.brand .sub { font-family: var(--mono); font-size: 11.5px; color: var(--emerald); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 560px; }
+.chips { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 8px;
+  background: rgba(15, 25, 48, .9); border: 1px solid rgba(148, 163, 184, .22); font: 11.5px var(--mono); white-space: nowrap; }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.chip.ok .dot { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
+.chip.bad { border-color: rgba(244, 63, 94, .5); } .chip.bad .dot { background: var(--rose); box-shadow: 0 0 8px var(--rose); }
+.chip.busy { border-color: var(--amber); background: rgba(245, 158, 11, .12); }
+.chip.busy .dot { background: var(--amber); box-shadow: 0 0 10px var(--amber); animation: pulse .7s infinite alternate; }
+.chip .tag { color: var(--amber); }
+@keyframes pulse { from { transform: scale(.8); opacity: .6 } to { transform: scale(1.25); opacity: 1 } }
+.nav { display: flex; gap: 7px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  background: rgba(15, 25, 48, .9); border: 1px solid rgba(148, 163, 184, .28); color: var(--text); font-size: 12px; font-weight: 600; text-decoration: none; }
+.btn:hover { border-color: var(--cyan); }
+.btn.primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); border-color: #38bdf8; }
+.btn.warn { border-color: rgba(245, 158, 11, .6); color: #fde68a; }
+.btn.danger { border-color: rgba(244, 63, 94, .6); color: #fecdd3; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── presets + command ── */
+.presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 16px 0; flex-shrink: 0; }
+.preset { text-align: left; padding: 8px 12px; border-radius: 10px; cursor: pointer; color: var(--text);
+  background: var(--card); border: 1px solid rgba(148, 163, 184, .2); transition: border-color .15s; }
+.preset:hover { border-color: var(--cyan); }
+.preset.active { border-color: var(--cyan); box-shadow: 0 0 0 1px rgba(0, 212, 255, .35) inset; background: rgba(0, 212, 255, .07); }
+.preset .t { font-weight: 700; font-size: 13px; display: flex; gap: 8px; align-items: center; }
+.preset .d { font: 11.5px var(--mono); color: var(--muted); margin-top: 2px; }
+.preset .k { font: 10.5px var(--mono); padding: 1px 6px; border-radius: 5px; border: 1px solid; }
+.k-pass { color: #6ee7b7; border-color: rgba(16, 185, 129, .5); }
+.k-hold { color: #fcd34d; border-color: rgba(245, 158, 11, .5); }
+.k-del { color: #fda4af; border-color: rgba(244, 63, 94, .5); }
+.command { display: flex; gap: 8px; align-items: center; padding: 8px 16px; flex-shrink: 0; }
+.command .lbl { font: 700 11px var(--mono); color: var(--c-intent); padding: 5px 8px; border: 1px solid rgba(167, 139, 250, .45); border-radius: 7px; white-space: nowrap; }
+.command input { flex: 1; min-width: 0; padding: 8px 11px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, .3);
+  background: rgba(3, 7, 18, .85); color: var(--text); font-size: 13px; outline: none; }
+.command input:focus { border-color: var(--cyan); }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font: 11.5px var(--mono); color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
+.toggle input { accent-color: #0ea5e9; }
+
+/* ── stage cards ── */
+.stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 0 16px 8px; flex-shrink: 0; }
+.stage { background: var(--card); border: 1px solid rgba(148, 163, 184, .18); border-radius: 10px; padding: 8px 10px; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+.stage.running { border-color: var(--amber); box-shadow: 0 0 0 1px rgba(245, 158, 11, .4) inset, 0 0 22px rgba(245, 158, 11, .12); }
+.stage.done { border-color: rgba(16, 185, 129, .55); }
+.stage.held { border-color: rgba(245, 158, 11, .75); }
+.stage.failed { border-color: rgba(244, 63, 94, .75); }
+.stage.skipped { opacity: .55; }
+.stage .head { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px; }
+.stage .name { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage .num { width: 19px; height: 19px; border-radius: 50%; display: grid; place-items: center; font: 700 11px var(--mono); background: rgba(56, 189, 248, .18); color: var(--sky); flex-shrink: 0; }
+.stage .badge { font: 700 10px var(--mono); padding: 1px 6px; border-radius: 5px; background: rgba(148, 163, 184, .14); color: var(--muted); white-space: nowrap; }
+.stage.running .badge { background: rgba(245, 158, 11, .18); color: #fcd34d; }
+.stage.done .badge { background: rgba(16, 185, 129, .18); color: #6ee7b7; }
+.stage.held .badge { background: rgba(245, 158, 11, .2); color: #fcd34d; }
+.stage.failed .badge { background: rgba(244, 63, 94, .2); color: #fda4af; }
+.sub { display: flex; gap: 6px; font: 11.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub .ic { width: 14px; flex-shrink: 0; text-align: center; }
+.sub.run { color: #fde68a; } .sub.ok { color: #d1fae5; } .sub.bad { color: #fecdd3; } .sub.hold { color: #fde68a; }
+
+/* ── main grid ── */
+.main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 8px; padding: 0 16px 12px; }
+.col { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; }
+.panel-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid rgba(148, 163, 184, .12); flex-shrink: 0; }
+.panel-h h2 { font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.pill { font: 10.5px var(--mono); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, .35); color: var(--sky); white-space: nowrap; }
+.canvas-wrap { position: relative; flex: 0 0 auto; height: 350px; }
+canvas#topo { width: 100%; height: 100%; display: block; }
+.canvas-foot { padding: 5px 12px; font: 11px var(--mono); color: var(--muted); border-top: 1px solid rgba(148, 163, 184, .12); display: flex; justify-content: space-between; gap: 10px; white-space: nowrap; overflow: hidden; }
+
+/* tabs */
+.tabs { display: flex; gap: 4px; padding: 6px 8px 0; border-bottom: 1px solid rgba(148, 163, 184, .12); flex-shrink: 0; }
+.tab { padding: 5px 10px; border-radius: 7px 7px 0 0; cursor: pointer; font: 600 11.5px var(--sans); color: var(--muted); border: 1px solid transparent; border-bottom: none; background: none; }
+.tab.active { color: var(--text); background: rgba(56, 189, 248, .08); border-color: rgba(56, 189, 248, .25); }
+.tab .n { font-family: var(--mono); color: var(--sky); margin-right: 4px; }
+.detail { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; }
+.empty { color: var(--dim); font: 12px var(--mono); padding: 18px 4px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.box { background: var(--card-2); border: 1px solid rgba(148, 163, 184, .16); border-radius: 9px; padding: 8px 10px; min-width: 0; }
+.box h3 { font: 700 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 3px 10px; font: 12px var(--mono); }
+.kv .k { color: var(--muted); } .kv .v { color: var(--text); overflow-wrap: anywhere; }
+.tokens { font-size: 14px; line-height: 2; }
+.tok { padding: 2px 5px; border-radius: 5px; margin: 0 1px; font-family: var(--mono); font-size: 12.5px; }
+.tok-node { background: rgba(34, 211, 238, .16); color: #a5f3fc; border: 1px solid rgba(34, 211, 238, .4); }
+.tok-bw { background: rgba(16, 185, 129, .16); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, .4); }
+.tok-lat { background: rgba(244, 114, 182, .14); color: #fbcfe8; border: 1px solid rgba(244, 114, 182, .4); }
+.tok-vlan { background: rgba(251, 191, 36, .14); color: #fde68a; border: 1px solid rgba(251, 191, 36, .4); }
+.tok-acm { background: rgba(251, 146, 60, .14); color: #fed7aa; border: 1px solid rgba(251, 146, 60, .4); }
+.tok-ip { background: rgba(96, 165, 250, .14); color: #bfdbfe; border: 1px solid rgba(96, 165, 250, .4); }
+.bar { height: 6px; border-radius: 4px; background: rgba(148, 163, 184, .15); overflow: hidden; margin-top: 4px; }
+.bar > i { display: block; height: 100%; background: linear-gradient(90deg, #0ea5e9, #22d3ee); }
+.strat { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font: 12px var(--mono); padding: 5px 0; border-bottom: 1px dashed rgba(148, 163, 184, .14); }
+.strat.sel { color: #a5f3fc; }
+pre.json { font: 11.5px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; color: #cbd5e1; max-height: 260px; overflow: auto; background: rgba(2, 6, 16, .7); border-radius: 7px; padding: 8px 10px; border: 1px solid rgba(148, 163, 184, .12); }
+pre.json .jk { color: #7dd3fc; } pre.json .js { color: #a7f3d0; } pre.json .jn { color: #fcd34d; } pre.json .jb { color: #f9a8d4; }
+pre.twin { font: 11.5px/1.5 var(--mono); white-space: pre; color: #cbd5e1; max-height: 220px; overflow: auto; background: rgba(2, 6, 16, .7); border-radius: 7px; padding: 8px 10px; }
+pre.twin .c { color: var(--dim); } pre.twin .kw { color: #f472b6; }
+.kpi { border-radius: 9px; padding: 9px 11px; border: 1px solid; min-width: 0; }
+.kpi.before { border-color: rgba(148, 163, 184, .3); background: rgba(148, 163, 184, .06); }
+.kpi.pass { border-color: rgba(16, 185, 129, .55); background: rgba(16, 185, 129, .08); }
+.kpi.fail { border-color: rgba(244, 63, 94, .6); background: rgba(244, 63, 94, .08); }
+.kpi .h { font: 700 11px var(--mono); letter-spacing: .03em; margin-bottom: 5px; }
+.kpi.pass .h { color: #6ee7b7; } .kpi.fail .h { color: #fda4af; } .kpi.before .h { color: var(--muted); }
+.kpi .big { font: 700 18px var(--mono); }
+.kpi .small { font: 11.5px var(--mono); color: var(--muted); margin-top: 2px; }
+.flowrow { display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; font: 11.5px var(--mono); padding: 2px 0; color: #cbd5e1; }
+.checks { display: flex; flex-direction: column; gap: 4px; }
+.check { display: grid; grid-template-columns: 18px 1fr auto auto; gap: 8px; align-items: center; font: 12px var(--mono); padding: 4px 8px; border-radius: 7px; background: rgba(148, 163, 184, .05); }
+.check .ok { color: #34d399; } .check .no { color: #fb7185; }
+.check .tg { color: var(--muted); } .check .vl { color: var(--text); }
+.verdict { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: 9px; font-weight: 700; margin-bottom: 8px; }
+.verdict.pass { background: rgba(16, 185, 129, .12); border: 1px solid rgba(16, 185, 129, .5); color: #a7f3d0; }
+.verdict.fail { background: rgba(245, 158, 11, .12); border: 1px solid rgba(245, 158, 11, .55); color: #fde68a; }
+.verdict .s { font-weight: 500; font-size: 12px; color: var(--text); }
+table.diff { width: 100%; border-collapse: collapse; font: 11.5px var(--mono); }
+table.diff th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid rgba(148, 163, 184, .18); position: sticky; top: 0; background: var(--card-2); }
+table.diff td { padding: 3px 6px; border-bottom: 1px dashed rgba(148, 163, 184, .1); vertical-align: top; overflow-wrap: anywhere; }
+td.was { color: #94a3b8; } td.now { color: #6ee7b7; } td.dev { color: #fdba74; white-space: nowrap; }
+.rules { display: flex; flex-direction: column; gap: 5px; }
+.rule { font: 11.5px var(--mono); padding: 5px 8px; border-radius: 7px; background: rgba(251, 146, 60, .07); border: 1px solid rgba(251, 146, 60, .25); overflow-wrap: anywhere; }
+.rule b { color: #fdba74; font-weight: 600; }
+.seq { display: flex; flex-direction: column; gap: 3px; font: 11.5px var(--mono); }
+.seq div { display: grid; grid-template-columns: 70px 58px 1fr 40px; gap: 8px; color: #cbd5e1; }
+.note { font: 11.5px var(--mono); color: var(--muted); margin-top: 6px; }
+.actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+svg.chart { width: 100%; height: 190px; display: block; }
+
+/* underlay */
+.ul-h { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px; border-bottom: 1px solid rgba(148, 163, 184, .12); flex-shrink: 0; }
+.ul-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.stds { display: flex; flex-wrap: wrap; gap: 5px; }
+.std { font: 10.5px var(--mono); padding: 2px 7px; border-radius: 6px; border: 1px solid; cursor: pointer; user-select: none; display: inline-flex; gap: 5px; align-items: center; }
+.std.off { opacity: .35; }
+.std .n { color: var(--text); }
+.wire { flex: 1; min-height: 0; overflow: auto; padding: 4px 6px 8px; }
+.w { border-left: 3px solid; border-radius: 6px; padding: 4px 7px; margin: 3px 0; background: rgba(148, 163, 184, .045); cursor: pointer; animation: slidein .25s ease-out; }
+@keyframes slidein { from { opacity: 0; transform: translateX(10px) } to { opacity: 1; transform: none } }
+.w:hover { background: rgba(148, 163, 184, .09); }
+.w .l1 { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto auto; gap: 7px; align-items: center; font: 11.5px var(--mono); }
+.w .ts { color: var(--dim); }
+.w .who { color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w .who b { font-weight: 600; color: var(--text); }
+.w .sc { font: 700 10.5px var(--mono); padding: 0 6px; border-radius: 5px; white-space: nowrap; }
+.w .st { font: 11px var(--mono); white-space: nowrap; }
+.w .st.e { color: #fb7185; }
+.w .l2 { font: 11.5px var(--mono); color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.w .l2 .m { font-weight: 700; margin-right: 6px; }
+.w .l2 .ip { color: var(--violet); font-size: 10.5px; margin-left: 6px; }
+.w .x { display: none; margin-top: 6px; }
+.w.open .x { display: block; }
+.w .x .ref { font: 11px var(--mono); color: var(--muted); margin-bottom: 4px; }
+.w .x pre.json { max-height: 220px; margin-top: 3px; }
+.w.phase { border-left-color: transparent !important; background: none; cursor: default; padding: 8px 4px 2px; animation: none; }
+.w.phase div { font: 700 11px var(--mono); color: var(--sky); letter-spacing: .04em; border-bottom: 1px solid rgba(56, 189, 248, .25); padding-bottom: 3px; }
+.w.phase.run { padding-top: 14px; }
+.w.phase.run div { color: var(--text); font: 700 12px var(--sans); letter-spacing: 0; border-bottom: 2px solid rgba(0, 212, 255, .5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ul-foot { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; border-top: 1px solid rgba(148, 163, 184, .12); font: 11px var(--mono); color: var(--muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; }
+
+/* boot overlay (browser copy) */
+#boot { position: fixed; inset: 0; background: rgba(4, 8, 20, .94); display: none; place-items: center; z-index: 50; }
+#boot.show { display: grid; }
+#boot .card { width: min(560px, 92vw); background: var(--card-2); border: 1px solid var(--border-2); border-radius: 14px; padding: 20px 22px; }
+#boot h2 { font-size: 15px; margin-bottom: 4px; } #boot .s { color: var(--muted); font-size: 12.5px; margin-bottom: 12px; }
+#boot ol { list-style: none; display: flex; flex-direction: column; gap: 5px; font: 12px var(--mono); }
+#boot li { color: var(--dim); } #boot li.ok { color: #a7f3d0; } #boot li.run { color: #fde68a; } #boot li.bad { color: #fda4af; }
+@media (max-width: 1200px) {
+  body { overflow: auto; height: auto; }
+  .main { grid-template-columns: 1fr; }
+  .presets, .stages { grid-template-columns: repeat(2, 1fr); }
+  .wire { max-height: 520px; }
+}
+</style>
+</head>
+<body>
+<div id="boot"><div class="card">
+  <h2>Starting the whole stack in your browser</h2>
+  <div class="s">CER-Intent, the TeraFlowSDN NBI with the Ceragon handler and driver, two radios and the digital twin run here as Python (Pyodide) and talk HTTP to each other on an in-page network.</div>
+  <ol id="bootSteps"></ol>
+</div></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">⬡</div>
+    <div>
+      <h1>CER-Intent · Intent to radio, end to end</h1>
+      <div class="sub" id="headline">Intent → RFC 9543 slice controller → NS-3.45 twin → TeraFlowSDN → Ceragon radios</div>
+    </div>
+  </div>
+  <div class="chips">
+    <span class="chip" id="chip-cer"><span class="dot"></span>CER-Intent</span>
+    <span class="chip" id="chip-tfs"><span class="dot"></span>TeraFlowSDN</span>
+    <span class="chip" id="chip-twin"><span class="dot"></span>Twin</span>
+    <span class="chip" id="chip-radios"><span class="dot"></span>Radios</span>
+    <span class="chip" id="chip-clock"><span class="dot"></span><span id="clock">0.0 s</span></span>
+  </div>
+  <nav class="nav">
+    <a class="btn" href="/slice-controller.html" id="nav-sc">Slice controller</a>
+    <a class="btn" href="/flow.html" id="nav-classic">Flow studio</a>
+  </nav>
+</header>
+
+<section class="presets" id="presets"></section>
+
+<section class="command">
+  <span class="lbl">INTENT</span>
+  <input id="intentText" spellcheck="false" />
+  <button class="btn primary" id="runBtn">▶ Run the flow</button>
+  <label class="toggle"><input type="checkbox" id="autoAdv" checked /> auto-advance</label>
+  <button class="btn" id="nextBtn" disabled>Next stage ›</button>
+</section>
+
+<section class="stages" id="stages"></section>
+
+<section class="main">
+  <div class="col">
+    <div class="panel">
+      <div class="panel-h">
+        <h2>Transport network · control plane and radio hop</h2>
+        <span class="pill" id="topoPill">synced from TeraFlowSDN</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="topo"></canvas></div>
+      <div class="canvas-foot"><span id="topoFoot">—</span><span id="hopFoot"></span></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <div class="tabs" id="tabs"></div>
+      <div class="detail" id="detail"><div class="empty">Pick an intent above and run the flow.</div></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="panel" style="flex:1">
+      <div class="ul-h">
+        <div class="ul-top">
+          <h2 style="font-size:12.5px;font-weight:700">API underlay · the standards on the wire</h2>
+          <span class="pill" id="wireCount">0 exchanges</span>
+        </div>
+        <div class="stds" id="stds"></div>
+      </div>
+      <div class="wire" id="wire"><div class="empty">Every HTTP exchange between the components appears here as it happens: who called whom, on which standard interface, and what was sent. Click one to see the request and the response.</div></div>
+      <div class="ul-foot"><span id="ulFoot">southbound: TeraFlowSDN → radios</span><span><label class="toggle"><input type="checkbox" id="followWire" checked /> follow</label></span></div>
+    </div>
+  </div>
+</section>
+
+<script>
+"use strict";
+// ───────────────────────────── configuration ─────────────────────────────
+const PRESETS = [
+  { id: "l2", title: "L2 slice · 500 Mbps", kind: "pass", tag: "applies",
+    desc: "VLAN 300 · ≤10 ms · MCS4 floor",
+    text: "Connect region-a and edge over VLAN 300 with 500 Mbps and at most 10 ms latency; keep the radio link at MCS4 or better" },
+  { id: "l2-big", title: "L2 slice · 800 Mbps", kind: "hold", tag: "twin holds it",
+    desc: "VLAN 310 · ≤10 ms · ≤0.1 % loss",
+    text: "Connect region-a and edge over VLAN 310 with 800 Mbps, at most 10 ms latency and 0.1% loss" },
+  { id: "l3", title: "L3 slice · 50 Mbps", kind: "pass", tag: "applies",
+    desc: "routed /30 · ≤5 ms · MCS6 floor",
+    text: "Routed L3VPN slice between region-a 192.0.2.1/30 and edge 198.51.100.1/30 with 50 Mbps and at most 5 ms latency; keep the radio at MCS6 or better" },
+  { id: "remove", title: "Remove the new slices", kind: "del", tag: "RFC 9543 DELETE",
+    desc: "keeps backhaul-ran in service", text: null },
+];
+const LAYERS = {
+  intent:     { color: "#a78bfa", label: "Intent API" },
+  slice:      { color: "#22d3ee", label: "RFC 9543" },
+  service:    { color: "#34d399", label: "L2SM / L3SM" },
+  topology:   { color: "#60a5fa", label: "RFC 8345" },
+  controller: { color: "#fbbf24", label: "TFS-API" },
+  device:     { color: "#fb923c", label: "RFC 8040" },
+  twin:       { color: "#f472b6", label: "Twin API" },
+  other:      { color: "#94a3b8", label: "other" },
+};
+const STAGES = [
+  { n: 1, name: "Operator intent", subs: ["Intent API · POST /api/v1/intent", "Parsed into a slice intent", "Architect plan · awaiting approval"] },
+  { n: 2, name: "Slice controller · RFC 9543", subs: ["RFC 9543 slice service", "Mapper · technology selector", "Realizer · L2SM / L3SM built"] },
+  { n: 3, name: "Digital twin · NS-3.45", subs: ["Sync from TeraFlowSDN · RFC 8345", "NS-3 before / after", "SLO verdict"] },
+  { n: 4, name: "TeraFlowSDN → radios", subs: ["Approval · twin gate", "L2SM / L3SM to TeraFlowSDN", "Ceragon driver · RESTCONF commit"] },
+  { n: 5, name: "Read-back · closed loop", subs: ["TeraFlowSDN service state", "Radio datastore diff", "Twin re-sync · intent verified"] },
+];
+const SLICE_COLORS = ["#22d3ee", "#a78bfa", "#34d399", "#f472b6", "#fbbf24", "#60a5fa"];
+
+// ───────────────────────────── state ─────────────────────────────
+const S = {
+  status: null, cursor: null, wire: [], queue: [], filters: new Set(Object.keys(LAYERS)),
+  counts: {}, run: null, busy: false, tab: 1, t0: null, waiter: null, tokens: [], pulses: {},
+  rain: null, candidate: null, hop: null,
+};
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const fmt = (n, d = 0) => (n === null || n === undefined || isNaN(n)) ? "—" : Number(n).toFixed(d);
+
+// ───────────────────────────── backend ─────────────────────────────
+async function api(method, path, body) {
+  if (window.FLOW_BACKEND) return window.FLOW_BACKEND(method, path, body);
+  const init = { method, headers: { "Content-Type": "application/json", "X-Flow-Client": "Operator" } };
+  if (body !== undefined) init.body = JSON.stringify(body);
+  const r = await fetch(path, init);
+  let data = null;
+  try { data = await r.json(); } catch (e) { /* empty body */ }
+  return { status: r.status, body: data };
+}
+
+// ───────────────────────────── stage cards ─────────────────────────────
+function buildStages() {
+  $("stages").innerHTML = STAGES.map((s) => `
+    <div class="stage" id="st-${s.n}" onclick="showTab(${s.n})">
+      <div class="head"><span class="name"><span class="num">${s.n}</span>${esc(s.name)}</span><span class="badge" id="stb-${s.n}">PENDING</span></div>
+      ${s.subs.map((t, i) => `<div class="sub" id="ss-${s.n}-${i}"><span class="ic">·</span><span>${esc(t)}</span></div>`).join("")}
+    </div>`).join("");
+  $("tabs").innerHTML = STAGES.map((s) => `<button class="tab" id="tab-${s.n}" onclick="showTab(${s.n})"><span class="n">${s.n}</span>${esc(s.name.split(" · ")[0])}</button>`).join("");
+}
+function setStage(n, state, badge) {
+  const el = $(`st-${n}`);
+  el.className = "stage" + (state ? " " + state : "");
+  $(`stb-${n}`).textContent = badge || state.toUpperCase();
+}
+const ICONS = { run: "⚙", ok: "✓", bad: "✖", hold: "⏸", skip: "—", "": "·" };
+function setSub(n, i, mode, text) {
+  const el = $(`ss-${n}-${i}`);
+  el.className = "sub" + (mode ? " " + mode : "");
+  el.querySelector(".ic").textContent = ICONS[mode] ?? "·";
+  if (text) el.lastElementChild.textContent = text;
+}
+function resetStages() {
+  STAGES.forEach((s) => { setStage(s.n, "", "PENDING"); s.subs.forEach((t, i) => setSub(s.n, i, "", t)); });
+}
+
+// ───────────────────────────── presets / command ─────────────────────────────
+function buildPresets() {
+  $("presets").innerHTML = PRESETS.map((p) => `
+    <button class="preset" id="pr-${p.id}" onclick="pickPreset('${p.id}')">
+      <div class="t">${esc(p.title)} <span class="k k-${p.kind}">${esc(p.tag)}</span></div>
+      <div class="d">${esc(p.desc)}</div>
+    </button>`).join("");
+}
+function pickPreset(id) {
+  const p = PRESETS.find((x) => x.id === id);
+  document.querySelectorAll(".preset").forEach((el) => el.classList.toggle("active", el.id === `pr-${id}`));
+  if (p.text) { $("intentText").value = p.text; }
+  else { removeSlices(); }
+}
+
+// ───────────────────────────── status ─────────────────────────────
+async function refreshStatus() {
+  const r = await api("GET", "/api/v1/flow/status");
+  if (r.status !== 200 || !r.body) { chip("chip-cer", "bad", "CER-Intent · offline"); return; }
+  S.status = r.body;
+  const st = r.body;
+  chip("chip-cer", "ok", `CER-Intent · ${st.cer_intent.realization}`);
+  const tfs = st.teraflowsdn;
+  chip("chip-tfs", tfs.ok ? "ok" : "bad", `TeraFlowSDN${tfs.standin ? " <span class='tag'>stand-in</span>" : ""} · ${tfs.ok ? "ready" : "offline"}`);
+  const eng = (st.twin.engine || {});
+  const engLabel = eng.mode === "replay" ? "NS-3.45 recorded runs" : eng.mode === "local" ? "NS-3.45 local" : eng.mode === "ssh" ? "NS-3.45 remote" : "—";
+  chip("chip-twin", st.twin.ok ? "ok" : "bad", `Twin · ${engLabel}`);
+  const radios = st.topology.nodes.filter((n) => n.radio);
+  const up = radios.filter((n) => String(n.status).includes("ENABLED")).length;
+  chip("chip-radios", up === radios.length && radios.length ? "ok" : "bad", `Radios ${up}/${radios.length} · ${esc(radios[0]?.model || "")}`);
+  $("ulFoot").textContent = tfs.standin ? "southbound visible: the stand-in runs the fork's Ceragon handler and driver"
+                                        : "TeraFlowSDN's southbound side is visible with the stand-in only";
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  $("topoFoot").textContent = `${plural(st.topology.nodes.length, "device")} · ${plural(st.topology.links.length, "link")} · ${plural(st.services.length, "service")} in TeraFlowSDN`;
+  layoutTopology();
+}
+function chip(id, cls, html) { const el = $(id); el.className = "chip " + cls; el.innerHTML = `<span class="dot"></span>${html}`; }
+
+// ───────────────────────────── wire ─────────────────────────────
+async function primeWire() {
+  const r = await api("GET", "/api/v1/flow/wire?since=0:0");
+  S.cursor = r.body ? r.body.cursor : "0:0";
+}
+// polls run one after another, so two of them never read the same cursor; ids guard the rest
+let wirePolls = Promise.resolve();
+const wireSeen = new Set();
+function pollWire() {
+  wirePolls = wirePolls.then(pollWireOnce, pollWireOnce);
+  return wirePolls;
+}
+async function pollWireOnce() {
+  if (S.cursor === null) return;
+  const r = await api("GET", `/api/v1/flow/wire?since=${S.cursor}`);
+  if (r.status !== 200 || !r.body) return;
+  S.cursor = r.body.cursor;
+  for (const e of r.body.items) {
+    if (e.id) { if (wireSeen.has(e.id)) continue; wireSeen.add(e.id); }
+    S.queue.push(e);
+  }
+}
+function wireLoop() {
+  const n = S.queue.length;
+  if (n) {
+    const e = S.queue.shift();
+    showWire(e);
+    spawnToken(e);
+  }
+  const gap = n > 40 ? 25 : n > 15 ? 60 : n > 5 ? 110 : 170;
+  setTimeout(wireLoop, gap);
+}
+function phaseMark(text, run) {
+  const el = document.createElement("div");
+  el.className = "w phase" + (run ? " run" : "");
+  el.innerHTML = `<div>${esc(text)}</div>`;
+  appendWire(el, Date.now() / 1000);
+}
+function appendWire(el, t) {
+  // entries arrive when they finish; they are placed by when they started
+  const box = $("wire");
+  if (box.firstElementChild && box.firstElementChild.classList.contains("empty")) box.innerHTML = "";
+  el.dataset.t = t;
+  let ref = null;
+  for (let i = box.children.length - 1; i >= 0; i--) {
+    if (parseFloat(box.children[i].dataset.t || "0") <= t) { ref = box.children[i].nextSibling; break; }
+    if (i === 0) ref = box.children[0];
+  }
+  box.insertBefore(el, ref);
+  if ($("followWire").checked) box.scrollTop = box.scrollHeight;
+}
+function showWire(e) {
+  const layer = e.std.layer in LAYERS ? e.std.layer : "other";
+  S.counts[e.std.std] = (S.counts[e.std.std] || 0) + 1;
+  S.wire.push(e);
+  const c = LAYERS[layer].color;
+  const rel = S.t0 ? ((e.t - S.t0) >= 0 ? "+" + (e.t - S.t0).toFixed(2) : (e.t - S.t0).toFixed(2)) : "";
+  const el = document.createElement("div");
+  el.className = "w";
+  el.dataset.layer = layer;
+  el.style.borderLeftColor = c;
+  if (!S.filters.has(layer)) el.style.display = "none";
+  const statusCls = (e.status === null || e.status >= 400) ? "st e" : "st";
+  el.innerHTML = `
+    <div class="l1"><span class="ts">${rel}</span>
+      <span class="who"><b>${esc(e.src)}</b> → <b>${esc(e.dst)}</b></span>
+      <span class="sc" style="color:${c};border:1px solid ${c}66">${esc(e.std.std)}</span>
+      <span class="${statusCls}">${e.status ?? "ERR"} · ${fmt(e.ms, 1)} ms</span></div>
+    <div class="l2"><span class="m" style="color:${c}">${esc(e.method)}</span>${esc(e.path)}${e.transport === "in-process" ? '<span class="ip">in-process</span>' : ""}</div>
+    <div class="x"><div class="ref">${esc(e.std.std)} · ${esc(e.std.name)}${e.std.ref ? " · " + esc(e.std.ref) : ""}</div>
+      ${e.req !== null && e.req !== undefined ? `<div class="ref">request</div><pre class="json">${jsonHtml(e.req)}</pre>` : ""}
+      ${e.res !== null && e.res !== undefined ? `<div class="ref">response</div><pre class="json">${jsonHtml(e.res)}</pre>` : ""}</div>`;
+  el.addEventListener("click", (ev) => { if (!ev.target.closest("pre")) el.classList.toggle("open"); });
+  appendWire(el, e.t || Date.now() / 1000);
+  $("wireCount").textContent = `${S.wire.length} exchanges`;
+  renderStdChips();
+}
+function renderStdChips() {
+  const byLayer = {};
+  for (const e of S.wire) { const l = e.std.layer in LAYERS ? e.std.layer : "other"; byLayer[l] = (byLayer[l] || 0) + 1; }
+  $("stds").innerHTML = Object.entries(LAYERS).filter(([k]) => k !== "other" || byLayer.other).map(([k, v]) =>
+    `<span class="std ${S.filters.has(k) ? "" : "off"}" style="color:${v.color};border-color:${v.color}66" onclick="toggleLayer('${k}')">${esc(v.label)} <span class="n">${byLayer[k] || 0}</span></span>`).join("");
+}
+function toggleLayer(k) {
+  if (S.filters.has(k)) S.filters.delete(k); else S.filters.add(k);
+  document.querySelectorAll(".w[data-layer]").forEach((el) => { el.style.display = S.filters.has(el.dataset.layer) ? "" : "none"; });
+  renderStdChips();
+}
+function jsonHtml(v) {
+  let s = typeof v === "string" ? v : JSON.stringify(v, null, 2);
+  if (s.length > 9000) s = s.slice(0, 9000) + "\n…";
+  s = esc(s);
+  return s.replace(/(&quot;(?:[^&]|&(?!quot;))*?&quot;)(\s*:)?|\b(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)\b|\b(true|false|null)\b/g, (m, str, colon, num, b) => {
+    if (str) return colon ? `<span class="jk">${str}</span>${colon}` : `<span class="js">${str}</span>`;
+    if (num) return `<span class="jn">${num}</span>`;
+    return `<span class="jb">${b}</span>`;
+  });
+}
+
+// ───────────────────────────── topology canvas ─────────────────────────────
+const VW = 1000, VH = 350;
+const CP = {
+  Operator: { x: 62, y: 66, w: 96, h: 50, label: "Operator", sub: "dashboard · OSS" },
+  "CER-Intent": { x: 300, y: 66, w: 300, h: 62, label: "CER-Intent", sub: "" },
+  "Intent engine": { x: 228, y: 74, w: 0, h: 0 },
+  "Slice controller": { x: 372, y: 74, w: 0, h: 0 },
+  TeraFlowSDN: { x: 610, y: 66, w: 200, h: 62, label: "TeraFlowSDN", sub: "Ceragon handler · driver" },
+  "Digital twin": { x: 880, y: 66, w: 190, h: 62, label: "Digital twin", sub: "NS-3.45 · Ceragon module" },
+};
+const ALIAS = { "flow-dashboard": "Operator", "flow-launcher": "Operator", "flow-recorder": "Operator", OpenSlice: "Operator" };
+let DP = {};       // data-plane nodes: name -> {x, y, radio}
+let DPLINKS = [];  // {a, b, radio}
+let canvas, ctx, dpr = 1;
+function layoutTopology() {
+  const st = S.status;
+  if (!st) return;
+  const nodes = st.topology.nodes, links = st.topology.links;
+  const adj = {};
+  links.forEach((l) => { (adj[l.a] = adj[l.a] || []).push(l.b); (adj[l.b] = adj[l.b] || []).push(l.a); });
+  const sites = nodes.filter((n) => !n.radio).map((n) => n.id);
+  const start = sites.includes("region-a") ? "region-a" : (sites[0] || nodes[0]?.id);
+  const order = [], seen = new Set([start]), q = [start];
+  while (q.length) { const n = q.shift(); order.push(n); (adj[n] || []).sort().forEach((m) => { if (!seen.has(m)) { seen.add(m); q.push(m); } }); }
+  nodes.forEach((n) => { if (!seen.has(n.id)) order.push(n.id); });
+  DP = {};
+  const xs = order.length > 1 ? order.map((_, i) => 110 + i * (780 / (order.length - 1))) : [500];
+  order.forEach((id, i) => { const n = nodes.find((x) => x.id === id) || {}; DP[id] = { x: xs[i], y: 232, radio: !!n.radio, model: n.model }; });
+  DPLINKS = links.map((l) => ({ a: l.a, b: l.b, radio: l.radio }));
+  const hop = DPLINKS.find((l) => l.radio);
+  S.hop = hop ? { a: hop.a, b: hop.b, cap: 1000, mcs: null } : null;
+}
+function anchor(name) {
+  name = ALIAS[name] || name;
+  if (CP[name]) return CP[name];
+  if (DP[name]) return { x: DP[name].x, y: DP[name].y - 22 };
+  return CP["CER-Intent"];
+}
+function spawnToken(e) {
+  const a = anchor(e.src), b = anchor(e.dst);
+  const layer = e.std.layer in LAYERS ? e.std.layer : "other";
+  const now = performance.now();
+  const key = `${ALIAS[e.src] || e.src}>${ALIAS[e.dst] || e.dst}`;
+  S.tokens.push({ a, b, t0: now, dur: 650, color: LAYERS[layer].color, label: e.std.std, back: e.status !== null && e.status < 400 });
+  S.pulses[ALIAS[e.dst] || e.dst] = now;
+  S.pulses[key] = now;
+}
+function resizeCanvas() {
+  canvas = $("topo"); ctx = canvas.getContext("2d");
+  dpr = window.devicePixelRatio || 1;
+  const r = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, r.width * dpr); canvas.height = Math.max(1, r.height * dpr);
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function edgeCurve(a, b) {
+  // control point: arcs between control-plane boxes bend upward, drops go straight
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  if (Math.abs(a.y - b.y) < 20 && Math.abs(a.x - b.x) > 320) return { cx: mx, cy: Math.min(a.y, b.y) - 70 };
+  return { cx: mx, cy: my };
+}
+function qpt(a, c, b, t) { const u = 1 - t; return { x: u * u * a.x + 2 * u * t * c.cx + t * t * b.x, y: u * u * a.y + 2 * u * t * c.cy + t * t * b.y }; }
+function draw(now) {
+  if (!ctx) { requestAnimationFrame(draw); return; }
+  const W = canvas.width, H = canvas.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const sx = W / VW, sy = H / VH, s = Math.min(sx, sy);
+  ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  // grid
+  ctx.strokeStyle = "rgba(56,189,248,0.05)"; ctx.lineWidth = 1;
+  for (let x = 0; x < VW; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, VH); ctx.stroke(); }
+  for (let y = 0; y < VH; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(VW, y); ctx.stroke(); }
+  // plane labels
+  ctx.font = "600 10px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  ctx.fillStyle = "rgba(148,163,184,0.55)"; ctx.textAlign = "left";
+  ctx.fillText("CONTROL PLANE", 12, 16); ctx.fillText("TRANSPORT NETWORK", 12, 180);
+  ctx.strokeStyle = "rgba(148,163,184,0.12)"; ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.moveTo(0, 166); ctx.lineTo(VW, 166); ctx.stroke(); ctx.setLineDash([]);
+  // static control edges
+  const E = [["Operator", "CER-Intent"], ["CER-Intent", "TeraFlowSDN"], ["CER-Intent", "Digital twin"], ["Digital twin", "TeraFlowSDN"]];
+  Object.keys(DP).filter((k) => DP[k].radio).forEach((r) => E.push(["TeraFlowSDN", r]));
+  E.forEach(([p, q]) => {
+    const a = anchor(p), b = anchor(q), c = edgeCurve(a, b);
+    const hot = now - (S.pulses[`${p}>${q}`] || S.pulses[`${q}>${p}`] || -1e9) < 700;
+    ctx.strokeStyle = hot ? "rgba(0,212,255,0.55)" : "rgba(148,163,184,0.18)"; ctx.lineWidth = hot ? 2 : 1.2;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(c.cx, c.cy, b.x, b.y); ctx.stroke();
+  });
+  // control boxes
+  ["Operator", "CER-Intent", "TeraFlowSDN", "Digital twin"].forEach((k) => {
+    const n = CP[k], hot = now - (S.pulses[k] || -1e9) < 600;
+    ctx.fillStyle = "rgba(10,18,38,0.96)"; rr(n.x - n.w / 2, n.y - n.h / 2, n.w, n.h, 10); ctx.fill();
+    ctx.strokeStyle = hot ? "rgba(0,212,255,0.95)" : "rgba(56,189,248,0.38)"; ctx.lineWidth = hot ? 2 : 1.2; ctx.stroke();
+    ctx.fillStyle = "#e2e8f0"; ctx.font = "700 13px Inter, system-ui, sans-serif"; ctx.textAlign = "center";
+    if (k === "CER-Intent") {
+      ctx.fillText("CER-Intent", n.x, n.y - 14);
+      [["Intent engine", 228], ["Slice controller", 372]].forEach(([lbl, x]) => {
+        const h2 = now - (S.pulses[lbl] || -1e9) < 600;
+        ctx.fillStyle = h2 ? "rgba(34,211,238,0.22)" : "rgba(34,211,238,0.08)"; rr(x - 66, n.y - 6, 132, 26, 6); ctx.fill();
+        ctx.strokeStyle = "rgba(34,211,238,0.35)"; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = "#a5f3fc"; ctx.font = "600 10.5px Inter, system-ui, sans-serif"; ctx.fillText(lbl === "Slice controller" ? "Slice controller · 9543" : lbl, x, n.y + 11);
+      });
+    } else {
+      ctx.fillText(n.label, n.x, n.y - 4);
+      ctx.fillStyle = "#94a3b8"; ctx.font = "500 10.5px Inter, system-ui, sans-serif"; ctx.fillText(n.sub, n.x, n.y + 13);
+    }
+  });
+  // data plane links
+  DPLINKS.forEach((l) => {
+    const a = DP[l.a], b = DP[l.b]; if (!a || !b) return;
+    if (l.radio) {
+      ctx.strokeStyle = "rgba(251,146,60,0.75)"; ctx.lineWidth = 2; ctx.setLineDash([3, 5]);
+      ctx.lineDashOffset = -(now / 40) % 8;
+      ctx.beginPath(); ctx.moveTo(a.x + 24, a.y); ctx.lineTo(b.x - 24, b.y); ctx.stroke(); ctx.setLineDash([]);
+      const mx = (a.x + b.x) / 2;
+      ctx.fillStyle = "#fdba74"; ctx.font = "600 10.5px " + getComputedStyle(document.body).getPropertyValue("--mono"); ctx.textAlign = "center";
+      const hop = S.hop || {};
+      const txt = `60 GHz · ${a.model || "radio"} · ${hop.mcs || "MCS10"} · ${fmt(hop.cap, 0)} Mbps`;
+      const tw = ctx.measureText(txt).width + 14;
+      ctx.fillStyle = "rgba(6,12,28,0.92)"; rr(mx - tw / 2, a.y - 47, tw, 17, 5); ctx.fill();
+      ctx.strokeStyle = "rgba(251,146,60,0.35)"; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = "#fdba74"; ctx.fillText(txt, mx, a.y - 35);
+    } else {
+      ctx.strokeStyle = "rgba(148,163,184,0.45)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(a.x + 26, a.y); ctx.lineTo(b.x - 26, b.y); ctx.stroke();
+    }
+  });
+  // rain over the hop while the twin replays
+  if (S.rain && S.hop) {
+    const a = DP[S.hop.a], b = DP[S.hop.b];
+    const k = S.rain.level;          // 0..1
+    if (a && b && k > 0.02) {
+      ctx.strokeStyle = `rgba(96,165,250,${0.25 + 0.45 * k})`; ctx.lineWidth = 1;
+      for (let i = 0; i < 70 * k; i++) {
+        const x = a.x + ((i * 53.7 + now / 3) % (b.x - a.x)), y = 178 + ((i * 37.1 + now / 4) % 78);
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 9); ctx.stroke();
+      }
+    }
+  }
+  // slice lanes: one line per service under the transport network, dropping to its two ends
+  const lanes = sliceLanes();
+  const ids = Object.keys(DP);
+  if (ids.length >= 2) {
+    const first = DP[ids[0]], last = DP[ids[ids.length - 1]], second = DP[ids[1]];
+    lanes.forEach((ln, i) => {
+      const y = 292 + i * 17;
+      ctx.strokeStyle = ln.color; ctx.lineWidth = ln.hot ? 3 : 2; ctx.globalAlpha = ln.pending ? 0.7 : 0.9;
+      if (ln.pending) ctx.setLineDash([6, 5]);
+      if (ln.hot) { ctx.shadowColor = ln.color; ctx.shadowBlur = 10; }
+      ctx.beginPath(); ctx.moveTo(first.x, first.y + 18); ctx.lineTo(first.x, y); ctx.lineTo(last.x, y); ctx.lineTo(last.x, last.y + 18); ctx.stroke();
+      ctx.setLineDash([]); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+      const lx = (first.x + second.x) / 2;
+      ctx.font = "600 10px " + getComputedStyle(document.body).getPropertyValue("--mono"); ctx.textAlign = "center";
+      const w = ctx.measureText(ln.label).width + 12;
+      ctx.fillStyle = "rgba(6,12,28,0.95)"; rr(lx - w / 2, y - 7, w, 14, 4); ctx.fill();
+      ctx.fillStyle = ln.color; ctx.fillText(ln.label, lx, y + 3.5);
+    });
+  }
+  // data plane nodes
+  Object.entries(DP).forEach(([id, n]) => {
+    const hot = now - (S.pulses[id] || -1e9) < 600;
+    if (n.radio) {
+      ctx.fillStyle = "rgba(10,18,38,0.98)"; ctx.beginPath(); ctx.arc(n.x, n.y, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = hot ? "#fb923c" : "rgba(251,146,60,0.6)"; ctx.lineWidth = hot ? 3 : 1.6; ctx.stroke();
+      ctx.strokeStyle = "#fdba74"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(n.x, n.y + 7); ctx.lineTo(n.x, n.y - 7); ctx.stroke();
+      [5, 9].forEach((r) => { ctx.beginPath(); ctx.arc(n.x, n.y - 7, r, -2.4, -0.74); ctx.stroke(); });
+    } else {
+      ctx.fillStyle = "rgba(10,18,38,0.98)"; rr(n.x - 26, n.y - 16, 52, 32, 7); ctx.fill();
+      ctx.strokeStyle = hot ? "#38bdf8" : "rgba(148,163,184,0.5)"; ctx.lineWidth = hot ? 2.4 : 1.4; ctx.stroke();
+    }
+    ctx.fillStyle = "#e2e8f0"; ctx.font = "700 11.5px Inter, system-ui, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(id, n.x, n.y + (n.radio ? 40 : 4));
+  });
+  // tokens
+  S.tokens = S.tokens.filter((tk) => now - tk.t0 < tk.dur * (tk.back ? 1.7 : 1));
+  S.tokens.forEach((tk) => {
+    const c = edgeCurve(tk.a, tk.b);
+    let t = (now - tk.t0) / tk.dur, a = tk.a, b = tk.b, cc = c;
+    if (t > 1) { t = (t - 1) / 0.7; a = tk.b; b = tk.a; }
+    const p = qpt(a, cc, b, Math.min(1, t));
+    ctx.fillStyle = tk.color; ctx.shadowColor = tk.color; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(p.x, p.y, (now - tk.t0) > tk.dur ? 3 : 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    if ((now - tk.t0) < tk.dur) { ctx.font = "700 9.5px " + getComputedStyle(document.body).getPropertyValue("--mono"); ctx.textAlign = "center"; ctx.fillText(tk.label, p.x, p.y - 9); }
+  });
+  requestAnimationFrame(draw);
+}
+function sliceLanes() {
+  const out = [];
+  if (!S.status) return out;
+  const path = Object.keys(DP);
+  const services = S.status.services || [];
+  services.forEach((svc, i) => {
+    const isNew = S.run && S.run.sliceId && svc.name === S.run.sliceId;
+    out.push({ path, color: isNew ? "#22d3ee" : SLICE_COLORS[(i + 1) % SLICE_COLORS.length], hot: isNew,
+               label: `${svc.name} · ${fmt(svc.capacity_mbps, 0)} Mbps`, pending: false });
+  });
+  if (S.candidate && !services.some((s) => s.name === S.candidate.slice_id)) {
+    out.push({ path, color: "#22d3ee", hot: true, pending: true,
+               label: `${S.candidate.slice_id} · ${fmt(S.candidate.bandwidth_mbps, 0)} Mbps (candidate)` });
+  }
+  return out;
+}
+
+// ───────────────────────────── detail tabs ─────────────────────────────
+const DETAIL = {};
+function showTab(n) {
+  S.tab = n;
+  document.querySelectorAll(".tab").forEach((el) => el.classList.toggle("active", el.id === `tab-${n}`));
+  $("detail").innerHTML = DETAIL[n] || `<div class="empty">Stage ${n} has not run yet.</div>`;
+}
+function setDetail(n, html, focus = true) { DETAIL[n] = html; if (focus || S.tab === n) showTab(n); }
+
+function highlightIntent(text, params) {
+  let h = esc(text);
+  const marks = [];
+  (params.sdps || []).forEach((s) => marks.push([s.node_id, "tok-node"]));
+  if (params.vlan_id) marks.push([`VLAN ${params.vlan_id}`, "tok-vlan"]);
+  if (params.bandwidth_mbps) marks.push([`${params.bandwidth_mbps >= 1000 && params.bandwidth_mbps % 1000 === 0 ? params.bandwidth_mbps / 1000 + " Gbps" : fmt(params.bandwidth_mbps) + " Mbps"}`, "tok-bw"]);
+  if (params.max_latency_ms) marks.push([`${fmt(params.max_latency_ms)} ms`, "tok-lat"]);
+  if (params.packet_loss_pct) marks.push([`${params.packet_loss_pct}% loss`, "tok-lat"]);
+  if (params.acm) marks.push([params.acm.min_modulation, "tok-acm"]);
+  (params.sdps || []).forEach((s) => { if (s.ip_address) marks.push([s.ip_address, "tok-ip"]); });
+  marks.forEach(([word, cls]) => {
+    if (!word) return;
+    const re = new RegExp(`(${String(word).replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")})`, "i");
+    h = h.replace(re, `<span class="tok ${cls}">$1</span>`);
+  });
+  return h;
+}
+
+function renderStage1(resp) {
+  const b = resp.body || {};
+  const p = b.parameters || {};
+  const plan = b.plan || {};
+  const sel = plan.selected_strategy || {};
+  const cands = plan.candidate_strategies || plan.all_strategies || plan.strategies || [];
+  const strat = (cands.length ? cands : [sel]).slice(0, 5).map((c) => `
+      <div class="strat ${c.name === sel.name ? "sel" : ""}"><span>${c.name === sel.name ? "▸ " : ""}${esc(c.name)}<br><span style="color:var(--dim)">${esc(c.skill_source || "")}</span></span>
+      <span>${fmt((c.confidence || 0) * 100, 1)} %</span>
+      <div class="bar" style="grid-column:1/3"><i style="width:${(c.confidence || 0) * 100}%"></i></div></div>`).join("");
+  setDetail(1, `
+    <div class="box" style="margin-bottom:10px"><h3>Intent text <span>${esc(b.intent_id || "")}</span></h3>
+      <div class="tokens">${highlightIntent(S.run.text, p)}</div></div>
+    <div class="grid2">
+      <div class="box"><h3>Parsed slice intent</h3><div class="kv">
+        <span class="k">type</span><span class="v">${esc(b.intent_type)} · ${esc(p.slice_type || "")}</span>
+        <span class="k">endpoints</span><span class="v">${(p.sdps || []).map((s) => esc(`${s.node_id}:${s.tp_id}${s.vlan_id ? " vlan " + s.vlan_id : ""}${s.ip_address ? " " + s.ip_address : ""}`)).join("<br>")}</span>
+        <span class="k">bandwidth</span><span class="v">${fmt(p.bandwidth_mbps)} Mbps</span>
+        <span class="k">latency</span><span class="v">${p.max_latency_ms ? "≤ " + fmt(p.max_latency_ms) + " ms" : "—"}</span>
+        <span class="k">loss</span><span class="v">${p.packet_loss_pct ? "≤ " + p.packet_loss_pct + " %" : "—"}</span>
+        <span class="k">radio</span><span class="v">${p.acm ? "modulation ≥ " + esc(p.acm.min_modulation) : "—"}</span>
+        <span class="k">technology</span><span class="v">${esc(p.realization_technology || "chosen by the slice controller")}</span>
+        <span class="k">state</span><span class="v">${esc(b.status)} · ${esc(b.state_3gpp || "")}</span>
+      </div></div>
+      <div class="box"><h3>Architect · skills scored</h3>${strat || '<div class="empty">no plan</div>'}</div>
+    </div>`);
+}
+
+function renderStage2(pv) {
+  const pipe = pv.pipeline, m = pipe.mapper, ts = pipe.technology_selector, rz = pipe.realizer;
+  const eps = m.endpoints.map((e) => `<div>${esc(e.sdp)} · ${esc(e.node)}:${esc(e.tp)}${e.vlan ? " · vlan " + e.vlan : ""}${e.ip ? " · " + esc(e.ip) : ""}</div>`).join("");
+  const slos = Object.entries(m.slos || {}).filter(([, v]) => v !== null && v !== undefined).map(([k, v]) => `<span class="k">${esc(k)}</span><span class="v">${esc(v)}</span>`).join("");
+  setDetail(2, `
+    <div class="grid3" style="margin-bottom:10px">
+      <div class="box"><h3>Mapper</h3><div class="kv" style="grid-template-columns:1fr">${eps}</div><div class="kv" style="margin-top:6px">${slos}</div></div>
+      <div class="box"><h3>Technology selector</h3><div class="big" style="font:700 18px var(--mono);color:#a5f3fc">${esc(ts.technology)}</div>
+        <div class="note">${esc(ts.reason)} <br>decided by: ${esc(ts.decided_by)}</div></div>
+      <div class="box"><h3>Realizer</h3><div class="kv">
+        <span class="k">model</span><span class="v">${esc(rz.model)}</span>
+        <span class="k">to</span><span class="v">TeraFlowSDN IETF NBI</span>
+        <span class="k">settings</span><span class="v">${esc(JSON.stringify(rz.service_settings || {}))}</span>
+        <span class="k">path</span><span class="v">${esc((pipe.planner.computed_path || []).join(" → "))}</span></div></div>
+    </div>
+    <div class="grid2">
+      <div class="box"><h3>RFC 9543 · ietf-network-slice-service</h3><pre class="json">${jsonHtml(pv.rfc9543.ietf)}</pre></div>
+      <div class="box"><h3>${esc(rz.model)} · request for TeraFlowSDN</h3><pre class="json">${jsonHtml(rz.payload)}</pre></div>
+    </div>`);
+}
+
+function twinTextHtml(t) {
+  return esc(t).split("\n").map((l) => l.startsWith("#") ? `<span class="c">${l}</span>` : l.replace(/^(\w+)/, '<span class="kw">$1</span>')).join("\n");
+}
+function chartSvg(pf) {
+  const after = pf.scenarios.after.report, before = pf.scenarios.before.report;
+  const series = after.series || {};
+  const key = Object.keys(series)[0];
+  const pts = key ? series[key] : [];
+  const simT = pf.plan.sim_time_s || 8;
+  const offeredAfter = (after.flows || []).reduce((s, f) => s + (f.offered_mbps || 0), 0);
+  const offeredBefore = (before.flows || []).reduce((s, f) => s + (f.offered_mbps || 0), 0);
+  const maxY = Math.max(1100, offeredAfter * 1.08);
+  const X = (t) => 46 + (t / simT) * 520, Y = (v) => 170 - (v / maxY) * 150;
+  const [r0, r1] = pf.plan.rain_window_s || [0, 0];
+  let path = "";
+  pts.forEach((p, i) => { path += `${i ? "L" : "M"}${X(p.t).toFixed(1)},${Y(p.capacity_mbps).toFixed(1)}`; });
+  const ticks = [0, 250, 500, 750, 1000].filter((v) => v <= maxY).map((v) => `<line x1="46" x2="566" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(148,163,184,.12)"/><text x="40" y="${Y(v) + 3}" fill="#64748b" font-size="9" text-anchor="end" font-family="monospace">${v}</text>`).join("");
+  const xt = [0, 2, 4, 6, 8].filter((t) => t <= simT).map((t) => `<text x="${X(t)}" y="184" fill="#64748b" font-size="9" text-anchor="middle" font-family="monospace">${t}s</text>`).join("");
+  const minPt = pts.reduce((m, p) => (!m || p.capacity_mbps < m.capacity_mbps) ? p : m, null);
+  return `<svg class="chart" viewBox="0 0 600 190" preserveAspectRatio="none">
+    <rect x="${X(r0)}" y="18" width="${X(r1) - X(r0)}" height="152" fill="rgba(96,165,250,.08)"/>
+    <text x="${(X(r0) + X(r1)) / 2}" y="14" fill="#93c5fd" font-size="9.5" text-anchor="middle" font-family="monospace">rain · peak ${pf.plan.design_rain_mmh} mm/h</text>
+    ${ticks}${xt}
+    <path d="${path}" fill="none" stroke="#fb923c" stroke-width="2"/>
+    <line x1="46" x2="566" y1="${Y(offeredBefore)}" y2="${Y(offeredBefore)}" stroke="#94a3b8" stroke-dasharray="4 4"/>
+    <line x1="46" x2="566" y1="${Y(offeredAfter)}" y2="${Y(offeredAfter)}" stroke="${pf.verdict === "pass" ? "#34d399" : "#fb7185"}" stroke-width="1.6"/>
+    <text x="570" y="${Y(offeredAfter) + 3}" fill="${pf.verdict === "pass" ? "#34d399" : "#fb7185"}" font-size="9" font-family="monospace">after ${fmt(offeredAfter)}</text>
+    <text x="570" y="${Y(offeredBefore) + 3}" fill="#94a3b8" font-size="9" font-family="monospace">before ${fmt(offeredBefore)}</text>
+    ${minPt ? `<text x="${X(minPt.t)}" y="${Y(minPt.capacity_mbps) + 13}" fill="#fdba74" font-size="9.5" text-anchor="middle" font-family="monospace">${minPt.modulation} · ${fmt(minPt.capacity_mbps)} Mbps</text>` : ""}
+    <text x="50" y="30" fill="#fb923c" font-size="9.5" font-family="monospace">radio hop capacity (NS-3 telemetry)</text>
+  </svg>`;
+}
+function flowRows(report) {
+  return (report.flows || []).map((f) => `<div class="flowrow"><span>${esc(f.name)}</span><span>${fmt(f.throughput_mbps)} Mbps</span><span>${fmt(f.loss_pct, 2)} %</span><span>${fmt(f.mean_delay_ms, 2)} ms</span></div>`).join("") || '<div class="note">no traffic</div>';
+}
+function renderStage3(sim, opts = {}) {
+  const pf = sim.preflight;
+  const eng = pf.engine || {};
+  const rp = eng.replay;
+  const engNote = eng.mode === "replay" ? (rp && rp.exact ? "recorded run of this exact scenario" : "nearest recorded run · " + (rp && rp.flows ? rp.flows.map((f) => `${f.name}: ${fmt(f.recorded_mbps)} Mbps recorded for ${fmt(f.requested_mbps)}`).join(", ") : "")) : `${fmt(eng.wall_clock_ms / 1000, 1)} s wall clock`;
+  const before = pf.scenarios.before.report, after = pf.scenarios.after.report;
+  const sliceFlow = (after.flows || []).find((f) => f.name === pf.candidate.slice_id.replace(/[^A-Za-z0-9_.-]/g, "_")) || {};
+  const hopA = (pf.scenarios.after.hops || [])[0] || {};
+  const actions = pf.verdict === "fail" ? `<div class="actions">
+      ${window.FLOW_REPLAY ? "" : '<button class="btn warn" onclick="applyAnyway()">Apply anyway (override the gate)</button>'}
+      <button class="btn danger" onclick="withdrawIntent()">Withdraw the intent</button></div>` : "";
+  setDetail(3, `
+    <div class="verdict ${pf.verdict}">${pf.verdict === "pass" ? "✓ SLOs hold under the design rain" : "⏸ Held: the twin predicts an SLO breach"}<span class="s">${esc(pf.summary)}</span></div>
+    ${actions}
+    <div class="grid2" style="margin:8px 0 10px">
+      <div class="kpi before"><div class="h">BEFORE · services already in service</div>
+        <div class="small">${(pf.network.existing_services || []).map((f) => esc(`${f.service} ${fmt(f.rate_mbps)} Mbps`)).join(", ") || "none"}</div>
+        ${flowRows(before)}</div>
+      <div class="kpi ${pf.verdict}"><div class="h">AFTER · with ${esc(pf.candidate.slice_id)}</div>
+        <div class="big">${fmt(sliceFlow.throughput_mbps)} Mbps · ${fmt(sliceFlow.mean_delay_ms, 2)} ms · ${fmt(sliceFlow.loss_pct, 2)} %</div>
+        ${flowRows(after)}</div>
+    </div>
+    <div class="grid2">
+      <div class="box"><h3>SLO checks <span>${esc(eng.engine || "")}</span></h3><div class="checks">
+        ${pf.checks.map((c) => `<div class="check"><span class="${c.ok ? "ok" : "no"}">${c.ok ? "✓" : "✖"}</span><span>${esc(c.label)}</span><span class="tg">${esc(c.target)}</span><span class="vl">${esc(c.value)}</span></div>`).join("")}
+      </div><div class="note">radio hop: capacity ${fmt(hopA.min_capacity_mbps)}–${fmt(hopA.max_capacity_mbps)} Mbps · lowest ${esc(pf.lowest_modulation || "—")} · ${esc(engNote)}</div></div>
+      <div class="box"><h3>Radio hop under rain</h3>${chartSvg(pf)}</div>
+    </div>
+    <div class="grid2" style="margin-top:10px">
+      <div class="box"><h3>Scenario the twin built · AFTER <span>.twin</span></h3><pre class="twin">${twinTextHtml(pf.scenarios.after.twin_text)}</pre></div>
+      <div class="box"><h3>Where it came from</h3><div class="kv">
+        <span class="k">topology</span><span class="v">${esc(pf.network.topology_source)} · TeraFlowSDN</span>
+        <span class="k">radios</span><span class="v">${pf.network.radio_hops.map((h) => esc(`${h.a}–${h.b} ${h.model} ${h.distance_m} m`)).join("<br>")}</span>
+        <span class="k">path</span><span class="v">${esc(pf.network.path.join(" → "))}</span>
+        <span class="k">traffic</span><span class="v">TFS-API services + the candidate</span>
+        <span class="k">weather</span><span class="v">site plan: ${pf.plan.design_rain_mmh} mm/h, t=${pf.plan.rain_window_s.join("–")} s</span>
+        <span class="k">engine</span><span class="v">${esc(eng.command || eng.engine || "")}</span>
+      </div></div>
+    </div>`, opts.focus !== false);
+}
+
+function renderStage4(resp) {
+  const b = resp.body || {};
+  const southbound = S.wire.filter((e) => e.t >= (S.run.applyT0 || 0) && e.src === "TeraFlowSDN");
+  const rules = S.wire.filter((e) => e.t >= (S.run.applyT0 || 0) && e.std.layer === "service");
+  const ok = resp.status === 200;
+  const seq = southbound.map((e) => `<div><span style="color:#fdba74">${esc(e.dst)}</span><span>${esc(e.method)}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.path.replace("/restconf/ds/ietf-datastores:candidate", "…candidate").replace("/restconf/operations/", "…ops/"))}</span><span>${e.status}</span></div>`).join("");
+  const handler = (S.run.verify && S.run.verify.diff || []);
+  setDetail(4, `
+    <div class="verdict ${ok ? "pass" : "fail"}">${ok ? "✓ Applied" : "✖ Not applied"}<span class="s">${esc(b.explanation || b.error || "")}</span></div>
+    <div class="grid2">
+      <div class="box"><h3>CER-Intent → TeraFlowSDN <span>${rules.length} service request(s)</span></h3>
+        ${rules.map((e) => `<div class="note" style="color:#a7f3d0">${esc(e.method)} ${esc(e.path)} → ${e.status}</div><pre class="json">${jsonHtml(e.req)}</pre>`).join("") || '<div class="empty">no service request</div>'}</div>
+      <div class="box"><h3>TeraFlowSDN → radios <span>${southbound.length} RESTCONF exchanges</span></h3><div class="seq">${seq || '<div class="empty">none</div>'}</div>
+        <div class="note">The fork's Ceragon service handler composed the rules; its CeragonDriver staged them in each radio's candidate datastore and committed them.</div></div>
+    </div>`);
+}
+
+function renderStage5(v) {
+  const rows = (v.diff || []).map((d) => `<tr><td class="dev">${esc(d.device)}</td><td>${esc(d.resource.replace("/restconf/", ""))}</td><td>${esc(d.leaf.replace(/^radio-bridge-tg-[a-z-]+:/, ""))}</td><td class="was">${esc(d.before ?? "—")}</td><td class="now">${esc(d.after ?? "—")}</td></tr>`).join("");
+  setDetail(5, `
+    <div class="verdict ${v.ok ? "pass" : "fail"}">${v.ok ? "✓ Verified on the network" : "✖ Read-back mismatch"}<span class="s">intent ${esc(v.intent.status)} · ${esc(v.intent.state_3gpp)} · ${esc(v.intent.outcome || "")}</span></div>
+    <div class="grid2">
+      <div class="box"><h3>Checks</h3><div class="checks">
+        ${v.checks.map((c) => `<div class="check"><span class="${c.ok ? "ok" : "no"}">${c.ok ? "✓" : "✖"}</span><span>${esc(c.label)}</span><span></span><span class="vl">${esc(c.value)}</span></div>`).join("")}</div></div>
+      <div class="box"><h3>Radios as read back</h3><div class="kv">
+        ${Object.entries(v.radios || {}).map(([k, r]) => `<span class="k">${esc(k)}</span><span class="v">VLANs ${esc((r.vlans || []).join(", ") || "none")} · link-distance ${esc((r.node_config || {})["link-distance"] || "—")}</span>`).join("")}
+        <span class="k">service</span><span class="v">${esc(v.service.type || "")} · ${esc(v.service.status || "")}</span>
+      </div></div>
+    </div>
+    <div class="box" style="margin-top:10px"><h3>Datastore diff · before the flow → after <span>${(v.diff || []).length} leaves</span></h3>
+      <div style="max-height:260px;overflow:auto"><table class="diff"><thead><tr><th>device</th><th>resource</th><th>leaf</th><th>before</th><th>after</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="was">no change</td></tr>'}</tbody></table></div></div>`);
+}
+
+// ───────────────────────────── the flow ─────────────────────────────
+function startClock() {
+  const t0 = performance.now();
+  chip("chip-clock", "busy", `<span id="clock">0.0 s</span>`);
+  clearInterval(S.clockTimer);
+  S.clockTimer = setInterval(() => { const el = $("clock"); if (el) el.textContent = ((performance.now() - t0) / 1000).toFixed(1) + " s"; }, 100);
+}
+function stopClock() { clearInterval(S.clockTimer); const el = $("chip-clock"); el.className = "chip ok"; }
+async function gate() {
+  if ($("autoAdv").checked) { await sleep(650); return; }
+  $("nextBtn").disabled = false;
+  await new Promise((r) => { S.waiter = r; });
+  $("nextBtn").disabled = true;
+}
+function headline(t) { $("headline").textContent = t; }
+async function flush() { await pollWire(); while (S.queue.length) await sleep(60); }
+
+async function runFlow() {
+  if (S.busy) return;
+  const text = $("intentText").value.trim();
+  if (!text) return;
+  S.busy = true; $("runBtn").disabled = true;
+  resetStages(); Object.keys(DETAIL).forEach((k) => delete DETAIL[k]);
+  S.run = { text }; S.candidate = null; S.t0 = Date.now() / 1000;
+  startClock();
+  const polling = setInterval(pollWire, 350);
+  try {
+    phaseMark(`▶ ${text}`, true);
+    // 1 · intent
+    phaseMark("1 · OPERATOR INTENT");
+    setStage(1, "running", "RUNNING"); setSub(1, 0, "run"); headline("Stage 1 · submitting the intent to CER-Intent's intent API");
+    const r1 = await api("POST", "/api/v1/intent", { intent: text, source: "flow-dashboard" });
+    await flush();
+    if (r1.status !== 202 || !r1.body || !r1.body.intent_id) {
+      setSub(1, 0, "bad", `Intent API · HTTP ${r1.status}`); setStage(1, "failed", "REJECTED");
+      setDetail(1, `<div class="verdict fail">✖ Rejected<span class="s">${esc((r1.body && (r1.body.error || (r1.body.errors || []).join("; "))) || "")}</span></div>`);
+      return;
+    }
+    S.run.intentId = r1.body.intent_id;
+    setSub(1, 0, "ok", `Intent API · 202 · ${S.run.intentId.slice(0, 8)}`);
+    setSub(1, 1, (r1.body.intent_type === "slice") ? "ok" : "bad", `Parsed: ${r1.body.intent_type} · ${r1.body.target_name || ""}`);
+    const sel = (r1.body.plan && r1.body.plan.selected_strategy) || {};
+    setSub(1, 2, "ok", `Plan: ${sel.name || "—"} · ${fmt((sel.confidence || 0) * 100, 1)} %`);
+    setStage(1, "done", "PLANNED"); renderStage1(r1);
+    await gate();
+
+    // 2 · slice controller
+    phaseMark("2 · SLICE CONTROLLER · RFC 9543");
+    setStage(2, "running", "RUNNING"); setSub(2, 0, "run"); headline("Stage 2 · the RFC 9543 request and what the slice controller would send to TeraFlowSDN");
+    const r2 = await api("POST", "/api/v1/flow/preview", { intent_id: S.run.intentId });
+    await flush();
+    if (r2.status !== 200) { setSub(2, 0, "bad", `preview · ${(r2.body || {}).error || r2.status}`); setStage(2, "failed", "FAILED"); return; }
+    const pv = r2.body; S.run.preview = pv; S.run.sliceId = pv.candidate.slice_id; S.candidate = pv.candidate;
+    setSub(2, 0, "ok", `RFC 9543 · ${pv.candidate.slice_id}`);
+    setSub(2, 1, "ok", `Mapper ${pv.pipeline.mapper.endpoints.length} SDPs · ${pv.pipeline.technology_selector.technology}`);
+    setSub(2, 2, "ok", `Realizer · ${pv.pipeline.realizer.model}`);
+    setStage(2, "done", "BUILT"); renderStage2(pv);
+    await gate();
+
+    // 3 · twin
+    phaseMark("3 · DIGITAL TWIN · NS-3.45");
+    setStage(3, "running", "RUNNING"); setSub(3, 0, "run"); setSub(3, 1, "run");
+    headline("Stage 3 · the twin syncs from TeraFlowSDN and runs NS-3.45 before / after under the design rain");
+    S.rain = { level: 0.2 };
+    const r3 = await api("POST", "/api/v1/flow/simulate", { intent_id: S.run.intentId });
+    await flush();
+    if (r3.status !== 200) {
+      S.rain = null;
+      setSub(3, 0, "bad", `twin · ${(r3.body || {}).error || r3.status}`); setStage(3, "failed", "NO TWIN");
+      setDetail(3, `<div class="verdict fail">✖ The twin did not answer<span class="s">${esc((r3.body || {}).error || "")}</span></div>`);
+      return;
+    }
+    const pf = r3.body.preflight; S.run.preflight = pf;
+    setSub(3, 0, "ok", `Synced · ${r3.body.sync.nodes_count} nodes · ${r3.body.sync.topology_source}`);
+    const eng = pf.engine || {};
+    setSub(3, 1, "ok", `NS-3 ×2 · ${eng.mode === "replay" ? "recorded" : fmt(eng.wall_clock_ms / 1000, 1) + " s"}`);
+    renderStage3(r3.body);
+    await replayRain(pf);
+    if (pf.verdict === "pass") { setSub(3, 2, "ok", "SLOs hold · pass"); setStage(3, "done", "PASS"); }
+    else { setSub(3, 2, "hold", "Breach predicted · held"); setStage(3, "held", "HELD"); }
+    renderStage3(r3.body);
+    if (pf.verdict !== "pass") {
+      [0, 1, 2].forEach((i) => setSub(4, i, "skip")); setStage(4, "skipped", "NOT SENT");
+      [0, 1, 2].forEach((i) => setSub(5, i, "skip")); setStage(5, "skipped", "—");
+      headline("Held at the twin: nothing was sent to TeraFlowSDN or the radios");
+      return;
+    }
+    await gate();
+    await applyStage(false);
+  } finally {
+    clearInterval(polling);
+    await flush();
+    stopClock();
+    S.busy = false; $("runBtn").disabled = false;
+    refreshStatus();
+  }
+}
+
+async function applyStage(override) {
+  phaseMark(override ? "4 · APPLY (gate overridden)" : "4 · TERAFLOWSDN → RADIOS");
+  setStage(4, "running", "RUNNING"); setSub(4, 0, "run");
+  headline("Stage 4 · approval → RFC 9543 → L2SM / L3SM to TeraFlowSDN → Ceragon driver → RESTCONF commit");
+  S.run.applyT0 = Date.now() / 1000 - 0.05;
+  const r4 = await api("POST", `/api/v1/intents/${S.run.intentId}/approve${override ? "?override=1" : ""}`);
+  await flush(); await sleep(300); await flush();
+  if (r4.status === 409) { setSub(4, 0, "hold", "Held by the twin gate"); setStage(4, "held", "HELD"); return false; }
+  setSub(4, 0, "ok", `Approved · ${override ? "override" : "twin gate passed"}`);
+  const svc = S.wire.filter((e) => e.t >= S.run.applyT0 && e.std.layer === "service");
+  const south = S.wire.filter((e) => e.t >= S.run.applyT0 && e.src === "TeraFlowSDN");
+  setSub(4, 1, svc.length ? "ok" : "bad", svc.length ? `${svc[0].std.std} · ${svc[0].method} → ${svc[0].status}` : "no service request");
+  const commits = south.filter((e) => e.path.includes("commit")).length;
+  setSub(4, 2, commits ? "ok" : (r4.status === 200 ? "ok" : "bad"), `RESTCONF · ${south.length} exchanges · ${commits} commits`);
+  setStage(4, r4.status === 200 ? "done" : "failed", r4.status === 200 ? "APPLIED" : "FAILED");
+  renderStage4(r4);
+  refreshStatus();
+  if (r4.status !== 200) return false;
+  await gate();
+
+  // 5 · read-back
+  phaseMark("5 · READ-BACK · CLOSED LOOP");
+  setStage(5, "running", "RUNNING"); setSub(5, 0, "run"); setSub(5, 1, "run");
+  headline("Stage 5 · read-back from TeraFlowSDN and the radios, datastore diff, twin re-sync");
+  const r5 = await api("POST", "/api/v1/flow/verify", { intent_id: S.run.intentId });
+  await flush();
+  const v = r5.body || { checks: [], diff: [], intent: {}, service: {} };
+  S.run.verify = v;
+  const svcCheck = v.checks.find((c) => c.id === "service") || {};
+  setSub(5, 0, svcCheck.ok ? "ok" : "bad", `TeraFlowSDN · ${svcCheck.value || "?"}`);
+  const radioChecks = v.checks.filter((c) => c.id.startsWith("vlan:") || c.id.startsWith("acm:"));
+  setSub(5, 1, radioChecks.every((c) => c.ok) ? "ok" : "bad", `Radios · ${(v.diff || []).length} leaves changed`);
+  setSub(5, 2, v.ok ? "ok" : "bad", `${v.intent.outcome || "?"} · twin re-synced`);
+  setStage(5, v.ok ? "done" : "failed", v.ok ? "VERIFIED" : "MISMATCH");
+  renderStage5(v);
+  headline(v.ok ? `Done · ${S.run.sliceId} is in service, verified on the radios` : "Read-back found a mismatch");
+  S.candidate = null;
+  return true;
+}
+
+async function replayRain(pf) {
+  const series = (pf.scenarios.after.report.series || {});
+  const key = Object.keys(series)[0];
+  const pts = key ? series[key] : [];
+  if (!pts.length || !S.hop) { S.rain = null; return; }
+  const peak = Math.max(1, ...pts.map((p) => p.rain_mmh));
+  const dur = 2600, t0 = performance.now();
+  while (performance.now() - t0 < dur) {
+    const i = Math.min(pts.length - 1, Math.floor(((performance.now() - t0) / dur) * pts.length));
+    const p = pts[i];
+    S.rain = { level: p.rain_mmh / peak };
+    S.hop.cap = p.capacity_mbps; S.hop.mcs = p.modulation;
+    await sleep(40);
+  }
+  const last = pts[pts.length - 1];
+  S.hop.cap = last.capacity_mbps; S.hop.mcs = last.modulation; S.rain = null;
+}
+
+async function applyAnyway() {
+  if (S.busy || !S.run || !S.run.intentId) return;
+  S.busy = true; $("runBtn").disabled = true; startClock();
+  const polling = setInterval(pollWire, 350);
+  try { await applyStage(true); }
+  finally { clearInterval(polling); await flush(); stopClock(); S.busy = false; $("runBtn").disabled = false; refreshStatus(); }
+}
+async function withdrawIntent() {
+  if (!S.run || !S.run.intentId) return;
+  phaseMark("WITHDRAW");
+  await api("DELETE", `/api/v1/intents/${S.run.intentId}`);
+  await flush();
+  S.candidate = null;
+  headline("Intent withdrawn: the network was never touched");
+}
+async function removeSlices() {
+  if (S.busy) return;
+  S.busy = true; $("runBtn").disabled = true; startClock();
+  const polling = setInterval(pollWire, 350);
+  try {
+    await refreshStatus();
+    const victims = (S.status.slices || []).filter((s) => s.id !== "backhaul-ran");
+    phaseMark(`▶ Remove ${victims.map((s) => s.id).join(", ") || "nothing"}`, true);
+    phaseMark(`REMOVE ${victims.length} SLICE(S) · RFC 9543 DELETE`);
+    headline(victims.length ? `Removing ${victims.map((s) => s.id).join(", ")} through the RFC 9543 interface` : "No slice to remove besides backhaul-ran");
+    for (const sl of victims) {
+      await api("DELETE", `/restconf/data/ietf-network-slice-service:network-slice-services/slice-service=${encodeURIComponent(sl.id)}`);
+      await flush();
+    }
+    S.candidate = null;
+  } finally { clearInterval(polling); await flush(); stopClock(); S.busy = false; $("runBtn").disabled = false; await refreshStatus(); }
+}
+
+// ───────────────────────────── boot ─────────────────────────────
+async function boot() {
+  buildPresets(); buildStages(); renderStdChips(); showTab(1);
+  $("intentText").value = PRESETS[0].text;
+  document.getElementById("pr-l2").classList.add("active");
+  $("runBtn").onclick = runFlow;
+  $("nextBtn").onclick = () => { if (S.waiter) { const w = S.waiter; S.waiter = null; w(); } };
+  $("intentText").addEventListener("keydown", (e) => { if (e.key === "Enter") runFlow(); });
+  resizeCanvas(); window.addEventListener("resize", resizeCanvas);
+  requestAnimationFrame(draw);
+  if (window.FLOW_BOOT) {
+    $("nav-classic").style.display = "none"; $("nav-sc").style.display = "none";
+    try { await window.FLOW_BOOT; } catch (e) { return; }
+  }
+  if (window.FLOW_REPLAY) {      // a recorded live session: the four examples only
+    $("intentText").readOnly = true;
+    $("intentText").title = "This copy replays a recorded live session of the four examples";
+    const c = document.createElement("span");
+    c.className = "chip busy"; c.style.animation = "none";
+    c.innerHTML = `<span class="dot" style="animation:none"></span>Replay of a live session · ${esc(window.FLOW_REPLAY)}`;
+    document.querySelector(".chips").prepend(c);
+  }
+  await refreshStatus();
+  await primeWire();
+  wireLoop();
+  setInterval(() => { if (!S.busy) refreshStatus(); }, 15000);
+}
+boot();
+</script>
+</body>
+</html>

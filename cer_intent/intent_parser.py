@@ -199,12 +199,117 @@ def _extract_float(text: str, patterns: list[str]) -> Optional[float]:
     return None
 
 
+# ── End-to-end transport slices: an intent that names its two endpoints ─────────
+# "Connect region-a and edge over VLAN 300, 500 Mbps, at most 10 ms; keep the radio at MCS4 or better"
+# becomes a slice intent with SDPs, which the slice translator hands to the
+# transport slice controller as one RFC 9543 request.
+
+_NODE = r"[A-Za-z][\w.-]*?"
+_PORT = r"(?:eth|ge|xe|et|port|ethernet)[\w/.-]*"
+_ADDR = r"(?:\s+\d{{1,3}}(?:\.\d{{1,3}}){{3}}(?:/\d{{1,2}})?)?"   # braces doubled for .format below
+_ENDPOINT = rf"(?P<{{n}}>{_NODE})(?:(?::|\s+port\s+|\s+)(?P<{{p}}>{_PORT}))?{_ADDR}"
+_PAIR_PATTERNS = [
+    rf"\bbetween\s+{_ENDPOINT.format(n='a', p='pa')}\s+and\s+{_ENDPOINT.format(n='b', p='pb')}(?=[\s,.;]|$)",
+    rf"\bfrom\s+{_ENDPOINT.format(n='a', p='pa')}\s+to\s+{_ENDPOINT.format(n='b', p='pb')}(?=[\s,.;]|$)",
+    rf"\bconnect\s+{_ENDPOINT.format(n='a', p='pa')}\s+(?:and|to|with)\s+{_ENDPOINT.format(n='b', p='pb')}(?=[\s,.;]|$)",
+]
+_CONNECTIVITY_WORDS = ("slice", "connect", "vpn", "circuit", "connectivity")
+_NOT_NODES = {"the", "a", "an", "and", "to", "with", "site", "sites", "port", "over", "at", "of"}
+_ACM_RE = re.compile(r"\b(mcs\s*-?\s*\d{1,2}|qpsk|\d{2,4}\s*-?\s*qam)\b", re.IGNORECASE)
+_IPV4_RE = re.compile(r"\b(\d{1,3}(?:\.\d{1,3}){3}/\d{1,2})\b")
+
+
+def parse_slice_endpoints(text: str) -> Optional[Dict[str, Any]]:
+    """
+    The slice intent of a request that names two endpoints, or None.
+    Endpoints are taken as written ("node", "node:port" or "node eth1"); the port
+    defaults to eth1. Bandwidth, latency, VLAN, L2VPN/L3VPN, an ACM floor and
+    per-endpoint IPv4 addresses are read when present.
+    """
+    text_l = text.lower()
+    if not any(w in text_l for w in _CONNECTIVITY_WORDS):
+        return None
+    match = None
+    for pattern in _PAIR_PATTERNS:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            break
+    if not match:
+        return None
+    a, b = match.group("a"), match.group("b")
+    if a.lower() in _NOT_NODES or b.lower() in _NOT_NODES or a.lower() == b.lower():
+        return None
+    ports = [match.group("pa") or "eth1", match.group("pb") or "eth1"]
+
+    mbps_m = re.search(r"(\d+(?:\.\d+)?)\s*mbps", text_l)
+    gbps_m = re.search(r"(\d+(?:\.\d+)?)\s*gbps", text_l)
+    bandwidth = float(mbps_m.group(1)) if mbps_m else (float(gbps_m.group(1)) * 1000.0 if gbps_m else None)
+    lat_m = re.search(r"(\d+(?:\.\d+)?)\s*ms\b", text_l)
+    latency = float(lat_m.group(1)) if lat_m else None
+    loss_m = re.search(r"(\d+(?:\.\d+)?)\s*%\s*(?:packet\s+)?loss", text_l)
+    loss = float(loss_m.group(1)) if loss_m else None
+    vlan_m = re.search(r"vlan[- ]?(?:id\s*)?(\d{1,4})", text_l)
+    vlan = int(vlan_m.group(1)) if vlan_m else None
+    technology = None
+    if re.search(r"\bl2vpn\b|layer[ -]?2", text_l):
+        technology = "L2VPN"
+    elif re.search(r"\bl3vpn\b|layer[ -]?3", text_l):
+        technology = "L3VPN"
+    acm = None
+    acm_m = _ACM_RE.search(text)
+    if acm_m and re.search(r"acm|modulation|mcs|qam|qpsk|radio", text_l):
+        token = re.sub(r"[\s-]+", "", acm_m.group(1)).upper()
+        acm = {"min_modulation": token}
+    addresses = _IPV4_RE.findall(text)
+
+    stype = "URLLC" if "urllc" in text_l else ("mMTC" if "mmtc" in text_l else "eMBB")
+    name_m = re.search(r"(slice-[A-Za-z0-9_-]+)", text)
+    name = name_m.group(1) if name_m else (f"slice-{a}-{b}" + (f"-{vlan}" if vlan is not None else "")).lower()
+    sdps = []
+    for i, (node, port) in enumerate(zip((a, b), ports), start=1):
+        sdp: Dict[str, Any] = {"id": str(i), "node_id": node, "tp_id": port}
+        if vlan is not None:
+            sdp["vlan_id"] = vlan
+        if len(addresses) >= 2:
+            sdp["ip_address"] = addresses[i - 1]
+        sdps.append(sdp)
+    params: Dict[str, Any] = {
+        "slice_name": name,
+        "slice_id": name,
+        "slice_type": stype,
+        "bandwidth_mbps": bandwidth,
+        "priority_level": 7 if stype == "URLLC" else 5,
+        "vlan_id": vlan,
+        "sdps": sdps,
+    }
+    if latency is not None:
+        params["max_latency_ms"] = latency
+    if loss is not None:
+        params["packet_loss_pct"] = loss
+    if technology:
+        params["realization_technology"] = technology
+    if acm:
+        params["acm"] = acm
+    return {
+        "intent_type": "slice",
+        "target": {"target_type": "link", "identifier": f"{a}<->{b}", "direction": None},
+        "parameters": params,
+        "priority": 7, "ttl_seconds": None, "tags": ["slice", "transport", stype],
+    }
+
+
+
 class RuleParser:
     """Deterministic keyword & regex intent parser supporting all 14 IntentTypes & 17 Skills."""
 
     def parse_text(self, text: str) -> Dict[str, Any]:
         text_l = text.lower()
         target_type, identifier = _extract_identifier(text)
+
+        # 0. An end-to-end slice that names its two endpoints (goes to the slice controller)
+        transport_slice = parse_slice_endpoints(text)
+        if transport_slice is not None:
+            return transport_slice
 
         # 1. TSN (IEEE 802.1Qbv / 802.1Qbu / PfifoFast / Frame Preemption / Time-Aware Shaper)
         if any(k in text_l for k in [

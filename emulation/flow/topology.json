@@ -1,0 +1,308 @@
+{
+ "_comment": "End-to-end flow topology: two sites joined by one Ceragon radio hop. Radios are radio_emulator.py instances on ports 8101/8102.",
+ "contexts": [
+  {
+   "context_id": {
+    "context_uuid": {
+     "uuid": "admin"
+    }
+   }
+  }
+ ],
+ "topologies": [
+  {
+   "topology_id": {
+    "context_id": {
+     "context_uuid": {
+      "uuid": "admin"
+     }
+    },
+    "topology_uuid": {
+     "uuid": "admin"
+    }
+   }
+  }
+ ],
+ "devices": [
+  {
+   "device_id": {
+    "device_uuid": {
+     "uuid": "region-a"
+    }
+   },
+   "name": "region-a",
+   "device_type": "emu-datacenter",
+   "device_drivers": [
+    "DEVICEDRIVER_UNDEFINED"
+   ],
+   "device_operational_status": "DEVICEOPERATIONALSTATUS_UNDEFINED",
+   "device_endpoints": [],
+   "device_config": {
+    "config_rules": [
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/address",
+       "resource_value": "127.0.0.1"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/port",
+       "resource_value": "0"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/settings",
+       "resource_value": {
+        "endpoints": [
+         {
+          "uuid": "eth1",
+          "type": "copper"
+         },
+         {
+          "uuid": "int",
+          "type": "copper"
+         }
+        ]
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device_id": {
+    "device_uuid": {
+     "uuid": "radio-1"
+    }
+   },
+   "name": "radio-1",
+   "device_type": "ceragon-wireless",
+   "device_drivers": [
+    "DEVICEDRIVER_CERAGON"
+   ],
+   "device_operational_status": "DEVICEOPERATIONALSTATUS_UNDEFINED",
+   "device_endpoints": [],
+   "device_config": {
+    "config_rules": [
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/address",
+       "resource_value": "127.0.0.1"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/port",
+       "resource_value": "8101"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/settings",
+       "resource_value": {
+        "scheme": "http",
+        "username": "admin",
+        "password": "admin",
+        "timeout": 5
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device_id": {
+    "device_uuid": {
+     "uuid": "radio-2"
+    }
+   },
+   "name": "radio-2",
+   "device_type": "ceragon-wireless",
+   "device_drivers": [
+    "DEVICEDRIVER_CERAGON"
+   ],
+   "device_operational_status": "DEVICEOPERATIONALSTATUS_UNDEFINED",
+   "device_endpoints": [],
+   "device_config": {
+    "config_rules": [
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/address",
+       "resource_value": "127.0.0.1"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/port",
+       "resource_value": "8102"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/settings",
+       "resource_value": {
+        "scheme": "http",
+        "username": "admin",
+        "password": "admin",
+        "timeout": 5
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "device_id": {
+    "device_uuid": {
+     "uuid": "edge"
+    }
+   },
+   "name": "edge",
+   "device_type": "emu-datacenter",
+   "device_drivers": [
+    "DEVICEDRIVER_UNDEFINED"
+   ],
+   "device_operational_status": "DEVICEOPERATIONALSTATUS_UNDEFINED",
+   "device_endpoints": [],
+   "device_config": {
+    "config_rules": [
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/address",
+       "resource_value": "127.0.0.1"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/port",
+       "resource_value": "0"
+      }
+     },
+     {
+      "action": "CONFIGACTION_SET",
+      "custom": {
+       "resource_key": "_connect/settings",
+       "resource_value": {
+        "endpoints": [
+         {
+          "uuid": "eth1",
+          "type": "copper"
+         },
+         {
+          "uuid": "int",
+          "type": "copper"
+         }
+        ]
+       }
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "links": [
+  {
+   "link_id": {
+    "link_uuid": {
+     "uuid": "region-a/eth1==radio-1/eth1"
+    }
+   },
+   "name": "region-a/eth1==radio-1/eth1",
+   "link_endpoint_ids": [
+    {
+     "device_id": {
+      "device_uuid": {
+       "uuid": "region-a"
+      }
+     },
+     "endpoint_uuid": {
+      "uuid": "eth1"
+     }
+    },
+    {
+     "device_id": {
+      "device_uuid": {
+       "uuid": "radio-1"
+      }
+     },
+     "endpoint_uuid": {
+      "uuid": "eth1"
+     }
+    }
+   ]
+  },
+  {
+   "link_id": {
+    "link_uuid": {
+     "uuid": "radio-1/rf-sector-1==radio-2/rf-sector-1"
+    }
+   },
+   "name": "radio-1/rf-sector-1==radio-2/rf-sector-1",
+   "link_endpoint_ids": [
+    {
+     "device_id": {
+      "device_uuid": {
+       "uuid": "radio-1"
+      }
+     },
+     "endpoint_uuid": {
+      "uuid": "rf-sector-1"
+     }
+    },
+    {
+     "device_id": {
+      "device_uuid": {
+       "uuid": "radio-2"
+      }
+     },
+     "endpoint_uuid": {
+      "uuid": "rf-sector-1"
+     }
+    }
+   ]
+  },
+  {
+   "link_id": {
+    "link_uuid": {
+     "uuid": "radio-2/eth1==edge/eth1"
+    }
+   },
+   "name": "radio-2/eth1==edge/eth1",
+   "link_endpoint_ids": [
+    {
+     "device_id": {
+      "device_uuid": {
+       "uuid": "radio-2"
+      }
+     },
+     "endpoint_uuid": {
+      "uuid": "eth1"
+     }
+    },
+    {
+     "device_id": {
+      "device_uuid": {
+       "uuid": "edge"
+      }
+     },
+     "endpoint_uuid": {
+      "uuid": "eth1"
+     }
+    }
+   ]
+  }
+ ]
+}
