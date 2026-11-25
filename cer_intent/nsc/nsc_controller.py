@@ -17,6 +17,8 @@ templates, TVR schedules and subscriptions.
 from __future__ import annotations
 
 import logging
+import os
+import re
 import time
 import uuid
 from dataclasses import asdict
@@ -32,13 +34,28 @@ from cer_intent.nsc.ietf_models import (
     StaticDeviceEnergy,
     IETFTelemetrySubscription,
 )
-from cer_intent.nsc.mapper import MappingError, map_request
+from cer_intent.nsc.mapper import MappingError, map_request, unwrap_slice_service
 from cer_intent.nsc.pce_planner import NDTPathComputationEngine
 from cer_intent.nsc.realizer import Realization, Realizer
 from cer_intent.nsc.technology_selector import SelectorSkill, select_technology
 from cer_intent.nsc.topology_file import load_topology_file
 
 logger = logging.getLogger("NetworkSliceController")
+
+_QAM_RANK = {"bpsk": 1, "qpsk": 2, "8psk": 3, "16qam": 4, "32qam": 5, "64qam": 6, "128qam": 7,
+             "256qam": 8, "512qam": 9, "1024qam": 10, "2048qam": 11, "4096qam": 12}
+
+
+def floor_rank(value: Any) -> int:
+    """Order modulation floors: MCS<n> by index, QAM names by constellation size; unknown = 0."""
+    s = re.sub(r"[\s_-]", "", str(value or "").lower())
+    m = re.fullmatch(r"mcs(\d+)", s)
+    if m:
+        return int(m.group(1))
+    if s in _QAM_RANK:
+        return _QAM_RANK[s]
+    m = re.fullmatch(r"(\d+)(?:qam)?", s)
+    return _QAM_RANK.get(f"{m.group(1)}qam", 0) if m else 0
 
 
 class NetworkSliceController:
@@ -54,7 +71,11 @@ class NetworkSliceController:
         self.realizer = Realizer(tfs_client=tfs_client, mode=realization_mode)
         self.technology_skill = technology_skill
         self.realizations: Dict[str, Realization] = {}
+        self.requests: Dict[str, Dict[str, Any]] = {}      # the RFC 9543 request each slice was created from
+        self.floor_log: List[Dict[str, Any]] = []           # modulation floors set per hop, and why
         self.topology_source = "not read yet"
+        self._last_topology: Dict[str, Any] = {}
+        self.hop_floors: Dict[str, str] = {}                # floor each slice's service settings carry
 
         # Datastores
         self.templates: Dict[str, SLOSLETemplate] = {}
@@ -80,6 +101,7 @@ class NetworkSliceController:
             try:
                 topo = self.tfs_client.fetch_normalized_topology()
                 self.topology_source = "TeraFlowSDN"
+                self._last_topology = topo
                 return topo
             except Exception as e:
                 logger.warning(f"Could not fetch topology from TFS: {e}")
@@ -243,6 +265,8 @@ class NetworkSliceController:
         computed_path = pce_result.get("computed_path", [ep.node_id for ep in mapped.endpoints])
 
         choice = select_technology(mapped, skill=self.technology_skill)
+        own_acm = dict(mapped.extensions["acm"]) if isinstance(mapped.extensions.get("acm"), dict) else None
+        floor_note = self._apply_hop_floor(mapped, computed_path)
 
         if self.realizer.mode == "tfs-api":
             realization = self.realizer.build(mapped, choice.technology)
@@ -257,8 +281,20 @@ class NetworkSliceController:
                                        self._slice_status(realization.status, pce_result.get("feasible", True)))
         self.slices[mapped.slice_id] = slice_svc
         self.realizations[mapped.slice_id] = realization
+        self.requests[mapped.slice_id] = {
+            "service": unwrap_slice_service(raw_req), "slos": asdict(mapped.slos),
+            "endpoints": [asdict(e) for e in mapped.endpoints], "acm": own_acm,
+            "radio": mapped.extensions.get("radio"), "technology": choice.technology, "created_at": time.time(),
+        }
+        if isinstance(mapped.extensions.get("acm"), dict) and mapped.extensions["acm"].get("min_modulation"):
+            self.hop_floors[mapped.slice_id] = mapped.extensions["acm"]["min_modulation"]
+        if floor_note and floor_note.get("raise"):
+            floor_note["updated"] = self._carry_floor(floor_note["raise"], floor_note["applied"])
         self._notify_subscribers(mapped.slice_id, slice_svc, pce_result)
-        return self._pipeline_result(slice_svc, mapped, pce_result, choice, realization)
+        result = self._pipeline_result(slice_svc, mapped, pce_result, choice, realization)
+        if floor_note:
+            result["hop_floor"] = floor_note
+        return result
 
     def preview_slice_service(self, raw_req: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -349,11 +385,156 @@ class NetworkSliceController:
         realization = self.realizations.get(slice_id)
         technology = realization.technology if realization else (
             "L3VPN" if svc.realization_technology == "L3SM" else "L2VPN")
+        path = list(svc.computed_path)
+        baseline = self._baseline_before_withdraw(slice_id, path)
         result = self.realizer.withdraw(slice_id, technology)
+        if baseline:
+            result["hop_floor"] = baseline
         if result.get("status") != "failed":
             self.slices.pop(slice_id, None)
             self.realizations.pop(slice_id, None)
+            self.requests.pop(slice_id, None)
+            restored = self._restore_hop_floor(path, removed=slice_id)
+            if restored:
+                result["hop_floor"] = restored
         return result
+
+    def update_slice_slos(self, slice_id: str, bandwidth_mbps: Optional[float] = None,
+                          max_latency_ms: Optional[float] = None, acm: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """
+        Change a realized slice's bandwidth, latency or modulation floor in place:
+        the stored request and record follow, and in ietf mode the TeraFlowSDN
+        service's SLA constraints (and ACM settings) are updated. None if unknown.
+        """
+        svc = self.slices.get(slice_id)
+        req = self.requests.get(slice_id)
+        if svc is None or req is None:
+            return None
+        slos = req.setdefault("slos", {})
+        if bandwidth_mbps is not None:
+            slos["bandwidth_mbps"] = float(bandwidth_mbps)
+            req["service"]["bandwidth_mbps"] = float(bandwidth_mbps)
+        if max_latency_ms is not None:
+            slos["max_latency_ms"] = float(max_latency_ms)
+            req["service"]["max_latency_ms"] = float(max_latency_ms)
+        settings = None
+        if acm and acm.get("min_modulation"):
+            req["acm"] = dict(acm)
+            req["service"]["acm"] = dict(acm)
+            hop_others = {sid: self._own_floor(sid) for sid in self._sharing(list(svc.computed_path), exclude=slice_id)}
+            floors = [f for f in hop_others.values() if f] + [acm["min_modulation"]]
+            top = max(floors, key=floor_rank)
+            settings = {"acm": {**acm, "min_modulation": top}}
+        result: Dict[str, Any] = {"slice_id": slice_id, "status": "updated", "slos": dict(slos)}
+        if self.realizer.mode == "ietf" and self.tfs_client is not None:
+            try:
+                self.tfs_client.update_service_constraints(
+                    slice_id, capacity_gbps=(bandwidth_mbps / 1000.0) if bandwidth_mbps is not None else None,
+                    latency_ms=max_latency_ms, settings=settings)
+            except Exception as e:  # pylint: disable=broad-except
+                return {"slice_id": slice_id, "status": "failed", "error": str(e)}
+            if settings:
+                self.hop_floors[slice_id] = settings["acm"]["min_modulation"]
+                stale = [sid for sid, f in hop_others.items() if f and self.hop_floors.get(sid) != settings["acm"]["min_modulation"]]
+                result["hop_floor"] = {"applied": settings["acm"]["min_modulation"],
+                                       "updated": self._carry_floor(stale, settings["acm"]["min_modulation"])}
+        self._notify_subscribers(slice_id, svc, {"feasible": True})
+        return result
+
+    # ── one modulation floor per radio hop ────────────────────────────────────────
+    # A radio holds one ACM floor. Slices sharing a radio that asked for a floor
+    # all carry the highest one asked on that radio, so re-applying any of their
+    # services keeps it; slices without a floor carry none. When a slice leaves,
+    # the floor drops to the highest that remains, or to the baseline
+    # (CER_ACM_BASELINE_FLOOR) when none remain.
+    def _radio_nodes(self, path: List[str]) -> List[str]:
+        roles = {}
+        for n in (self._last_topology or {}).get("nodes", []):
+            text = " ".join(str(n.get(k) or "") for k in ("role", "type", "model")).lower()
+            roles[n.get("id")] = any(w in text for w in ("mmwave", "microwave", "radio", "wireless", "mh-t", "ip-50"))
+        radios = [n for n in path if roles.get(n) or str(n).lower().startswith("radio")]
+        return radios
+
+    def _sharing(self, path: List[str], exclude: Optional[str] = None) -> List[str]:
+        radios = set(self._radio_nodes(path))
+        if not radios:
+            return []
+        return [sid for sid, svc in self.slices.items()
+                if sid != exclude and radios & set(svc.computed_path or [])]
+
+    def _own_floor(self, slice_id: str) -> Optional[str]:
+        acm = (self.requests.get(slice_id) or {}).get("acm") or {}
+        return acm.get("min_modulation") if isinstance(acm, dict) else None
+
+    def _apply_hop_floor(self, mapped, path: List[str]) -> Optional[Dict[str, Any]]:
+        acm = mapped.extensions.get("acm") if isinstance(mapped.extensions.get("acm"), dict) else None
+        own = (acm or {}).get("min_modulation")
+        others = {sid: self._own_floor(sid) for sid in self._sharing(path, exclude=mapped.slice_id)}
+        floors = {sid: f for sid, f in others.items() if f}
+        if not own or not floors:
+            return None
+        top_sid, top = max(floors.items(), key=lambda kv: floor_rank(kv[1]))
+        hop = self._radio_nodes(path)
+        if floor_rank(own) < floor_rank(top):
+            mapped.extensions["acm"] = {**acm, "min_modulation": top}
+            note = {"hop": hop, "requested": own, "applied": top, "kept_for": top_sid,
+                    "reason": "the radio carries one floor: the highest asked by the slices on it"}
+        else:
+            lower = [sid for sid, f in floors.items() if self.hop_floors.get(sid, f) != own]
+            if not lower:
+                return None
+            note = {"hop": hop, "requested": own, "applied": own, "raise": lower,
+                    "reason": "the radio carries one floor: the slices that asked for a lower one now carry this one"}
+        self.floor_log.append({"t": time.time(), "slice": mapped.slice_id, **note})
+        return note
+
+    def _carry_floor(self, slice_ids: List[str], floor: Optional[str]) -> List[str]:
+        """Write the hop floor into these slices' service settings (each write re-applies it on the radios)."""
+        done = []
+        if self.realizer.mode != "ietf" or self.tfs_client is None or not floor:
+            return done
+        for sid in slice_ids:
+            acm = {**((self.requests.get(sid) or {}).get("acm") or {}), "min_modulation": floor}
+            try:
+                self.tfs_client.update_service_settings(sid, {"acm": acm})
+                self.hop_floors[sid] = floor
+                done.append(sid)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(f"[NSC] could not carry floor {floor} to {sid}: {e}")
+        return done
+
+    def _restore_hop_floor(self, path: List[str], removed: str) -> Optional[Dict[str, Any]]:
+        self.hop_floors.pop(removed, None)
+        remaining = self._sharing(path, exclude=removed)
+        floors = {sid: self._own_floor(sid) for sid in remaining if self._own_floor(sid)}
+        hop = self._radio_nodes(path)
+        if floors:
+            top = max(floors.values(), key=floor_rank)
+            stale = [sid for sid in floors if self.hop_floors.get(sid) != top]
+            if not stale:
+                return None
+            updated = self._carry_floor(stale, top)
+            note = {"hop": hop, "applied": top, "updated": updated, "after_removing": removed,
+                    "reason": "the floor goes back to the highest asked by the slices that remain"}
+        else:
+            return None
+        self.floor_log.append({"t": time.time(), **note})
+        return note
+
+    def _baseline_before_withdraw(self, slice_id: str, path: List[str]) -> Optional[Dict[str, Any]]:
+        """The last slice holding a floor on its radios hands them back the baseline before it is withdrawn."""
+        baseline = os.getenv("CER_ACM_BASELINE_FLOOR", "").strip()
+        own = self.hop_floors.get(slice_id)
+        if not own or not baseline:
+            return None
+        others = [sid for sid in self._sharing(path, exclude=slice_id) if self._own_floor(sid)]
+        if others or floor_rank(own) == floor_rank(baseline):
+            return None
+        updated = self._carry_floor([slice_id], baseline)
+        note = {"hop": self._radio_nodes(path), "applied": baseline, "updated": updated, "after_removing": slice_id,
+                "reason": "no slice on these radios asks for a floor any more: back to the baseline"}
+        self.floor_log.append({"t": time.time(), **note})
+        return note
 
     def _legacy_tfs_api_dispatch(self, mapped, technology: str, computed_path: List[str]) -> Dict[str, Any]:
         """Earlier behaviour (TFS_REALIZATION=tfs-api): a custom slice object via the TFS API."""

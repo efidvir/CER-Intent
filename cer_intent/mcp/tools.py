@@ -211,6 +211,81 @@ def run_what_if(scenario: Dict[str, Any]) -> Dict[str, Any]:
     return body
 
 
+# ── The intent manager (API v2): records, questions, alternatives, approval ────
+
+def _v2(method: str, path: str, body: Optional[Dict[str, Any]] = None, acting: bool = False) -> Dict[str, Any]:
+    """Call CER-Intent's /api/v2. In advise mode the agent acts as a viewer: it can read, ask and explore, never approve."""
+    role = "operator" if (acting and mcp_mode() == "act") else "viewer"
+    headers = {"X-User": os.getenv("CER_INTENT_MCP_USER", "mcp-agent"), "X-Role": role}
+    resp = requests.request(method, f"{_api_base()}{path}", json=body, headers=headers, timeout=_http_timeout())
+    try:
+        out = resp.json()
+    except ValueError:
+        out = {"raw": resp.text[:500]}
+    if not isinstance(out, dict):
+        out = {"result": out}
+    out.setdefault("http_status", resp.status_code)
+    out["mode"] = mcp_mode()
+    return out
+
+
+def _brief(rec: Dict[str, Any]) -> Dict[str, Any]:
+    keep = ("id", "name", "state", "reply", "questions", "alternatives", "answer", "check", "links", "http_status", "mode", "error")
+    return {k: rec.get(k) for k in keep if k in rec}
+
+
+def intent_converse(text: str, session: str = "mcp") -> Dict[str, Any]:
+    """Talk to the intent manager as an operator would: a request, an answer to its question, 'option 2', 'approve'."""
+    return _v2("POST", "/api/v2/converse", {"session": session, "text": text}, acting=True)
+
+
+def intent_submit(text: str) -> Dict[str, Any]:
+    """Submit an intent in words; returns how it was read, any questions, the check and alternatives. Nothing changes until approval."""
+    return _brief(_v2("POST", "/api/v2/intents", {"text": text, "channel": "mcp"}, acting=True))
+
+
+def intent_get(intent_id: str) -> Dict[str, Any]:
+    """An intent record: expectations with where each value came from, state, check, actions, reports."""
+    return _v2("GET", f"/api/v2/intents/{intent_id}")
+
+
+def intent_answer(intent_id: str, question: str, value: str) -> Dict[str, Any]:
+    """Answer one of an intent's open questions (by question id or field)."""
+    return _brief(_v2("POST", f"/api/v2/intents/{intent_id}/answers", {"question": question, "value": value}, acting=True))
+
+
+def intent_accept_alternative(intent_id: str, alternative: str) -> Dict[str, Any]:
+    """Accept one of the alternatives offered for an intent the network cannot meet as asked (id or number)."""
+    return _brief(_v2("POST", f"/api/v2/intents/{intent_id}/alternatives/{alternative}/accept", {}, acting=True))
+
+
+def intent_approve(intent_id: str) -> Dict[str, Any]:
+    """Approve a checked intent so it is applied (act mode only; rules may require a human approver)."""
+    if mcp_mode() != "act":
+        return {"mode": "advise", "applied": False, "note": "set CER_INTENT_MCP_MODE=act to approve", "intent_id": intent_id}
+    return _brief(_v2("POST", f"/api/v2/intents/{intent_id}/approve", {}, acting=True))
+
+
+def intent_withdraw(intent_id: str) -> Dict[str, Any]:
+    """Withdraw an intent; what it changed in the network is put back (act mode only)."""
+    if mcp_mode() != "act":
+        return {"mode": "advise", "applied": False, "note": "set CER_INTENT_MCP_MODE=act to withdraw", "intent_id": intent_id}
+    return _brief(_v2("DELETE", f"/api/v2/intents/{intent_id}", acting=True))
+
+
+def intent_report(intent_id: str) -> Dict[str, Any]:
+    """The 3GPP TS 28.312 intent report: fulfilment per expectation and target, feasibility, conflicts."""
+    return _v2("GET", f"/api/v2/intents/{intent_id}/report")
+
+
+def explore_network(question: str) -> Dict[str, Any]:
+    """Ask a question or a what-if ('how much more can the hop carry in heavy rain?'); answered from the twin, nothing changes."""
+    out = _v2("POST", "/api/v2/intents", {"text": question, "channel": "mcp"})
+    return {"answer": (out.get("answer") or {}).get("text") or out.get("reply"), "state": out.get("state"),
+            "insight": (out.get("answer") or {}).get("insight"), "data": (out.get("answer") or {}).get("data"),
+            "http_status": out.get("http_status"), "mode": out.get("mode")}
+
+
 # ── Registry ───────────────────────────────────────────────────────────────────
 
 @dataclass(frozen=True)
@@ -238,6 +313,15 @@ TOOLS: List[ToolSpec] = [
     ToolSpec(get_radio_link, read_only=True),
     ToolSpec(submit_intent, read_only=False),
     ToolSpec(run_what_if, read_only=True),
+    ToolSpec(intent_converse, read_only=False),
+    ToolSpec(intent_submit, read_only=False),
+    ToolSpec(intent_get, read_only=True),
+    ToolSpec(intent_answer, read_only=False),
+    ToolSpec(intent_accept_alternative, read_only=False),
+    ToolSpec(intent_approve, read_only=False),
+    ToolSpec(intent_withdraw, read_only=False, destructive=True),
+    ToolSpec(intent_report, read_only=True),
+    ToolSpec(explore_network, read_only=True),
 ]
 
 
@@ -268,4 +352,4 @@ def _annotations(spec: ToolSpec) -> Optional[Any]:
     except ImportError:
         return None
     return ToolAnnotations(readOnlyHint=spec.read_only, destructiveHint=spec.destructive,
-                           openWorldHint=spec.fn in (submit_intent, run_what_if))
+                           openWorldHint=spec.fn in (submit_intent, run_what_if, intent_converse, intent_submit, explore_network))

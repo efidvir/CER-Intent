@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CER-Intent · Intent studio</title>
+<style>
+:root {
+  --bg-0: #040814; --card: rgba(12, 21, 42, 0.94); --card-2: rgba(17, 29, 56, 0.96);
+  --border: rgba(56, 189, 248, 0.20); --text: #f1f5f9; --muted: #94a3b8; --dim: #64748b;
+  --cyan: #00d4ff; --emerald: #10b981; --amber: #f59e0b; --rose: #f43f5e; --violet: #a78bfa; --sky: #38bdf8;
+  --s-stated: #e2e8f0; --s-resolved: #38bdf8; --s-profile: #a78bfa; --s-policy: #f59e0b; --s-negotiated: #f472b6;
+  --s-model: #fb7185; --s-answer: #34d399;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: radial-gradient(circle at 18% 0%, #0e1e3f 0%, #040814 68%); color: var(--text);
+  font: 13px/1.45 var(--sans); display: flex; flex-direction: column; overflow: hidden; }
+.mono { font-family: var(--mono); }
+button, input, select { font-family: inherit; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 8px 16px;
+  background: rgba(5, 10, 24, .96); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.logo { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--cyan), var(--violet));
+  display: grid; place-items: center; font-weight: 800; color: #fff; box-shadow: 0 0 18px rgba(0, 212, 255, .45); }
+.brand h1 { font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
+.brand .sub { font: 11.5px var(--mono); color: var(--emerald); }
+.who { display: flex; gap: 8px; align-items: center; }
+.who input, .who select { background: rgba(3, 7, 18, .85); color: var(--text); border: 1px solid rgba(148, 163, 184, .3);
+  border-radius: 7px; padding: 5px 8px; font-size: 12px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  background: rgba(15, 25, 48, .9); border: 1px solid rgba(148, 163, 184, .28); color: var(--text); font-size: 12px;
+  font-weight: 600; text-decoration: none; }
+.btn:hover { border-color: var(--cyan); }
+.btn.primary { background: linear-gradient(135deg, #0ea5e9, #0284c7); border-color: #38bdf8; }
+.btn.ok { background: linear-gradient(135deg, #059669, #047857); border-color: #34d399; }
+.btn.danger { border-color: rgba(244, 63, 94, .6); color: #fecdd3; }
+.btn.small { padding: 3px 8px; font-size: 11px; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.main { flex: 1; display: grid; grid-template-columns: 360px 1fr 330px; gap: 10px; padding: 10px 14px; min-height: 0; }
+.col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.panel { background: var(--card); border: 1px solid rgba(148, 163, 184, .18); border-radius: 12px; display: flex;
+  flex-direction: column; min-height: 0; }
+.panel > h2 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 9px 12px 7px;
+  border-bottom: 1px solid rgba(148, 163, 184, .12); display: flex; justify-content: space-between; align-items: center; }
+.scroll { overflow: auto; min-height: 0; }
+/* conversation */
+.chat { flex: 1; }
+.msgs { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.msg { padding: 8px 10px; border-radius: 10px; max-width: 94%; white-space: pre-wrap; word-wrap: break-word; }
+.msg.me { align-self: flex-end; background: rgba(14, 165, 233, .16); border: 1px solid rgba(56, 189, 248, .35); }
+.msg.it { align-self: flex-start; background: rgba(15, 25, 48, .95); border: 1px solid rgba(148, 163, 184, .2); }
+.msg .meta { font: 10.5px var(--mono); color: var(--dim); margin-bottom: 3px; }
+.msg .choices { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.composer { border-top: 1px solid rgba(148, 163, 184, .12); padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.composer textarea { width: 100%; min-height: 54px; resize: vertical; background: rgba(3, 7, 18, .85); color: var(--text);
+  border: 1px solid rgba(148, 163, 184, .3); border-radius: 8px; padding: 8px; font-size: 13px; outline: none; }
+.composer textarea:focus { border-color: var(--cyan); }
+.reading { font: 11px var(--mono); color: var(--muted); min-height: 16px; }
+.examples { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 8px; max-height: 70px; overflow: auto;
+  border-top: 1px solid rgba(148, 163, 184, .08); }
+.ex { font: 10.5px var(--mono); padding: 3px 7px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(148, 163, 184, .25);
+  color: var(--muted); background: rgba(3, 7, 18, .6); }
+.ex:hover { color: var(--text); border-color: var(--cyan); }
+/* record */
+.record { flex: 1; }
+.rec-head { padding: 10px 12px; display: flex; justify-content: space-between; gap: 10px; align-items: flex-start;
+  border-bottom: 1px solid rgba(148, 163, 184, .12); }
+.rec-head .name { font-weight: 800; font-size: 15px; }
+.rec-head .text { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.state { font: 700 11px var(--mono); padding: 3px 8px; border-radius: 6px; border: 1px solid; text-transform: uppercase; white-space: nowrap; }
+.st-active, .st-answered, .st-completed { color: #6ee7b7; border-color: rgba(16, 185, 129, .55); }
+.st-checked, .st-scheduled { color: #7dd3fc; border-color: rgba(56, 189, 248, .55); }
+.st-clarifying, .st-negotiating, .st-draft { color: #fcd34d; border-color: rgba(245, 158, 11, .55); }
+.st-held, .st-degraded, .st-failed, .st-rejected { color: #fda4af; border-color: rgba(244, 63, 94, .55); }
+.st-withdrawn, .st-suspended { color: var(--muted); border-color: rgba(148, 163, 184, .4); }
+.section { padding: 10px 12px; border-bottom: 1px solid rgba(148, 163, 184, .08); }
+.section h3 { font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px;
+  display: flex; gap: 8px; align-items: center; }
+.exp { border: 1px solid rgba(148, 163, 184, .18); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; background: var(--card-2); }
+.exp .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.kind { font: 700 10.5px var(--mono); padding: 2px 7px; border-radius: 5px; background: rgba(167, 139, 250, .16);
+  color: #c4b5fd; border: 1px solid rgba(167, 139, 250, .45); text-transform: uppercase; }
+.obj { font-weight: 700; }
+.vals { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.val { font: 11.5px var(--mono); padding: 3px 7px; border-radius: 6px; background: rgba(3, 7, 18, .7);
+  border: 1px solid rgba(148, 163, 184, .25); display: inline-flex; gap: 6px; align-items: center; }
+.src { font-size: 9.5px; padding: 0 5px; border-radius: 4px; border: 1px solid; text-transform: uppercase; letter-spacing: .04em; }
+.src-stated { color: var(--s-stated); border-color: rgba(226, 232, 240, .4); }
+.src-resolved { color: var(--s-resolved); border-color: rgba(56, 189, 248, .5); }
+.src-profile { color: var(--s-profile); border-color: rgba(167, 139, 250, .5); }
+.src-policy { color: var(--s-policy); border-color: rgba(245, 158, 11, .5); }
+.src-negotiated { color: var(--s-negotiated); border-color: rgba(244, 114, 182, .5); }
+.src-model { color: var(--s-model); border-color: rgba(251, 113, 133, .5); }
+.src-answer { color: var(--s-answer); border-color: rgba(52, 211, 153, .5); }
+.prov { font: 11px var(--mono); color: var(--muted); margin-top: 6px; }
+.prov div { padding: 1px 0; }
+.q { border: 1px solid rgba(245, 158, 11, .45); background: rgba(245, 158, 11, .07); border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; }
+.q .choices { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.q input { background: rgba(3, 7, 18, .85); color: var(--text); border: 1px solid rgba(148, 163, 184, .3); border-radius: 6px; padding: 4px 7px; font-size: 12px; }
+.verdict { font: 700 12px var(--mono); padding: 3px 8px; border-radius: 6px; }
+.v-pass { background: rgba(16, 185, 129, .15); color: #6ee7b7; } .v-fail, .v-held { background: rgba(244, 63, 94, .15); color: #fda4af; }
+.hop { margin: 6px 0 10px; }
+.hop .lbl { font: 11.5px var(--mono); display: flex; justify-content: space-between; gap: 8px; color: var(--muted); }
+.bar { position: relative; height: 18px; border-radius: 6px; background: rgba(3, 7, 18, .8); border: 1px solid rgba(148, 163, 184, .2); margin-top: 4px; overflow: hidden; }
+.bar .seg { position: absolute; top: 0; bottom: 0; }
+.bar .tick { position: absolute; top: -2px; bottom: -2px; width: 2px; }
+.legend { display: flex; gap: 10px; font: 10.5px var(--mono); color: var(--dim); margin-top: 3px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-top: 6px; }
+.ck { font: 11px var(--mono); padding: 5px 7px; border-radius: 7px; border: 1px solid rgba(148, 163, 184, .2); }
+.ck.ok { border-color: rgba(16, 185, 129, .45); } .ck.no { border-color: rgba(244, 63, 94, .55); background: rgba(244, 63, 94, .07); }
+.alt { border: 1px solid rgba(244, 114, 182, .45); background: rgba(244, 114, 182, .06); border-radius: 10px; padding: 8px 10px;
+  margin-bottom: 6px; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.alt .t { font-weight: 700; } .alt .d { font: 11px var(--mono); color: var(--muted); }
+.actions-bar { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 12px; border-top: 1px solid rgba(148, 163, 184, .12); }
+.tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+.tab { font: 11px var(--mono); padding: 3px 8px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(148, 163, 184, .25); color: var(--muted); }
+.tab.on { color: var(--text); border-color: var(--cyan); }
+pre.json { font: 11px/1.4 var(--mono); background: rgba(3, 7, 18, .85); border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 8px; padding: 8px; max-height: 260px; overflow: auto; color: #cbd5e1; white-space: pre-wrap; }
+.answer { font-size: 13px; padding: 8px 10px; border-radius: 10px; background: rgba(16, 185, 129, .08); border: 1px solid rgba(16, 185, 129, .35); }
+.answer .ins { font: 10.5px var(--mono); color: var(--emerald); margin-bottom: 3px; text-transform: uppercase; }
+.act { font: 11.5px var(--mono); padding: 2px 0; }
+.act.no { color: #fda4af; }
+/* intents + network */
+.list { flex: 1; }
+.item { padding: 8px 10px; border-bottom: 1px solid rgba(148, 163, 184, .08); cursor: pointer; }
+.item:hover, .item.sel { background: rgba(0, 212, 255, .06); }
+.item .n { font-weight: 700; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.item .s { font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filters { display: flex; gap: 4px; }
+.net { padding: 8px 10px; font: 11.5px var(--mono); }
+.events { font: 11px var(--mono); padding: 6px 10px; color: var(--muted); max-height: 150px; }
+.events div { padding: 2px 0; border-bottom: 1px dotted rgba(148, 163, 184, .12); }
+.empty { color: var(--dim); padding: 16px; text-align: center; }
+.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(244, 63, 94, .95); color: #fff;
+  padding: 8px 14px; border-radius: 8px; font-size: 12px; display: none; z-index: 10; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">CI</div>
+    <div><h1>Intent studio</h1><div class="sub" id="sub">reading the network…</div></div>
+  </div>
+  <div class="who">
+    <span class="mono" style="color:var(--muted);font-size:11px">acting as</span>
+    <input id="user" value="operator" size="10" title="who acts (X-User)" />
+    <select id="role" title="role (X-Role)">
+      <option>viewer</option><option selected>operator</option><option>approver</option><option>admin</option>
+    </select>
+    <a class="btn" href="intent-flow.html">Flow dashboard</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="col">
+    <div class="panel chat">
+      <h2>Conversation <button class="btn small" id="newSession" title="start a new conversation">new</button></h2>
+      <div class="msgs scroll" id="msgs"></div>
+      <div class="examples" id="examples"></div>
+      <div class="composer">
+        <textarea id="say" placeholder="Say what the network should do, ask, or explore. Enter sends; Shift+Enter for a new line."></textarea>
+        <div class="reading" id="reading"></div>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn primary" id="send">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="panel record">
+      <h2>Intent record <span class="mono" id="recId" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="scroll" id="record"><div class="empty">Say something on the left, or pick an intent on the right.</div></div>
+      <div class="actions-bar" id="actions"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="panel list">
+      <h2>Intents
+        <span class="filters">
+          <span class="tab on" data-f="all">all</span><span class="tab" data-f="live">live</span><span class="tab" data-f="open">open</span>
+        </span>
+      </h2>
+      <div class="scroll" id="list"></div>
+    </div>
+    <div class="panel">
+      <h2>Network <span class="mono" id="netSrc" style="text-transform:none"></span></h2>
+      <div class="net" id="net"></div>
+    </div>
+    <div class="panel">
+      <h2>Events</h2>
+      <div class="events scroll" id="events"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const S = { session: localStorage.getItem("imf.session") || ("studio-" + Math.random().toString(36).slice(2, 8)),
+            current: null, record: null, filter: "all", tab: "record", typing: null };
+try { localStorage.setItem("imf.session", S.session); } catch (e) {}
+
+const KIND_EXAMPLES = [
+  ["deliver", "Connect region-a and edge with 300 Mbps, at most 10 ms, gold"],
+  ["deliver", "A best-effort slice from region-a to edge for 100 Mbps"],
+  ["change", "Double the backhaul tonight 20:00-23:00, then restore it"],
+  ["keep", "Never let the backhaul drop below 150 Mbps; take it from best effort first"],
+  ["optimise", "Save energy on the hop at night when traffic is below 100 Mbps, keep MCS4"],
+  ["guard", "No changes during business hours without approval"],
+  ["observe", "Alert me when the radio link drops below MCS6"],
+  ["explore", "How much more can the hop carry in heavy rain?"],
+  ["explore", "What if radio-1 fails?"],
+  ["ask", "What runs over radio-1?"],
+];
+
+function headers() {
+  return { "Content-Type": "application/json", "X-User": $("user").value || "operator", "X-Role": $("role").value };
+}
+async function api(method, path, body) {
+  const r = await fetch(path, { method, headers: headers(), body: body ? JSON.stringify(body) : undefined });
+  let data = null;
+  try { data = await r.json(); } catch (e) { data = {}; }
+  if (!r.ok) { toast(data.error || `HTTP ${r.status}`); throw new Error(data.error || r.status); }
+  return data;
+}
+function toast(t) { const el = $("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(el._t); el._t = setTimeout(() => el.style.display = "none", 4200); }
+
+// ── conversation ──────────────────────────────────────────────────────────
+function addMsg(who, text, meta, rec) {
+  const d = document.createElement("div");
+  d.className = "msg " + (who === "me" ? "me" : "it");
+  d.innerHTML = (meta ? `<div class="meta">${esc(meta)}</div>` : "") + esc(text);
+  if (rec && rec.state === "clarifying" && rec.questions && rec.questions[0] && rec.questions[0].choices.length) {
+    const c = document.createElement("div"); c.className = "choices";
+    rec.questions[0].choices.forEach((ch, i) => {
+      const b = document.createElement("button"); b.className = "btn small"; b.textContent = ch.label;
+      b.onclick = () => answer(rec.id, rec.questions[0].id, ch.value, ch.label); c.appendChild(b);
+    });
+    d.appendChild(c);
+  }
+  if (rec && rec.state === "negotiating" && rec.alternatives) {
+    const c = document.createElement("div"); c.className = "choices";
+    rec.alternatives.forEach((a) => {
+      const b = document.createElement("button"); b.className = "btn small"; b.textContent = `${a.n}) ${a.label}`;
+      b.onclick = () => send(`option ${a.n}`); c.appendChild(b);
+    });
+    d.appendChild(c);
+  }
+  if (rec && rec.state === "checked") {
+    const c = document.createElement("div"); c.className = "choices";
+    const b = document.createElement("button"); b.className = "btn small ok"; b.textContent = "Approve";
+    b.onclick = () => send("approve"); c.appendChild(b);
+    const x = document.createElement("button"); x.className = "btn small danger"; x.textContent = "Cancel";
+    x.onclick = () => send("cancel"); c.appendChild(x);
+    d.appendChild(c);
+  }
+  $("msgs").appendChild(d); $("msgs").scrollTop = $("msgs").scrollHeight;
+}
+async function send(text) {
+  text = (text ?? $("say").value).trim();
+  if (!text) return;
+  $("say").value = ""; $("reading").textContent = "";
+  addMsg("me", text, $("user").value + " · " + $("role").value);
+  const busy = document.createElement("div"); busy.className = "msg it"; busy.textContent = "…"; $("msgs").appendChild(busy);
+  try {
+    const r = await api("POST", "/api/v2/converse", { session: S.session, text });
+    busy.remove();
+    const rec = r.intent;
+    addMsg("it", r.reply, rec ? `${rec.name} · ${rec.state} · read by ${(rec.readings || {}).reader || "rules"}` : null, rec);
+    if (rec) { S.current = rec.id; render(rec); }
+    refreshList(); refreshNet();
+  } catch (e) { busy.remove(); }
+}
+async function answer(id, qid, value, label) {
+  addMsg("me", label ?? String(value), $("user").value + " · " + $("role").value);
+  const rec = await api("POST", `/api/v2/intents/${id}/answers`, { question: qid, value });
+  addMsg("it", rec.reply, `${rec.name} · ${rec.state}`, rec);
+  S.current = rec.id; render(rec); refreshList();
+}
+$("send").onclick = () => send();
+$("say").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+$("say").addEventListener("input", () => {
+  clearTimeout(S.typing);
+  S.typing = setTimeout(async () => {
+    const t = $("say").value.trim();
+    if (t.length < 6) { $("reading").textContent = ""; return; }
+    try {
+      const r = await fetch("/api/v2/read", { method: "POST", headers: headers(), body: JSON.stringify({ text: t }) }).then((x) => x.json());
+      $("reading").textContent = r.reading && r.reading.out_of_scope ? `outside scope: ${r.reading.out_of_scope}` :
+        (r.summary || []).length ? "reads as: " + r.summary.join("  |  ") : "";
+    } catch (e) {}
+  }, 350);
+});
+$("newSession").onclick = () => { S.session = "studio-" + Math.random().toString(36).slice(2, 8); try { localStorage.setItem("imf.session", S.session); } catch (e) {}
+  $("msgs").innerHTML = ""; addMsg("it", "New conversation. What should the network do?"); };
+KIND_EXAMPLES.forEach(([k, t]) => {
+  const b = document.createElement("span"); b.className = "ex"; b.textContent = k + ": " + t.slice(0, 42) + (t.length > 42 ? "…" : "");
+  b.title = t; b.onclick = () => { $("say").value = t; $("say").focus(); $("say").dispatchEvent(new Event("input")); };
+  $("examples").appendChild(b);
+});
+
+// ── the record ────────────────────────────────────────────────────────────
+function srcChip(s) { return `<span class="src src-${esc(s)}">${esc(s)}</span>`; }
+function targetText(t) {
+  const sym = { ge: "≥", le: "≤", gt: ">", lt: "<", eq: "=", set: "→", add: "+" }[t.op] || t.op;
+  if (t.op === "between" && Array.isArray(t.value)) return `${t.metric} ${t.value[0]}–${t.value[1]} ${t.unit || ""}`;
+  if (t.op === "scale") return `${t.metric} ×${t.value}`;
+  if (t.op === "minimize" || t.op === "maximize") return `${t.op} ${t.metric}`;
+  return `${t.metric} ${sym} ${t.value}${t.unit && t.unit !== "MCS" ? " " + t.unit : ""}`;
+}
+function ctxText(c) {
+  const p = c.params || {};
+  if (c.kind === "window") return (p.label ? p.label + " · " : "") + [p.start, p.end].filter(Boolean).join("–") + (p.days && !p.label ? " · " + p.days.join(",") : "") + (p.date ? " · " + p.date : "");
+  if (c.kind === "schedule") return "every " + (p.every || (p.seconds + " s"));
+  if (c.kind === "weather") return p.rain_mmh != null ? `rain ${p.rain_mmh} mm/h` : "in " + (p.rain || "rain");
+  if (c.kind === "condition") return `when ${p.metric} ${({ ge: "≥", le: "≤", lt: "<", gt: ">", eq: "=" })[p.op] || p.op} ${p.value}`;
+  return c.kind;
+}
+function objLabel(o) {
+  if (o.endpoints && o.endpoints.length) return o.endpoints.map((e) => `${e.node || "“" + (e.mention || "?") + "”"}${e.port ? ":" + e.port : ""}${e.vlan != null ? " ·vlan " + e.vlan : ""}${e.ip ? " " + e.ip : ""}`).join("  ↔  ");
+  if (o.ids && o.ids.length) return o.ids.join(", ");
+  if (o.selector && o.selector.all) return `all ${o.type}s` + ((o.selector.except || []).length ? " except " + o.selector.except.join(", ") : "");
+  return (o.mentions || []).join(", ") || o.type;
+}
+function hopBars(screen) {
+  return (screen.hops || []).map((h) => {
+    const cap = Math.max(h.clear_capacity_mbps || 1000, h.existing_mbps + h.slice_mbps, 1);
+    const pc = (v) => Math.min(100, 100 * v / cap);
+    const av = h.availability || {};
+    return `<div class="hop"><div class="lbl"><span>${esc(h.hop.replace("|", " – "))} · ${esc(h.clear_mcs)} clear, ${esc(h.rain_mcs)} at ${h.rain_mmh} mm/h${h.floor ? " · floor " + esc(h.floor) : ""}</span>
+      <span>${av.mcs && av.availability_pct != null ? "ITU-R " + av.availability_pct.toFixed(3) + " % a year at " + esc(av.mcs) : "more than the hop carries at any modulation"}</span></div>
+      <div class="bar">
+        <div class="seg" style="left:0;width:${pc(h.existing_mbps)}%;background:rgba(148,163,184,.45)"></div>
+        <div class="seg" style="left:${pc(h.existing_mbps)}%;width:${pc(h.slice_mbps)}%;background:${h.existing_mbps + h.slice_mbps > h.rain_capacity_mbps ? "rgba(244,63,94,.75)" : "rgba(14,165,233,.8)"}"></div>
+        <div class="tick" style="left:${pc(h.rain_capacity_mbps)}%;background:var(--amber)" title="capacity in design rain"></div>
+        <div class="tick" style="left:${pc(h.clear_capacity_mbps)}%;background:var(--emerald)" title="capacity in clear sky"></div>
+      </div>
+      <div class="legend"><span><i style="background:rgba(148,163,184,.45)"></i>in use ${h.existing_mbps} Mbps</span>
+        <span><i style="background:rgba(14,165,233,.8)"></i>this intent ${h.slice_mbps} Mbps</span>
+        <span><i style="background:var(--amber)"></i>design rain ${h.rain_capacity_mbps} Mbps</span>
+        <span><i style="background:var(--emerald)"></i>clear sky ${h.clear_capacity_mbps} Mbps</span></div></div>`;
+  }).join("");
+}
+function render(rec) {
+  S.record = rec;
+  $("recId").textContent = rec.id + " · " + rec.channel;
+  const parts = [];
+  parts.push(`<div class="rec-head"><div><div class="name">${esc(rec.name || rec.id)}</div><div class="text">${esc(rec.text || "")}</div>
+     <div class="text mono" style="font-size:11px;margin-top:3px">read by ${esc((rec.readings || {}).reader || "rules")}${(rec.readings || {}).agreement != null ? " · agreement " + rec.readings.agreement : ""}${(rec.readings || {}).context ? " · " + esc(rec.readings.context) : ""} · ${esc(rec.owner)} (${esc(rec.role)})</div></div>
+     <span class="state st-${esc(rec.state)}">${esc(rec.state)}</span></div>`);
+  // tabs
+  parts.push(`<div class="section"><div class="tabs">${["record", "tmf921", "28.312", "report", "audit"].map((t) => `<span class="tab ${S.tab === t ? "on" : ""}" data-tab="${t}">${t}</span>`).join("")}</div><div id="tabBody"></div></div>`);
+  $("record").innerHTML = parts.join("");
+  document.querySelectorAll("[data-tab]").forEach((el) => el.onclick = () => { S.tab = el.dataset.tab; render(S.record); });
+  const body = $("tabBody");
+  if (S.tab === "record") body.innerHTML = recordBody(rec);
+  else if (S.tab === "tmf921") fetch(`/tmf-api/intentManagement/v5/intent/${rec.id}`).then((r) => r.json()).then((j) => body.innerHTML = `<pre class="json">${esc(JSON.stringify(j, null, 1))}</pre>`);
+  else if (S.tab === "28.312") fetch(`/3gpp-intent/v1/IntentHandlingFunction=1/Intent=${rec.id}`).then((r) => r.json()).then((j) => body.innerHTML = `<pre class="json">${esc(JSON.stringify(j, null, 1))}</pre>`);
+  else if (S.tab === "report") fetch(`/api/v2/intents/${rec.id}/report`).then((r) => r.json()).then((j) => body.innerHTML = `<pre class="json">${esc(JSON.stringify(j, null, 1))}</pre>`);
+  else fetch(`/api/v2/intents/${rec.id}/audit`).then((r) => r.json()).then((j) => body.innerHTML = (j.audit || []).map((a) => `<div class="act">${new Date(a.t * 1000).toLocaleTimeString()} · ${esc(a.event)} · ${esc(a.who)} (${esc(a.role)})</div>`).join("") || '<div class="empty">no audit entries</div>');
+  wire(rec);
+  renderActions(rec);
+}
+function recordBody(rec) {
+  const out = [];
+  if (rec.answer && rec.answer.text) out.push(`<div class="answer"><div class="ins">${esc(rec.answer.insight || "")}</div>${esc(rec.answer.text)}</div>`);
+  if (rec.expectations.length) {
+    out.push(`<h3>Read as ${rec.expectations.length} expectation${rec.expectations.length > 1 ? "s" : ""}</h3>`);
+    rec.expectations.forEach((e) => {
+      const vals = e.targets.map((t) => `<span class="val">${esc(targetText(t))} ${srcChip(t.source)}</span>`).join("") +
+        e.contexts.map((c) => `<span class="val">${esc(ctxText(c))} ${srcChip(c.source)}</span>`).join("") +
+        (e.profile ? `<span class="val">profile ${esc(e.profile)}</span>` : "") +
+        (e.priority ? `<span class="val">priority ${e.priority}</span>` : "") +
+        (e.strictness !== "must" ? `<span class="val">${esc(e.strictness)}</span>` : "") +
+        (e.action && (e.action.op || e.action.rule || e.action.question) ? `<span class="val">${esc(e.action.op || e.action.rule || e.action.question)}${e.action.metric ? " " + esc(e.action.metric) : ""}${e.action.value != null ? " " + esc(e.action.value) : ""}${e.action.revert ? " · then restore" : ""}${e.action.shed_first ? " · shed " + esc(e.action.shed_first) + " first" : ""}</span>` : "");
+      const prov = (e.action.provenance || []).map((p) => `<div>${srcChip(p.source)} ${esc(p.field)} = ${esc(JSON.stringify(p.value))} · ${esc(p.why)}</div>`).join("");
+      out.push(`<div class="exp"><div class="top"><span class="kind">${esc(e.kind)}</span><span class="obj">${esc(objLabel(e.object))}</span>${e.name ? `<span class="mono" style="color:var(--muted)">${esc(e.name)}</span>` : ""}</div>
+        <div class="vals">${vals}</div>${prov ? `<div class="prov">${prov}</div>` : ""}</div>`);
+    });
+  }
+  if (rec.questions && rec.questions.length) {
+    out.push(`<h3>Questions</h3>`);
+    rec.questions.forEach((q) => out.push(`<div class="q"><div>${esc(q.text)}</div><div class="choices">${q.choices.map((c, i) => `<button class="btn small" data-q="${q.id}" data-i="${i}">${esc(c.label)}</button>`).join("")}
+      ${q.free ? `<input placeholder="or type an answer" data-qfree="${q.id}" />` : ""}</div></div>`));
+  }
+  const ck = rec.check;
+  if (ck) {
+    out.push(`<h3>Check <span class="verdict v-${esc(ck.verdict)}">${esc(ck.verdict)}</span>${ck.twin && ck.twin.ran ? `<span class="mono" style="text-transform:none">twin: ${esc(ck.twin.engine || "NS-3")} · ${esc(ck.twin.verdict)}</span>` : ck.twin ? `<span class="mono" style="text-transform:none">twin: ${esc(ck.twin.why)}</span>` : ""}</h3>`);
+    (ck.rules || []).forEach((r) => out.push(`<div class="act ${r.effect === "hold" ? "no" : ""}">rule · ${esc(r.why)}</div>`));
+    (ck.conflicts || []).forEach((c) => out.push(`<div class="act ${c.severity === "block" ? "no" : ""}">conflict · ${esc(c.why)}</div>`));
+    (ck.screens || []).forEach((sc) => {
+      if (sc.why) out.push(`<div class="act ${sc.ok === false ? "no" : ""}">${esc(sc.why)}</div>`);
+      if (sc.hops && sc.hops.length && sc.hops[0].hop && sc.hops[0].existing_mbps != null) out.push(hopBars(sc));
+      else if (sc.hops) sc.hops.forEach((h) => h.why && out.push(`<div class="act">${esc(h.why)}</div>`));
+      (sc.findings || []).forEach((f) => out.push(`<div class="act ${f.why ? "no" : ""}">${esc(f.slice)} on ${esc(f.hop)}: ${f.availability && f.availability.availability_pct != null ? "ITU-R " + f.availability.availability_pct.toFixed(3) + " %" : ""} ${esc(f.why || f.rain || "")}</div>`));
+    });
+    if (ck.twin && ck.twin.ran && ck.twin.checks) {
+      out.push(`<div class="checks">${ck.twin.checks.map((c) => `<div class="ck ${c.ok ? "ok" : "no"}">${c.ok ? "✓" : "✗"} ${esc(c.label || c.id)}<br>${esc(c.value)} <span style="color:var(--dim)">(${esc(c.target)})</span></div>`).join("")}</div>`);
+      out.push(`<div class="legend" style="margin-top:4px">simulated on the twin (${esc(ck.twin.insight || "simulated")})</div>`);
+    }
+  }
+  if (rec.alternatives && rec.alternatives.length) {
+    out.push(`<h3>Alternatives</h3>`);
+    rec.alternatives.forEach((a) => out.push(`<div class="alt"><div><div class="t">${a.n}) ${esc(a.label)}</div><div class="d">${esc(a.trade_off)}</div></div>
+      <div style="display:flex;gap:5px"><button class="btn small" data-alt="${a.id}">Accept</button><button class="btn small ok" data-alt-go="${a.id}">Accept + apply</button></div></div>`));
+  }
+  if (rec.actions && rec.actions.length) {
+    out.push(`<h3>Actions</h3>`);
+    rec.actions.slice(-12).forEach((a) => out.push(`<div class="act ${a.ok ? "" : "no"}">${new Date(a.t * 1000).toLocaleTimeString()} · ${esc(a.op)} ${esc(a.slice || a.hop || "")} ${a.ok ? "✓" : "✗ " + esc(a.error || "")}${a.rollback ? " (rollback)" : ""}${a.window ? " (window " + esc(a.window) + ")" : ""}${a.note ? " · " + esc(a.note) : ""}</div>`));
+  }
+  if (rec.reports && rec.reports.length) {
+    const r = rec.reports[rec.reports.length - 1];
+    out.push(`<h3>Latest report <span class="mono" style="text-transform:none">${new Date(r.t * 1000).toLocaleTimeString()}</span></h3>`);
+    Object.entries(r.expectations || {}).forEach(([eid, x]) => {
+      const tg = Object.entries(x.targets || {}).map(([m, v]) => `${m}: ${v.achieved} (${v.status})`).join(" · ");
+      out.push(`<div class="act ${x.status === "NOT_FULFILLED" ? "no" : ""}">${esc(x.status)}${tg ? " · " + esc(tg) : ""}${x.alert ? " · ALERT " + esc(x.alert) : ""}</div>`);
+      if (x.values) Object.entries(x.values).forEach(([h, v]) => out.push(`<div class="act">${esc(h)}: ${esc(v.lowest_modulation)} · ${v.capacity_mbps} Mbps for ${v.load_mbps} Mbps (${esc(v.source)})</div>`));
+    });
+    if (r.why) out.push(`<div class="act no">${esc(r.why)}</div>`);
+  }
+  return `<div>${out.join("")}</div>`;
+}
+function wire(rec) {
+  document.querySelectorAll("[data-q]").forEach((b) => b.onclick = () => {
+    const q = rec.questions.find((x) => x.id === b.dataset.q); const c = q.choices[+b.dataset.i];
+    answer(rec.id, q.id, c.value, c.label);
+  });
+  document.querySelectorAll("[data-qfree]").forEach((inp) => inp.onkeydown = (e) => {
+    if (e.key === "Enter" && inp.value.trim()) answer(rec.id, inp.dataset.qfree, inp.value.trim());
+  });
+  document.querySelectorAll("[data-alt]").forEach((b) => b.onclick = async () => { const r = await api("POST", `/api/v2/intents/${rec.id}/alternatives/${b.dataset.alt}/accept`, {}); addMsg("it", r.reply, `${r.name} · ${r.state}`, r); render(r); refreshList(); });
+  document.querySelectorAll("[data-alt-go]").forEach((b) => b.onclick = async () => { const r = await api("POST", `/api/v2/intents/${rec.id}/alternatives/${b.dataset.altGo}/accept`, { approve: true }); addMsg("it", r.reply, `${r.name} · ${r.state}`, r); render(r); refreshList(); refreshNet(); });
+}
+function renderActions(rec) {
+  const a = [];
+  const btn = (label, cls, fn, on = true) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = label; b.disabled = !on; b.onclick = fn; a.push(b); };
+  const go = async (method, path, body) => { const r = await api(method, path, body); addMsg("it", r.reply, `${r.name} · ${r.state}`, r); render(r); refreshList(); refreshNet(); };
+  btn("Approve", "ok", () => go("POST", `/api/v2/intents/${rec.id}/approve`), rec.state === "checked");
+  btn("Re-check", "", () => go("POST", `/api/v2/intents/${rec.id}/recheck`), ["checked", "negotiating", "held", "clarifying", "draft"].includes(rec.state));
+  btn("Suspend", "", () => go("POST", `/api/v2/intents/${rec.id}/suspend`), ["active", "degraded"].includes(rec.state));
+  btn("Resume", "", () => go("POST", `/api/v2/intents/${rec.id}/resume`), rec.state === "suspended");
+  btn("Withdraw", "danger", () => go("DELETE", `/api/v2/intents/${rec.id}`), !["withdrawn", "rejected", "answered"].includes(rec.state));
+  $("actions").innerHTML = ""; a.forEach((b) => $("actions").appendChild(b));
+}
+
+// ── intents, network, events ──────────────────────────────────────────────
+document.querySelectorAll("[data-f]").forEach((el) => el.onclick = () => {
+  document.querySelectorAll("[data-f]").forEach((x) => x.classList.remove("on")); el.classList.add("on"); S.filter = el.dataset.f; refreshList();
+});
+async function refreshList() {
+  const r = await fetch("/api/v2/intents").then((x) => x.json()).catch(() => ({ intents: [] }));
+  let items = (r.intents || []).slice().reverse();
+  if (S.filter === "live") items = items.filter((i) => ["active", "degraded", "scheduled", "suspended"].includes(i.state));
+  if (S.filter === "open") items = items.filter((i) => ["draft", "clarifying", "checked", "negotiating", "held"].includes(i.state));
+  $("list").innerHTML = items.map((i) => `<div class="item ${i.id === S.current ? "sel" : ""}" data-id="${i.id}"><div class="n"><span>${esc(i.name)}</span><span class="state st-${esc(i.state)}">${esc(i.state)}</span></div>
+    <div class="s">${esc(i.channel)} · ${esc(i.summary || i.text)}</div></div>`).join("") || '<div class="empty">no intents yet</div>';
+  document.querySelectorAll(".item").forEach((el) => el.onclick = async () => { S.current = el.dataset.id; render(await api("GET", `/api/v2/intents/${el.dataset.id}`)); refreshList(); });
+}
+async function refreshNet() {
+  try {
+    const n = await fetch("/api/v2/network").then((x) => x.json());
+    $("netSrc").textContent = n.source;
+    const sites = n.nodes.filter((x) => !x.radio).map((x) => x.id), radios = n.nodes.filter((x) => x.radio).map((x) => x.id);
+    $("sub").textContent = `${sites.length} sites · ${radios.length} radios · ${n.slices.length} slices · ${n.hops.length} radio hop${n.hops.length === 1 ? "" : "s"}`;
+    $("net").innerHTML = `<div style="color:var(--muted)">sites ${esc(sites.join(", "))} · radios ${esc(radios.join(", "))}</div>` +
+      n.hops.map((h) => `<div style="margin-top:6px"><b>${esc(h.hop.replace("|", " – "))}</b> · ${h.distance_m} m · ${h.load_mbps} Mbps asked${h.floor ? " · floor " + esc(h.floor) : ""}<div style="color:var(--muted)">${esc(h.slices.join(", "))}</div></div>`).join("") +
+      `<div style="margin-top:6px;color:var(--muted)">${n.slices.map((s) => `${esc(s.id)} ${s.bandwidth_mbps ?? "?"} Mbps vlan ${esc((s.endpoints[0] || {}).vlan ?? "-")}`).join("<br>")}</div>`;
+  } catch (e) { $("sub").textContent = "network not reachable"; }
+}
+async function refreshEvents() {
+  const r = await fetch("/api/v2/events").then((x) => x.json()).catch(() => ({ events: [] }));
+  $("events").innerHTML = (r.events || []).slice(-30).reverse().map((e) => `<div>${esc(e.event)} · ${esc(e.intent)}${e.why ? " · " + esc(e.why) : ""}</div>`).join("") || '<div class="empty">quiet</div>';
+}
+async function poll() {
+  await refreshList(); await refreshEvents();
+  if (S.current) { try { const r = await fetch(`/api/v2/intents/${S.current}`).then((x) => x.json()); if (r && r.id && (!S.record || r.updated_at !== S.record.updated_at)) render(r); } catch (e) {} }
+}
+addMsg("it", "Tell me what the network should do: deliver, change, keep, optimise, set a rule, report, or ask what-if. I ask when something is missing and check every change on the twin before it reaches the radios.");
+refreshNet(); poll(); setInterval(poll, 4000); setInterval(refreshNet, 8000);
+</script>
+</body>
+</html>

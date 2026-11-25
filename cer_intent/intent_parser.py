@@ -17,7 +17,7 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, Optional
 
 from cer_intent.intent_schema import (
     Intent, IntentTarget, IntentType,
@@ -68,7 +68,7 @@ The JSON must conform to this schema:
 }
 
 Rules:
-- Extract identifiers from the text (e.g. "link A-B" -> identifier="link-A-B", "sector-north" -> identifier="sector-north", "ctu-96" or "ceragon-mh-t261-ctu-96" -> target_type="node", identifier="ceragon-mh-t261-ctu-96")
+- Extract identifiers from the text (e.g. "link A-B" -> identifier="link-A-B", "sector-north" -> identifier="sector-north", a device the network knows such as "radio-1" -> target_type="node", identifier="radio-1")
 - Respond ONLY with the JSON object. No explanation, no markdown fences.
 - CRITICAL: If the user provides text that is nonsensical, adversarial, or completely unrelated to telecom network management, return: {"error": "Unrecognized or nonsensical intent"}.
 """
@@ -89,26 +89,26 @@ FEW_SHOTS = [
     },
     {
         "role": "user",
-        "parts": ["Enable IEEE 802.1Qbv TSN time-aware shaper with 1000us cycle and 250us URLLC window on ceragon-mh-t261-ctu-96"]
+        "parts": ["Enable IEEE 802.1Qbv TSN time-aware shaper with 1000us cycle and 250us URLLC window on radio-1"]
     },
     {
         "role": "model",
         "parts": [json.dumps({
             "intent_type": "tsn",
-            "target": {"target_type": "node", "identifier": "ceragon-mh-t261-ctu-96", "direction": "both"},
+            "target": {"target_type": "node", "identifier": "radio-1", "direction": "both"},
             "parameters": {"tas_8021qbv_enabled": True, "frame_preemption_8021qbu": True, "cycle_time_us": 1000, "urllc_slot_us": 250, "guard_band_us": 15, "max_e2e_latency_ms": 0.5, "frer_8021cb_enabled": False},
             "priority": 9, "ttl_seconds": None, "tags": ["tsn", "802.1qbv", "urllc"]
         })]
     },
     {
         "role": "user",
-        "parts": ["Steer 60.48 GHz massive2 phased array beam to +15 deg azimuth and +2 deg elevation on ceragon-mh-t261-ctu-96"]
+        "parts": ["Steer 60.48 GHz massive2 phased array beam to +15 deg azimuth and +2 deg elevation on radio-1"]
     },
     {
         "role": "model",
         "parts": [json.dumps({
             "intent_type": "beamforming",
-            "target": {"target_type": "node", "identifier": "ceragon-mh-t261-ctu-96", "direction": "both"},
+            "target": {"target_type": "node", "identifier": "radio-1", "direction": "both"},
             "parameters": {"antenna_array_profile": "massive2", "frequency_ghz": 60.48, "steer_azimuth_deg": 15.0, "steer_elevation_deg": 2.0, "beam_tracking_mode": "adaptive-closed-loop", "ignite_candidate_bridge": None},
             "priority": 7, "ttl_seconds": None, "tags": ["beamforming", "60ghz", "massive2"]
         })]
@@ -152,15 +152,47 @@ class LLMParser:
 _MODULATION_LEVELS = ["QPSK", "16QAM", "32QAM", "64QAM", "128QAM", "256QAM", "512QAM", "1024QAM", "2048QAM"]
 
 
+# Device names the network reports (TeraFlowSDN topology, registered at start-up and
+# whenever the intent manager reads the network), with their short forms ("ctu-96" for
+# "...-ctu-96"), and operator aliases from CER_INTENT_NODE_ALIASES (JSON: alias -> name).
+_KNOWN_NODES: Dict[str, str] = {}
+
+
+def register_network_names(names: Iterable[str], aliases: Optional[Dict[str, str]] = None) -> None:
+    for name in names:
+        if not name:
+            continue
+        low = str(name).lower()
+        _KNOWN_NODES[low] = str(name)
+        parts = low.split("-")
+        for k in range(1, len(parts) - 1):
+            suffix = "-".join(parts[k:])
+            if len(parts) - k >= 2 and len(suffix) >= 5:
+                _KNOWN_NODES.setdefault(suffix, str(name))
+    for alias, name in (aliases or {}).items():
+        _KNOWN_NODES[str(alias).lower()] = str(name)
+
+
+def _load_alias_env() -> None:
+    raw = os.getenv("CER_INTENT_NODE_ALIASES", "")
+    if raw:
+        try:
+            register_network_names([], json.loads(raw))
+        except ValueError:
+            logger.warning("CER_INTENT_NODE_ALIASES is not JSON; ignored")
+
+
+_load_alias_env()
+
+
 def _extract_identifier(text: str) -> tuple[str, str]:
     """Return (target_type, identifier) from text heuristics."""
     text_l = text.lower()
 
-    # Specific physical / TFS node names first
-    if any(k in text_l for k in ["ceragon-mh-t261-ctu-96", "ctu-96", "mh-t261", "ceragon-0"]):
-        return "node", "ceragon-mh-t261-ctu-96"
-    if "oran-cu1" in text_l or "o-cu north" in text_l:
-        return "node", "oran-cu1"
+    # Devices the network knows, longest name first
+    for key in sorted(_KNOWN_NODES, key=len, reverse=True):
+        if re.search(rf"(?<![\w-]){re.escape(key)}(?![\w-])", text_l):
+            return "node", _KNOWN_NODES[key]
 
     # Sector
     sector_m = re.search(r"sector[- _]?(\w+)", text_l)
@@ -610,7 +642,9 @@ class RuleParser:
 
     def _parse_beamforming(self, text: str, ttype: str, ident: str) -> Dict:
         if ident == "all":
-            ttype, ident = "node", "ceragon-mh-t261-ctu-96"
+            radios = sorted({v for k, v in _KNOWN_NODES.items() if "radio" in k or "ctu" in k or "mh-" in k})
+            if radios:
+                ttype, ident = "node", radios[0]
         freq_m = re.search(r"(58\.32|60\.48|62\.64|64\.80|60)\s*ghz", text, re.IGNORECASE)
         freq = float(freq_m.group(1)) if freq_m else 60.48
         if freq == 60.0:

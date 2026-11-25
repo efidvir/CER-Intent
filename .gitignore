@@ -33,3 +33,7 @@ Yossi/
 Thumbs.db
 .vscode/
 .idea/
+
+# Intent manager state (records and audit), written at run time
+data/imf_intents.json
+data/imf_audit.jsonl

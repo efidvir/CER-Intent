@@ -15,6 +15,18 @@ RFC9543 = {"std": "RFC 9543", "name": "IETF network slice service",
 
 _RULES = [
     # (predicate on (method, path), label)
+    (lambda m, p: p.startswith("/tmf-api/intentManagement/v5"),
+     {"std": "TMF921", "name": "TM Forum intent management", "ref": "TMF921 Intent Management API v5 · TM Forum intent ontology",
+      "layer": "intent"}),
+    (lambda m, p: p.startswith("/3gpp-intent/"),
+     {"std": "TS 28.312", "name": "3GPP intent handling", "ref": "3GPP TS 28.312 intent-driven management (IntentHandlingFunction)",
+      "layer": "intent"}),
+    (lambda m, p: p.startswith("/api/v2/converse"),
+     {"std": "Intent API", "name": "operator conversation", "ref": "CER-Intent intent API v2 · 3GPP TS 28.312 intent lifecycle",
+      "layer": "intent"}),
+    (lambda m, p: p.startswith("/api/v2/intents"),
+     {"std": "Intent API", "name": "intent record", "ref": "CER-Intent intent API v2 · 3GPP TS 28.312 intent lifecycle",
+      "layer": "intent"}),
     (lambda m, p: p.startswith("/api/v1/intents/") and p.endswith("/approve"),
      {"std": "Intent API", "name": "approval (operator in the loop)",
       "ref": "CER-Intent intent API · 3GPP TS 28.312 intent lifecycle", "layer": "intent"}),

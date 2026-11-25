@@ -171,6 +171,9 @@ def _model(dev: Dict[str, Any]) -> Optional[str]:
 def _logged_inbound(method: str, path: str) -> bool:
     if method == "POST" and (path.rstrip("/") == "/api/v1/intent" or _APPROVE.match(path)):
         return True
+    if method in ("POST", "PUT", "PATCH", "DELETE") and path.startswith(("/api/v2/intents", "/api/v2/converse",
+                                                                          "/tmf-api/intentManagement/v5", "/3gpp-intent/")):
+        return True
     if method == "DELETE" and path.startswith("/api/v1/intents/"):
         return True
     return path.startswith(RFC9543_PATH) and method in ("POST", "PUT", "PATCH", "DELETE")
@@ -216,14 +219,18 @@ def _after(resp):
 
 @flow_bp.get("/status")
 def status():
+    adapter = current_app.config.get("adapter")
+    return jsonify(snapshot(adapter_name=type(adapter).__name__ if adapter else None))
+
+
+def snapshot(adapter_name: Optional[str] = None, twin: bool = True) -> Dict[str, Any]:
+    """The network as CER-Intent sees it: TeraFlowSDN topology and services, the twin, the slices."""
     from cer_intent.api.restconf_routes import get_nsc
     from cer_intent.nsc.realizer import realization_mode
 
     quiet = _quiet()
-    adapter = current_app.config.get("adapter")
     out: Dict[str, Any] = {
-        "cer_intent": {"ok": True, "adapter": type(adapter).__name__ if adapter else None,
-                       "realization": realization_mode()},
+        "cer_intent": {"ok": True, "adapter": adapter_name, "realization": realization_mode()},
         "teraflowsdn": {"url": _tfs(), "ok": False},
         "twin": {"url": _twin(), "ok": False},
         "topology": {"nodes": [], "links": []},
@@ -238,6 +245,7 @@ def status():
         for dev in topo.get("devices", []):
             out["topology"]["nodes"].append({
                 "id": dev.get("name") or dev["device_id"]["device_uuid"]["uuid"],
+                "uuid": dev["device_id"]["device_uuid"]["uuid"],
                 "type": dev.get("device_type"),
                 "radio": _is_ceragon(dev),
                 "model": _model(dev),
@@ -255,6 +263,11 @@ def status():
                     "b": b["device_id"]["device_uuid"]["uuid"], "b_ep": eb,
                     "radio": ea.startswith("rf-sector") or eb.startswith("rf-sector"),
                 })
+        try:
+            from cer_intent.intent_parser import register_network_names
+            register_network_names(n["id"] for n in out["topology"]["nodes"])
+        except Exception:  # pylint: disable=broad-except
+            pass
         s = quiet.get(f"{_tfs()}/tfs-api/context/admin/services", timeout=4)
         for svc in (s.json().get("services", []) if s.ok else []):
             cap = next((c["sla_capacity"]["capacity_gbps"] for c in svc.get("service_constraints", [])
@@ -269,6 +282,8 @@ def status():
     except (requests.RequestException, ValueError, KeyError) as exc:
         out["teraflowsdn"]["error"] = str(exc)
     try:
+        if not twin:
+            raise requests.RequestException("twin not asked")
         h = quiet.get(f"{_twin()}/healthz", timeout=3)
         out["twin"].update({"ok": h.ok, "health": h.json() if h.ok else None})
         e = quiet.get(f"{_twin()}/api/v1/dti/ceragon/engine", timeout=3)
@@ -279,9 +294,19 @@ def status():
     nsc = get_nsc()
     for sid, svc in nsc.slices.items():
         r = nsc.realizations.get(sid)
-        out["slices"].append({"id": sid, "status": svc.status, "model": svc.realization_technology,
-                              "path": list(svc.computed_path), "realization": r.status if r else None})
-    return jsonify(out)
+        req = nsc.requests.get(sid) or {}
+        slos = req.get("slos") or {}
+        out["slices"].append({
+            "id": sid, "status": svc.status, "model": svc.realization_technology,
+            "path": list(svc.computed_path), "realization": r.status if r else None,
+            "endpoints": [{"node": p.node_id, "port": p.tp_id, "vlan": p.vlan_id, "ip": p.ip_address} for p in svc.sdps],
+            "bandwidth_mbps": slos.get("bandwidth_mbps"), "max_latency_ms": slos.get("max_latency_ms"),
+            "loss_pct": slos.get("packet_loss_pct"), "availability_pct": slos.get("availability_pct"),
+            "acm_floor": (req.get("acm") or {}).get("min_modulation") if isinstance(req.get("acm"), dict) else None,
+            "hop_floor": nsc.hop_floors.get(sid), "technology": req.get("technology"),
+            "description": (req.get("service") or {}).get("description"),
+        })
+    return out
 
 
 # ── stage 2: what the slice controller would send ────────────────────────────

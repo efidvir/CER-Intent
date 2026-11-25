@@ -211,6 +211,68 @@ def check(paths: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     return out
 
 
+def imf_check(paths: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """
+    The intent manager through the in-process stack, over its three interfaces:
+    a conversation (/api/v2/converse), TMF921 v5 and 3GPP TS 28.312. Returns what
+    each step answered and the exchanges on the wire.
+    """
+    os.environ.update({"CER_IMF_STORE": ":memory:", "CER_IMF_TICK_S": "0"})
+    stack = inprocess(paths)
+    import requests
+    s = requests.Session()
+    s.headers.update({"User-Agent": "intent-studio/1.0", "X-Flow-Client": "Operator", "X-User": "check", "X-Role": "approver"})
+    cer = stack["urls"]["cer"]
+    out: Dict[str, Any] = {"existing": stack["existing"]["status"]}
+    cursor = s.get(f"{cer}/api/v1/flow/wire", params={"since": "0:0"}).json()["cursor"]
+
+    def say(text: str) -> Dict[str, Any]:
+        r = s.post(f"{cer}/api/v2/converse", json={"session": "check", "text": text})
+        b = r.json()
+        rec = b.get("intent") or {}
+        return {"status": r.status_code, "how": b.get("how"), "state": rec.get("state"), "reply": b.get("reply"),
+                "id": rec.get("id"), "twin": ((rec.get("check") or {}).get("twin") or {}).get("verdict"),
+                "questions": [q["field"] for q in rec.get("questions", [])], "slices": (rec.get("links") or {}).get("slices")}
+
+    out["deliver"] = say("Connect region-a and edge over VLAN 300 with 500 Mbps and at most 10 ms latency; "
+                         "keep the radio link at MCS4 or better")
+    out["approve"] = say("approve")
+    out["radios"] = {name: sorted(st.running["bridges"]) for name, st in stack["radios"].items()}
+    out["clarify"] = say("Connect HQ and edge with 50 Mbps")
+    out["answer"] = say("region-a")
+    out["cancel"] = say("cancel")
+    out["headroom"] = say("How much more can the hop carry in heavy rain?")
+    out["inventory"] = say("What runs over radio-1?")
+    out["scope"] = say("Configure BGP on the core routers")
+    tmf = s.post(f"{cer}/tmf-api/intentManagement/v5/intent",
+                 json={"name": "cctv", "description": "Connect region-a and edge with 60 Mbps, at most 20 ms"}).json()
+    out["tmf_create"] = {"status": tmf.get("lifecycleStatus"), "id": tmf.get("id"), "type": tmf.get("@type"),
+                         "reply": s.get(f"{cer}/api/v2/intents/{tmf.get('id')}").json().get("reply")}
+    p = s.patch(f"{cer}/tmf-api/intentManagement/v5/intent/{tmf['id']}", json={"lifecycleStatus": "active"}).json()
+    out["tmf_active"] = p.get("lifecycleStatus")
+    rep = s.get(f"{cer}/tmf-api/intentManagement/v5/intent/{tmf['id']}/intentReport").json()
+    out["tmf_report"] = rep[0]["expression"]["expressionValue"]["icm:intentHandlingState"] if rep else None
+    g = s.put(f"{cer}/3gpp-intent/v1/IntentHandlingFunction=1/Intent=video-1", json={"Intent": {
+        "userLabel": "video", "intentAdminState": "ACTIVATED", "intentExpectations": [{
+            "expectationId": "e1", "expectationVerb": "DELIVER",
+            "expectationObject": {"objectType": "TransportNetworkSlice", "objectInstance": "slice-video",
+                                  "objectContexts": [{"contextAttribute": "serviceDemarcationPoints", "contextCondition": "IS_ALL_OF",
+                                                      "contextValueRange": [{"node": "region-a"}, {"node": "edge"}]}]},
+            "expectationTargets": [{"targetName": "oneWayBandwidth", "targetCondition": "IS_EQUAL_TO_OR_GREATER_THAN",
+                                    "targetValueRange": 10, "targetUnit": "Mbps"}]}]}}).json()
+    out["g3_put"] = {"state": g.get("cerState"), "id": g.get("id")}
+    r3 = s.get(f"{cer}/3gpp-intent/v1/IntentHandlingFunction=1/Intent=video-1/IntentReport").json()
+    out["g3_report"] = r3["intentFulfilmentReport"]["intentFulfilmentInfo"]["fulfilmentStatus"]
+    net = s.get(f"{cer}/api/v2/network").json()
+    out["network_slices"] = sorted(x["id"] for x in net["slices"])
+    out["withdraw"] = s.delete(f"{cer}/api/v2/intents/{out['approve']['id']}").json().get("state")
+    out["slices_after"] = sorted(x["id"] for x in s.get(f"{cer}/api/v2/network").json()["slices"])
+    wire = s.get(f"{cer}/api/v1/flow/wire", params={"since": cursor}).json()["items"]
+    out["wire"] = [{"src": e["src"], "dst": e["dst"], "method": e["method"], "path": e["path"].split("?")[0],
+                    "status": e["status"], "std": e["std"]["std"]} for e in wire]
+    return out
+
+
 # ── processes, real sockets ──────────────────────────────────────────────────
 
 def _wait(url: str, timeout: float = 60.0) -> bool:
@@ -263,12 +325,15 @@ def up(paths: Dict[str, str], python: str, logs: Path) -> List[subprocess.Popen]
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["up", "check"])
+    parser.add_argument("command", choices=["up", "check", "imf"])
     parser.add_argument("--logs", default=str(ROOT / "data" / "flow-logs"))
     args = parser.parse_args(argv)
     paths = default_paths()
     if args.command == "check":
         print(json.dumps(check(paths), indent=1))
+        return 0
+    if args.command == "imf":
+        print(json.dumps(imf_check(paths), indent=1))
         return 0
     python = os.getenv("PYTHON", sys.executable)
     mode = "NS-3.45 local binary" if paths["ns3_binary"] and Path(paths["ns3_binary"]).exists() else "recorded NS-3 runs"

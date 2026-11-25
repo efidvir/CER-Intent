@@ -283,6 +283,7 @@ CER_Intent/
 
 ## Documentation
 
+- **Intent manager and intent studio**: [docs/INTENT_MANAGER.md](docs/INTENT_MANAGER.md) — one intent record for words, forms, TMF921 v5, 3GPP TS 28.312 and MCP; questions, checks on the twin, alternatives, approval, schedules, objectives and reports. Studio: `http://localhost:5000/intent-studio.html`.
 - **TeraFlowSDN Adapter Guide**: [Ceragon TeraFlowSDN Adapter Guide](file:///c:/CER_Intent/docs/CERAGON_TFS_ADAPTER_GUIDE.md) — Complete portfolio, YANG 1.1 schema closure, and bidirectional control/telemetry reference.
 - **NS-3 Functional Twin Guide**: [Ceragon Functional Digital Twin for NS-3 (`contrib/ceragon`)](file:///c:/CER_Intent/docs/CERAGON_NS3_FUNCTIONAL_TWIN_GUIDE.md) — Architecture, ITU-R PHY/MAC/QoS/TSN mathematical models, `.twin` grammar, and validation suite.
 - **NS-3 Sphinx Module Manual**: [`ns3_ceragon/contrib/ceragon/doc/ceragon.rst`](file:///c:/CER_Intent/ns3_ceragon/contrib/ceragon/doc/ceragon.rst) — Native ns-3 Sphinx documentation.
