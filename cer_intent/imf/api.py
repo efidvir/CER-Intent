@@ -8,10 +8,10 @@ HTTP interfaces of the intent manager
 Every interface leads to the same records, so an intent submitted as TMF921 can
 be answered in the studio and approved over 28.312.
 
-Who acts: the X-User and X-Role headers (viewer, operator, approver, admin).
-They are trusted as sent, which suits a lab behind its own access control; a
-deployment puts this API behind its identity provider and maps its claims to
-these roles.
+Who acts (viewer, operator, approver, admin): with CER_AUTH=headers (the default) the
+X-User and X-Role headers, trusted as sent, which suits a lab behind its own access
+control; with CER_AUTH=token the person's token (cer_intent/auth.py), and the headers
+are ignored.
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from cer_intent.imf import standards
 from cer_intent.imf.check import TwinClient
+from cer_intent.imf.discovery import Discovery
 from cer_intent.imf.manager import ImfError, IntentManager, describe
 from cer_intent.imf.model import IntentRecord, State
 from cer_intent.imf.network import NetworkModel
@@ -37,20 +38,31 @@ TMF = "/tmf-api/intentManagement/v5"
 G3 = "/3gpp-intent/v1"
 
 
+DISCOVERY = Discovery()
+
+
 def live_network() -> NetworkModel:
-    """The network as TeraFlowSDN and the slice controller report it now."""
+    """
+    The network as TeraFlowSDN and the slice controller report it now, with what each
+    device reports about itself (models, bands, ports, the radios' current modulation).
+    """
     from cer_intent.flow.routes import snapshot
     snap = snapshot(twin=False)
     if not snap.get("topology", {}).get("nodes") and os.getenv("CER_IMF_DEMO", "0") == "1":
         return NetworkModel.demo()
-    return NetworkModel.from_snapshot(snap)
+    net = NetworkModel.from_snapshot(snap)
+    if os.getenv("CER_IMF_DISCOVERY", "1") not in ("0", "false", "off"):
+        radios = [n.id for n in net.nodes.values() if n.radio]
+        net.enrich(DISCOVERY.details(list(net.nodes), radios=radios))
+    return net
 
 
 def _v1_submit(text: str) -> Dict[str, Any]:
     """Device features go through the v1 pipeline (parse, validate, architect, translate, apply)."""
     app = _app or current_app._get_current_object()
+    from cer_intent.auth import INTERNAL
     with app.test_client() as c:
-        r = c.post("/api/v1/intent", json={"intent": text, "source": "imf"})
+        r = c.post("/api/v1/intent", json={"intent": text, "source": "imf"}, environ_base={INTERNAL: "1"})
         body = r.get_json(silent=True) or {}
         if r.status_code >= 400:
             body.setdefault("error", f"v1 returned {r.status_code}")
@@ -62,7 +74,8 @@ def manager() -> IntentManager:
     with _lock:
         if _manager is None:
             twin = TwinClient() if os.getenv("CER_IMF_TWIN", "1") not in ("0", "false", "off") else None
-            _manager = IntentManager(network=live_network, twin=twin, legacy=_v1_submit)
+            from cer_intent.imf.autoapprove import state_path
+            _manager = IntentManager(network=live_network, twin=twin, legacy=_v1_submit, auto_state=state_path())
             if os.getenv("CER_IMF_TICK_S", "10") not in ("0", ""):
                 _manager.start(float(os.getenv("CER_IMF_TICK_S", "10")))
         return _manager
@@ -80,9 +93,8 @@ def _remember_app(state) -> None:
 
 
 def _who() -> Tuple[str, str]:
-    body = request.get_json(silent=True) or {}
-    who = request.headers.get("X-User") or body.get("who") or "operator"
-    role = (request.headers.get("X-Role") or body.get("role") or "operator").lower()
+    from cer_intent.auth import who as acting
+    who, role = acting()
     if role not in ROLES:
         raise ImfError(f"unknown role {role}; one of {', '.join(ROLES)}", 400)
     return who, role
@@ -193,13 +205,31 @@ def v2_converse():
 
 @imf_bp.post("/api/v2/read")
 def v2_read():
-    """How the words read, before anything is stored: rules, and the model when one is configured."""
+    """How the words read, before anything is stored, and what in the network they point at."""
+    from cer_intent.imf import referents
     body = request.get_json(silent=True) or {}
     m = manager()
     net = m.network()
-    rules = RuleReader(net.names(), m.clock()).read(body.get("text") or "")
+    text = body.get("text") or ""
+    rules = RuleReader(net.names(), m.clock()).read(text)
+    who, _ = _who()
+    refs = [r.to_dict() for r in referents.find(text, net, m.store.all(), who)]
+    low = text.lower()
+    words = [{"phrase": v["phrase"], "id": v["id"], "type": v["type"], "why": v["why"]} for v in net.vocabulary()
+             if v["phrase"].lower() in low]
+    words += [{"phrase": n, "id": n, "type": t, "why": "a name the network reports"} for t, names in net.names().items()
+              for n in names if n.lower() in low and not any(w["phrase"].lower() == n.lower() for w in words)
+              and t in ("node", "radio", "slice", "service", "intent")]
     return jsonify({"reading": rules.model_dump(mode="json"), "summary": [e.summary() for e in rules.expectations],
-                    "names": net.names()})
+                    "references": refs, "words": words[:12]})
+
+
+@imf_bp.get("/api/v2/network/vocabulary")
+def v2_vocabulary():
+    """Every phrase the translator knows for a part of this network, and where it comes from."""
+    net = manager().network()
+    return jsonify({"vocabulary": net.vocabulary(), "names": net.names(),
+                    "discovery_errors": DISCOVERY.errors})
 
 
 @imf_bp.get("/api/v2/network")
@@ -218,6 +248,25 @@ def v2_tick():
 @imf_bp.get("/api/v2/events")
 def v2_events():
     return jsonify({"events": manager().events[-100:]})
+
+
+@imf_bp.get("/api/v2/auto-approve")
+def v2_auto_get():
+    """The auto-approval policy, the rule intents that widen it, and recent automatic decisions."""
+    from cer_intent.imf.autoapprove import active_rules
+    m = manager()
+    rules = [{"intent": r.id, "name": r.name, "text": r.text, "kinds": e.action.get("kinds"), "max_mbps": e.value("bandwidth"),
+              "window": (e.context("window").params if e.context("window") else None), "scope": e.object.ids}
+             for r, e in active_rules(m.store.all())]
+    recent = [a for a in m.store.audit_log(limit=2000) if a.get("event") in ("auto-approved", "auto-rolled-back")][-20:]
+    return jsonify({"policy": m.policy.auto.to_dict(), "rules": rules, "recent": recent})
+
+
+@imf_bp.put("/api/v2/auto-approve")
+def v2_auto_put():
+    who, role = _who()
+    body = request.get_json(silent=True) or {}
+    return jsonify({"policy": manager().set_auto_policy(body, who, role)})
 
 
 @imf_bp.get("/api/v2/capabilities")

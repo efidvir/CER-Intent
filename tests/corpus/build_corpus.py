@@ -148,6 +148,37 @@ case("Suspend the backhaul tonight 22:00-02:00, then resume it", ["lifecycle"], 
 case("Connect region-a and edge with 100 Mbps; also alert me if the hop drops below MCS5", ["deliver", "observe"], endpoints=[R, E])
 case("Give region-a to edge 200 Mbps and never let it fall below 150 Mbps", ["deliver", "keep"], endpoints=[R, E])
 
+# ── auto-approval: grants and restrictions (rule intents) ─────────────────────
+case("Auto-approve deliveries up to 300 Mbps", ["guard"], rule="auto_approve", targets={"bandwidth": ["le", 300]})
+case("Auto-approve slices of no more than 300 Mbps", ["guard"], rule="auto_approve", targets={"bandwidth": ["le", 300]})
+case("Apply changes up to 100 Mbps without asking", ["guard"], rule="auto_approve", targets={"bandwidth": ["le", 100]})
+case("Approve suspensions automatically at night", ["guard"], rule="auto_approve", contexts=["window"])
+case("Never auto-approve deliveries", ["guard"], rule="approval")
+case("Don't approve changes automatically", ["guard"], rule="approval")
+case("Stop auto-approving slices on radio-1", ["guard"], rule="approval", ids=["radio-1"])
+case("Turn off auto-approval", ["guard"], rule="approval")
+case("No auto-approval for suspensions", ["guard"], rule="approval")
+
+# ── described, not named: answered from what the network reports ─────────────
+HOP = "radio-1|radio-2"
+case("Double the slice on VLAN 100", ["change"], ids=["backhaul-ran"], action="scale", targets={"bandwidth": ["ge", 400]})
+case("Suspend the VLAN 100 slice", ["lifecycle"], ids=["backhaul-ran"], action="suspend")
+case("Keep the 200 Mbps slice under 5 ms", ["keep"], ids=["backhaul-ran"], targets={"latency": ["le", 5]})
+case("Report the busiest hop every hour", ["observe"], ids=[HOP], contexts=["schedule"])
+case("How is the 60 GHz link doing?", ["ask"], ids=[HOP])
+case("Alert me when the hop to edge drops below MCS6", ["observe"], ids=[HOP], contexts=["condition"])
+case("What is the radio at edge doing?", ["ask"], ids=["radio-2"])
+case("Which slices use the V-band hop?", ["ask"], ids=[HOP])
+case("What runs over the region-a hop?", ["ask"], ids=["backhaul-ran"])
+case("Save energy on the V-band link at night, keep MCS4", ["optimise"], ids=[HOP], action="minimize")
+case("Freeze the 60 GHz hop during peak hours", ["guard"], ids=[HOP], rule="freeze")
+case("Never let the edge hop go below MCS5", ["keep"], ids=[HOP], targets={"modulation_floor": ["ge", "MCS5"]})
+case("How much more can the 60 GHz hop carry?", ["explore"], ids=[HOP], question_type="headroom")
+case("Remove the biggest slice", ["lifecycle"], ids=["backhaul-ran"], action="delete")
+case("Give the VLAN 100 slice 50% more", ["change"], ids=["backhaul-ran"], targets={"bandwidth": ["ge", 300]})
+case("Watch the hop to region-a", ["observe"], ids=[HOP])
+case("Suspend every slice over radio-2", ["lifecycle"], ids=["backhaul-ran"], action="suspend")
+
 # ── outside scope ─────────────────────────────────────────────────────────────
 for t in ["Configure BGP on the core routers", "Order pizza for the NOC", "Reset my laptop password",
           "Update the firmware on the office printer", "What's the weather in Paris tomorrow?", "Write me a poem about networks",

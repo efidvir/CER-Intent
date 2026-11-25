@@ -88,6 +88,39 @@ def candidate_for(e: Expectation, slice_id: Optional[str] = None) -> Optional[Di
             "vlan_id": eps[0].vlan, "technology": e.value("technology") or "L2VPN"}
 
 
+def held_request(req: Any) -> Optional[Dict[str, Any]]:
+    """A slice request a suspend put aside, read the way the slice controller reads it."""
+    if not isinstance(req, dict):
+        return None
+    try:
+        from cer_intent.nsc.mapper import map_request
+        m = map_request(req)
+    except Exception:  # pylint: disable=broad-except
+        return None
+    acm = m.extensions.get("acm") if isinstance(m.extensions.get("acm"), dict) else {}
+    return {"endpoints": [{"node": e.node_id, "port": e.tp_id, "vlan": e.vlan_id, "ip": e.ip_address} for e in m.endpoints],
+            "bandwidth_mbps": m.slos.bandwidth_mbps, "max_latency_ms": m.slos.max_latency_ms,
+            "floor": (acm or {}).get("min_modulation"), "description": getattr(m, "description", None)}
+
+
+def resume_probe(sid: str, records: List[IntentRecord]) -> Optional[Expectation]:
+    """The slice a suspend put aside (kept on the intent that suspended it), as a delivery to screen."""
+    from cer_intent.imf.model import Endpoint
+    req = next(((r.links.get("suspended") or {}).get(sid) for r in records if (r.links.get("suspended") or {}).get(sid)), None)
+    held = held_request(req)
+    if not held or len(held["endpoints"]) < 2:
+        return None
+    probe = Expectation(kind=Kind.DELIVER, name=sid, object={"type": "slice", "ids": [sid]})
+    probe.object.endpoints = [Endpoint(node=x["node"], port=x["port"], vlan=x["vlan"], ip=x["ip"]) for x in held["endpoints"][:2]]
+    if held["bandwidth_mbps"]:
+        probe.set_target("bandwidth", "ge", float(held["bandwidth_mbps"]), "Mbps")
+    if held["max_latency_ms"]:
+        probe.set_target("latency", "le", float(held["max_latency_ms"]), "ms")
+    if held["floor"]:
+        probe.set_target("modulation_floor", "ge", held["floor"], "MCS")
+    return probe
+
+
 # ── rules from guard intents ───────────────────────────────────────────────────
 
 def active_guards(store_items: List[IntentRecord]) -> List[Tuple[IntentRecord, Expectation]]:
@@ -111,31 +144,48 @@ def _in_window(e: Expectation, now: dt.datetime) -> bool:
     return start <= now < end if end else start <= now
 
 
+def touches(expectations: List[Expectation], net: NetworkModel) -> set:
+    """What these expectations act on: named ids, endpoint sites, and the nodes and hops on their path."""
+    touched = set()
+    for e in expectations:
+        touched |= set(e.object.ids) | {ep.node for ep in e.object.endpoints if ep.node}
+        eps = [ep.node for ep in e.object.endpoints if ep.node]
+        if len(eps) == 2:
+            path = net.path(eps[0], eps[1])
+            touched |= set(path) | {h.name for h in net.hops(path)}
+        for sid in e.object.ids:                       # a slice touches what its path crosses
+            sl = net.slices.get(sid)
+            if sl is not None and sl.path:
+                touched |= set(sl.path) | {h.name for h in net.hops(sl.path)}
+    return touched
+
+
+def in_scope(scope: set, touched: set) -> bool:
+    return not scope or bool(scope & touched) or any(s in t for s in scope for t in touched)
+
+
 def guard_findings(rec: IntentRecord, guards: List[Tuple[IntentRecord, Expectation]], now: dt.datetime,
                    net: NetworkModel) -> List[Dict[str, Any]]:
     out = []
     acting = [e for e in rec.expectations if e.kind in ACTING_KINDS]
     if not acting:
         return out
+    touched = touches(acting, net)
     for g_rec, g in guards:
         if g_rec.id == rec.id:
             continue
         rule = g.action.get("rule")
-        scope = set(g.object.ids)
-        touched = set()
-        for e in acting:
-            touched |= set(e.object.ids) | {ep.node for ep in e.object.endpoints if ep.node}
-            for ep_pair in [e.object.endpoints]:
-                if len(ep_pair) == 2 and ep_pair[0].node and ep_pair[1].node:
-                    touched |= {h.name for h in net.hops(net.path(ep_pair[0].node, ep_pair[1].node))}
-        applies = not scope or bool(scope & touched) or any(s in t for s in scope for t in touched)
-        if not applies:
+        if not in_scope(set(g.object.ids), touched):
+            continue
+        if g.action.get("kinds") and not any(e.kind.value in g.action["kinds"] for e in acting):
             continue
         base = {"rule": rule, "guard": g_rec.id, "text": g_rec.text}
         if rule == "freeze" and _in_window(g, now):
             out.append({**base, "effect": "hold", "why": f"changes are frozen by {g_rec.name or g_rec.id}"})
         elif rule == "approval":
-            out.append({**base, "effect": "approval", "why": "an approver must approve this change"})
+            out.append({**base, "effect": "approval",
+                        "why": f"{g_rec.name or g_rec.id} asks a person to approve this" if g.action.get("no_auto") else
+                        "an approver must approve this change"})
         elif rule == "floor" and g.action.get("value"):
             out.append({**base, "effect": "floor", "value": g.action["value"],
                         "why": f"radios hold at least {g.action['value']} ({g_rec.name or g_rec.id})"})
@@ -189,9 +239,20 @@ def screen_delivery(net: NetworkModel, e: Expectation, replacing: Optional[str] 
             ok = False
             reasons.append(f"{hop.name}: holding {av['mcs']} for {existing + bw:g} Mbps gives {pct(av['availability_pct'])} "
                            f"a year (ITU-R), below {float(target):g} %")
+        live = net.live_mcs(hop)
+        if live:
+            from cer_intent.imf.radio import capacity_mbps as _cap
+            now_cap = min(hop.port_mbps, _cap(live))
+            row.update({"live_mcs": live, "live_capacity_mbps": now_cap,
+                        # below clear sky in rate (MCS9 and up all carry the radio's 1 Gbps: not fading)
+                        "fading_now": now_cap + 1e-9 < min(hop.port_mbps, _cap(sc.clear_mcs)),
+                        "fits_now": existing + bw <= now_cap + 1e-9})
         hops.append(row)
+    now_notes = [f"{h['hop']} runs {h['live_mcs']} now ({h['live_capacity_mbps']:g} Mbps): it carries this "
+                 + ("now as well" if h["fits_now"] else "when the hop recovers, not right now")
+                 for h in hops if h.get("fading_now")]
     return {"ok": ok, "path": path, "hops": hops, "why": "; ".join(reasons) or "fits on every hop", "floor": floor,
-            "basis": "analytic: ITU-R P.838/P.530 on the twin's radio model"}
+            "now": "; ".join(now_notes) or None, "basis": "analytic: ITU-R P.838/P.530 on the twin's radio model"}
 
 
 def keep_screen(net: NetworkModel, e: Expectation) -> Dict[str, Any]:
@@ -280,6 +341,20 @@ def check_record(rec: IntentRecord, net: NetworkModel, guards: List[Tuple[Intent
                 out["conflicts"] += keep_conflicts(rec, e, sid, new_bw, others)
                 tw = None
                 if use_twin and twin is not None and new_bw is not None and not _capacity_only(sc, headroom):
+                    tw = run_twin(twin, candidate_for(probe, sid))
+                    out["twin"] = tw
+                _decide(out, entry, tw)
+        elif e.kind == Kind.LIFECYCLE and e.action.get("op") == "resume":
+            # a resume puts the slice's load back: screened (and run on the twin) like delivering it again
+            for sid in e.object.ids:
+                probe = resume_probe(sid, others)
+                if probe is None:
+                    continue
+                sc = screen_delivery(net, probe, headroom=headroom, guard_floor=guard_floor)
+                entry = {"expectation": e.id, "slice": sid, **sc}
+                out["screens"].append(entry)
+                tw = None
+                if use_twin and twin is not None and not _capacity_only(sc, headroom):
                     tw = run_twin(twin, candidate_for(probe, sid))
                     out["twin"] = tw
                 _decide(out, entry, tw)

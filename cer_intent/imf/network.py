@@ -55,6 +55,28 @@ class Node:
     model: Optional[str] = None
     status: Optional[str] = None
     endpoints: List[str] = field(default_factory=list)
+    # what the device reports about itself (cer_intent/imf/discovery.py)
+    hostname: Optional[str] = None
+    vendor: Optional[str] = None
+    family: Optional[str] = None
+    role: Optional[str] = None
+    features: List[str] = field(default_factory=list)
+    bands: List[Dict[str, Any]] = field(default_factory=list)
+    max_mbps: Optional[float] = None
+    live: Dict[str, Any] = field(default_factory=dict)       # mcs, snr_db, rsl_dbm, speed_mbps, freq_mhz, tx_power_control
+
+    def band_words(self) -> List[str]:
+        words = []
+        for b in self.bands:
+            if b.get("name"):
+                words.append(str(b["name"]))
+            lo, hi = b.get("min_ghz"), b.get("max_ghz")
+            if lo and hi:
+                words.append(f"{round((float(lo) + float(hi)) / 2 / 10) * 10:g} GHz")
+        if self.live.get("freq_mhz"):
+            f = float(self.live["freq_mhz"]) / 1000.0
+            words += [f"{f:g} GHz", f"{round(f):g} GHz"]
+        return list(dict.fromkeys(words))
 
     def access_port(self) -> Optional[str]:
         for e in self.endpoints:
@@ -88,6 +110,8 @@ class SliceInfo:
     hop_floor: Optional[str] = None
     description: Optional[str] = None
     intent: Optional[str] = None             # the intent record that made it, when known
+    source: str = "slice controller"         # or "TeraFlowSDN": a service CER-Intent did not make
+    technology_label: Optional[str] = None
 
     def vlans(self) -> List[int]:
         return sorted({int(e["vlan"]) for e in self.endpoints if e.get("vlan") not in (None, "")})
@@ -125,6 +149,7 @@ class NetworkModel:
         self.vlan_pool = vlan_pool
         self.source = source
         self.reserved: Dict[str, Dict[str, Any]] = {}       # intents not applied yet: name -> {"vlans", "nodes", "intent"}
+        self.suspended: Dict[str, SliceInfo] = {}           # slices a suspend put aside: named, but carrying no load
         by_uuid = {n.uuid: n.id for n in self.nodes.values() if n.uuid}
         for lk in self.links:          # links may name devices by uuid
             lk.a, lk.b = by_uuid.get(lk.a, lk.a), by_uuid.get(lk.b, lk.b)
@@ -146,8 +171,46 @@ class NetworkModel:
         for s, raw in zip(slices, snap.get("slices", [])):
             s.endpoints = raw.get("endpoints") or []
             s.path = raw.get("path") or []
-        return cls(nodes, links, slices, snap.get("services", []), intents, plan or load_plan(),
-                   load_aliases(), source="live")
+        net = cls(nodes, links, slices, snap.get("services", []), intents, plan or load_plan(), load_aliases(), source="live")
+        # services in TeraFlowSDN that the slice controller did not make still use the hops
+        by_uuid = {n.uuid: n.id for n in net.nodes.values() if n.uuid}
+        for svc in snap.get("services", []):
+            name = svc.get("name")
+            if not name or name in net.slices or "ACTIVE" not in str(svc.get("status") or ""):
+                continue
+            ends = [by_uuid.get(e, e) for e in svc.get("endpoints") or []]
+            vlans, ips, ports = svc.get("vlans") or {}, svc.get("ips") or {}, svc.get("ports") or []
+            eps = [{"node": e, "port": ports[i] if i < len(ports) else None, "vlan": vlans.get(e), "ip": ips.get(e)}
+                   for i, e in enumerate(ends)]
+            net.slices[name] = SliceInfo(id=name, status="active", technology=svc.get("type"), endpoints=eps,
+                                         path=net.path(ends[0], ends[-1]) if len(ends) >= 2 else [],
+                                         bandwidth_mbps=svc.get("capacity_mbps"), max_latency_ms=svc.get("latency_ms"),
+                                         description=f"TeraFlowSDN service {name}", source="TeraFlowSDN")
+        return net
+
+    def enrich(self, details: Dict[str, Dict[str, Any]]) -> "NetworkModel":
+        """Add what each device reports about itself (discovery.parse_device) to the model."""
+        for name, d in details.items():
+            n = self.nodes.get(name)
+            if n is None:
+                continue
+            n.hostname = d.get("hostname") or n.hostname
+            n.model = d.get("model") or n.model
+            n.vendor = d.get("vendor") or n.vendor
+            n.family = d.get("family") or n.family
+            n.role = d.get("role") or n.role
+            n.features = d.get("features") or n.features
+            n.bands = d.get("bands") or n.bands
+            n.max_mbps = d.get("max_mbps") or n.max_mbps
+            n.live = d.get("live") or n.live
+            if d.get("endpoints"):
+                n.endpoints = [e for e in d["endpoints"] if e]
+            if n.bands and not n.radio:
+                n.radio = True
+        for lk in self.links:
+            if not lk.radio and lk.a in self.nodes and lk.b in self.nodes:
+                lk.radio = self.nodes[lk.a].radio and self.nodes[lk.b].radio
+        return self
 
     @classmethod
     def demo(cls, with_slice: bool = True) -> "NetworkModel":
@@ -159,7 +222,12 @@ class NetworkModel:
             radio = "DEVICEDRIVER_CERAGON" in (d.get("device_drivers") or []) or any(
                 w in str(d.get("device_type", "")).lower() for w in RADIO_WORDS)
             nodes.append(Node(id=d["name"], uuid=d["device_id"]["device_uuid"]["uuid"], type=d.get("device_type"),
-                              radio=radio, endpoints=["eth1"] + (["rf-sector-1"] if radio else [])))
+                              radio=radio, endpoints=["eth1"] + (["rf-sector-1"] if radio else ["int"]),
+                              hostname=d["name"], model="MH-T261" if radio else None, family="MultiHaul TG" if radio else None,
+                              role="transport_mmwave_vband" if radio else "datacenter",
+                              bands=[{"name": "V-band", "min_ghz": 57.0, "max_ghz": 71.0}] if radio else [],
+                              max_mbps=1000.0 if radio else None,
+                              live={"freq_mhz": 60480.0} if radio else {}))
         links = []
         for lk in topo["links"]:
             a, b = lk["link_endpoint_ids"][:2]
@@ -181,11 +249,92 @@ class NetworkModel:
         out: Dict[str, List[str]] = {"node": [], "radio": [], "slice": [], "service": [], "intent": []}
         for n in self.nodes.values():
             out["radio" if n.radio else "node"].append(n.id)
-        out["slice"] = list(self.slices)
-        known = set(self.slices)
+        out["slice"] = list(self.slices) + [x for x in self.suspended if x not in self.slices]
+        known = set(self.slices) | set(self.suspended)
         out["service"] = [s.get("name") for s in self.services if s.get("name") and s.get("name") not in known]
         out["intent"] = [i.get("name") for i in self.intents if i.get("name")]
+        for v in self.vocabulary():
+            if v["phrase"].lower() != str(v["id"]).lower() and len(v["phrase"]) >= 3:
+                out.setdefault({"site": "node"}.get(v["type"], v["type"]), []).append(v["phrase"])
         return {k: sorted(set(v), key=len, reverse=True) for k, v in out.items() if v}
+
+    # ── words the network gives its parts ────────────────────────────────────
+    def vocabulary(self) -> List[Dict[str, Any]]:
+        """Phrases that mean a part of this network, each with the part and where the phrase comes from."""
+        out: List[Dict[str, Any]] = []
+
+        def add(phrase, ident, typ, why):
+            if phrase and str(phrase).strip():
+                out.append({"phrase": str(phrase).strip(), "id": ident, "type": typ, "why": why})
+        radios = [n for n in self.nodes.values() if n.radio]
+        for n in self.nodes.values():
+            t = "radio" if n.radio else "site"
+            if n.hostname and n.hostname.lower() != n.id.lower():
+                add(n.hostname, n.id, t, "the device's host name")
+            short = re.sub(r"^(?:[a-z]+-)+(?=[a-z]+-?\d+$)", "", n.id.lower())
+            if short != n.id.lower() and len(short) >= 4:
+                add(short, n.id, t, "the end of its name")
+        for group, key, why in (("model", "model", "the radios' model"), ("family", "family", "the radios' product family")):
+            vals = {getattr(n, key) for n in radios if getattr(n, key)}
+            for v in vals:
+                ids = [n.id for n in radios if getattr(n, key) == v]
+                add(f"{v} radios" if len(ids) > 1 else v, ids if len(ids) > 1 else ids[0], "radio", why)
+        for hop in self.radio_hops():
+            a, b = self.nodes.get(hop.a), self.nodes.get(hop.b)
+            add(f"{hop.a} {hop.b} hop", hop.name, "hop", "its two radios")
+            add(f"{hop.a} to {hop.b}", hop.name, "hop", "its two radios")
+            words = list(dict.fromkeys((a.band_words() if a else []) + (b.band_words() if b else [])))
+            for w in words:
+                same = [h for h in self.radio_hops() if w in ((self.nodes[h.a].band_words() if h.a in self.nodes else []))]
+                if len(same) == 1:
+                    for noun in ("hop", "link", "radio link"):
+                        add(f"{w} {noun}", hop.name, "hop", f"the radios report {w}")
+            ends = self._ends_through(hop)
+            for site in ends:
+                add(f"hop to {site}", hop.name, "hop", f"the radio hop on the way to {site}")
+                add(f"{site} hop", hop.name, "hop", f"the radio hop on the way to {site}")
+            if len(ends) == 2:
+                add(f"{ends[0]} {ends[1]} link", hop.name, "hop", "the radio hop between the two sites")
+        for s in self.slices.values():
+            for v in s.vlans():
+                add(f"vlan {v} slice", s.id, "slice", f"{s.id} uses VLAN {v}")
+            if s.description and s.source == "slice controller":
+                add(s.description.split(",")[0], s.id, "slice", "its description")
+        for k, v in self.aliases.items():
+            hit = next((e for e in self._entities() if e[0] == v), None)
+            if hit:
+                add(k, v, hit[1], "the operator's alias")
+        return out
+
+    def _ends_through(self, hop: Hop) -> List[str]:
+        """The sites on either side of a radio hop (following links away from it)."""
+        ends = []
+        for start, other in ((hop.a, hop.b), (hop.b, hop.a)):
+            seen, frontier = {other, start}, [start]
+            found = None
+            while frontier and found is None:
+                nxt = []
+                for x in frontier:
+                    for nb in self.neighbours(x):
+                        if nb in seen:
+                            continue
+                        seen.add(nb)
+                        if nb in self.nodes and not self.nodes[nb].radio:
+                            found = nb
+                            break
+                        nxt.append(nb)
+                    if found:
+                        break
+                frontier = nxt
+            if found:
+                ends.append(found)
+        return ends
+
+    def live_mcs(self, hop: Hop) -> Optional[str]:
+        """The lower of the two radios' current modulation, when the radios reported it."""
+        from cer_intent.imf.radio import mcs_index
+        vals = [self.nodes[x].live.get("mcs") for x in (hop.a, hop.b) if x in self.nodes and self.nodes[x].live.get("mcs")]
+        return min(vals, key=lambda m: mcs_index(m) or 0) if vals else None
 
     def sites(self) -> List[str]:
         return [n.id for n in self.nodes.values() if not n.radio]
@@ -197,10 +346,13 @@ class NetworkModel:
         for n in self.nodes.values():
             t = "radio" if n.radio else "site"
             if t in want:
-                out.append((n.id, t, [n.id]))
+                out.append((n.id, t, [n.id] + ([n.hostname] if n.hostname else [])))
         if "slice" in want or "service" in want:
             for s in self.slices.values():
                 out.append((s.id, "slice", [s.id] + ([s.description] if s.description else [])))
+            for s in self.suspended.values():
+                if s.id not in self.slices:
+                    out.append((s.id, "slice", [s.id] + ([s.description] if s.description else [])))
             for svc in self.services:
                 name = svc.get("name")
                 if name and name not in self.slices:
@@ -215,6 +367,9 @@ class NetworkModel:
         return out
 
     def resolve(self, mention: str, types: Optional[Iterable[str]] = None) -> Resolution:
+        hit = self._vocab_hit(mention, types)
+        if hit is not None:
+            return hit
         m = re.sub(r"^(?:the|a|an|our|my)\s+", "", str(mention or "").strip(), flags=re.I)
         m = re.sub(r"^(?:site|node|slice|service|radio\s+site)\s+(?=\S)", "", m, flags=re.I)
         m = re.sub(r"\s+(?:site|node)$", "", m, flags=re.I)
@@ -255,6 +410,21 @@ class NetworkModel:
             return Resolution(mention, "ambiguous", candidates=scored[:4])
         top = scored[0]
         return Resolution(mention, "fuzzy", top[0], top[1], top[2], candidates=scored[:4])
+
+    def _vocab_hit(self, mention: str, types: Optional[Iterable[str]] = None) -> Optional[Resolution]:
+        key = squash(re.sub(r"^(?:the|a|an|our|my|both|all)\s+", "", str(mention or "").strip(), flags=re.I))
+        if not key:
+            return None
+        want = set(types) if types else None
+        hits = [v for v in self.vocabulary() if squash(v["phrase"]) == key and (want is None or v["type"] in want
+                                                                                   or (v["type"] == "slice" and "service" in want))]
+        ids = {json.dumps(v["id"]) for v in hits}
+        if len(ids) == 1:
+            v = hits[0]
+            if isinstance(v["id"], list):          # a group: "the MH-T261 radios"
+                return Resolution(mention, "group", candidates=[(i, v["type"], 0.95) for i in v["id"]])
+            return Resolution(mention, "alias", v["id"], v["type"], 0.96, candidates=[(v["id"], v["type"], 0.96)])
+        return None
 
     def suggest(self, types: Iterable[str], limit: int = 6) -> List[str]:
         return [i for i, _, _ in self._entities(types)][:limit]
@@ -365,6 +535,7 @@ class NetworkModel:
 
     def to_dict(self) -> Dict[str, Any]:
         return {"source": self.source, "nodes": [asdict(n) for n in self.nodes.values()],
+                "live": {h.name: self.live_mcs(h) for h in self.radio_hops()},
                 "links": [asdict(l) for l in self.links], "slices": [asdict(s) for s in self.slices.values()],
                 "hops": [{"hop": h.name, "distance_m": h.distance_m, "load_mbps": self.load(h),
                           "floor": self.hop_floor(h), "slices": [s.id for s in self.slices_on(h)]} for h in self.radio_hops()],

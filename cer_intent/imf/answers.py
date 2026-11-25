@@ -253,16 +253,48 @@ def answer_ask(e: Expectation, net: NetworkModel, records: List[IntentRecord]) -
         events = [h["event"] for h in target.history[-4:]]
         return {"question": q, "insight": "state", "data": {"intent": target.id, "state": target.state.value, "events": events},
                 "text": f"{target.name or target.id} is {target.state.value}. " + " ".join(r for r in reasons[:3] if r)}
+    # a radio, asked about directly: what it reports now
+    radios = [i for i in e.object.ids if i in net.nodes and net.nodes[i].radio]
+    if radios and e.object.type == "radio":
+        parts, data = [], []
+        for rid in radios:
+            n = net.nodes[rid]
+            lv = n.live or {}
+            bits = [f"{rid}" + (f" ({n.model})" if n.model else "")]
+            if lv.get("mcs"):
+                bits.append(f"runs {lv['mcs']} now ({capacity_mbps(lv['mcs']):g} Mbps)")
+            if lv.get("snr_db") is not None:
+                bits.append(f"SNR {float(lv['snr_db']):g} dB")
+            if lv.get("rsl_dbm") is not None:
+                bits.append(f"receive level {float(lv['rsl_dbm']):g} dBm")
+            if lv.get("freq_mhz"):
+                bits.append(f"{float(lv['freq_mhz']) / 1000:g} GHz")
+            if lv.get("tx_power_control"):
+                bits.append(f"transmit power {lv['tx_power_control']}")
+            on = [s.id for s in net.slices.values() if rid in s.path]
+            bits.append(f"carries {', '.join(on) or 'no slice'}")
+            parts.append(", ".join(bits))
+            data.append({"radio": rid, "model": n.model, "live": lv, "slices": on, "bands": n.bands})
+        live = any((net.nodes[r].live or {}).get("mcs") for r in radios)
+        return {"question": q, "insight": "measured" if live else "state", "data": data,
+                "text": ". ".join(parts) + "." + ("" if live else " (The radios have not reported their modulation.)")}
     # status / metric
     rows = []
     for hop in _hops_for(e, net):
         load = net.load(hop)
+        live = net.live_mcs(hop)
         rows.append({"hop": hop.name, "load_mbps": load, "clear_capacity_mbps": hop.capacity(0),
                      "rain_capacity_mbps": hop.capacity(hop.design_rain_mmh), "floor": net.hop_floor(hop),
+                     "live_mcs": live, "live_capacity_mbps": min(hop.port_mbps, capacity_mbps(live)) if live else None,
                      "availability": availability_for(hop, load, net.hop_floor(hop))})
     degraded = [r for r in records if r.state == State.DEGRADED]
-    text = "; ".join(f"{r['hop'].replace('|', ' – ')}: {r['load_mbps']:g} of {r['clear_capacity_mbps']:g} Mbps in use "
-                     f"({r['rain_capacity_mbps']:g} in design rain), availability {pct(r['availability'].get('availability_pct', 0))}"
-                     for r in rows)
+
+    def line(r):
+        now = (f"runs {r['live_mcs']} now: {r['live_capacity_mbps']:g} Mbps for {r['load_mbps']:g} Mbps asked"
+               if r["live_mcs"] else f"{r['load_mbps']:g} of {r['clear_capacity_mbps']:g} Mbps in use")
+        return (f"{r['hop'].replace('|', ' – ')} {now} ({r['clear_capacity_mbps']:g} in clear sky, {r['rain_capacity_mbps']:g} in "
+                f"design rain), availability {pct(r['availability'].get('availability_pct', 0))}")
+    text = "; ".join(line(r) for r in rows)
     text += f". {len(net.slices)} slice(s); " + (f"{len(degraded)} intent(s) degraded." if degraded else "every intent is met.")
-    return {"question": q, "insight": "analytic", "data": rows, "text": text}
+    measured = any(r["live_mcs"] for r in rows)
+    return {"question": q, "insight": "measured" if measured else "analytic", "data": rows, "text": text}

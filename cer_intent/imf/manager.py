@@ -26,20 +26,22 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from cer_intent.imf import clarify
+from cer_intent.imf import autoapprove, clarify
 from cer_intent.imf.actions import Actuator, radio_state
 from cer_intent.imf.answers import answer_ask, answer_explore
-from cer_intent.imf.check import TwinClient, active_guards, check_record
+from cer_intent.imf.check import TwinClient, active_guards, check_record, held_request
 from cer_intent.imf.llm import Provider, merge, provider_from_env
 from cer_intent.imf.match import Matcher, Policy
 from cer_intent.imf.model import (ACTING_KINDS, STANDING_KINDS, Expectation, IntentRecord, Kind, Question,
                                   Source, State)
 from cer_intent.imf.negotiate import alternatives, apply_alternative
-from cer_intent.imf.network import NetworkModel
+from cer_intent.imf.network import NetworkModel, SliceInfo
 from cer_intent.imf.radio import capacity_mbps, mcs_index
 from cer_intent.imf.reader import RuleReader
 from cer_intent.imf.store import IntentStore
 from cer_intent.imf.timex import find_times, window_bounds
+
+ROLES_ALL = ("viewer", "operator", "approver", "admin", "system")
 
 logger = logging.getLogger("CER-Intent.imf")
 
@@ -62,7 +64,8 @@ class IntentManager:
     def __init__(self, store: Optional[IntentStore] = None, network: Optional[Callable[[], NetworkModel]] = None,
                  nsc: Optional[Callable[[], Any]] = None, twin: Optional[TwinClient] = None, llm: Optional[Provider] = None,
                  policy: Optional[Policy] = None, clock: Optional[Callable[[], dt.datetime]] = None,
-                 legacy: Optional[Callable[[str], Dict[str, Any]]] = None, use_llm_env: bool = True):
+                 legacy: Optional[Callable[[str], Dict[str, Any]]] = None, use_llm_env: bool = True,
+                 auto_state: Optional[Any] = None):
         self.store = store or IntentStore()
         self._network = network or NetworkModel.demo
         self.actuator = Actuator(nsc or _default_nsc)
@@ -70,6 +73,12 @@ class IntentManager:
         self.twin = twin
         self.llm = llm if llm is not None else (provider_from_env() if use_llm_env else None)
         self.policy = policy or Policy.load()
+        self.auto_state = auto_state            # where an admin's auto-approval changes are kept (None: not kept)
+        kept = autoapprove.load_state(auto_state)
+        if kept:
+            cur = self.policy.auto.to_dict()
+            cur.update(kept)
+            self.policy.auto = autoapprove.AutoPolicy.from_dict(cur, env=False)
         self.clock = clock or dt.datetime.now
         self.legacy = legacy
         self.lock = threading.RLock()
@@ -87,6 +96,12 @@ class IntentManager:
             pass
         net.intents = []
         for r in self.store.all():
+            for sid, req in (r.links.get("suspended") or {}).items():
+                held = held_request(req) if sid not in net.slices else None
+                if held:
+                    net.suspended[sid] = SliceInfo(id=sid, status="suspended", bandwidth_mbps=held["bandwidth_mbps"],
+                                                   endpoints=held["endpoints"], acm_floor=held["floor"],
+                                                   description=held["description"], intent=r.id)
             if r.state in (State.WITHDRAWN, State.REJECTED):
                 continue
             keeps: Dict[str, List[float]] = {}
@@ -125,7 +140,7 @@ class IntentManager:
             self.store.put(record)
             if approve and record.state == State.CHECKED:
                 return self.approve(record.id, who=who, role=role)
-            return record
+            return self._auto(record)
 
     def _understand(self, rec: IntentRecord, net: NetworkModel) -> None:
         now = self.clock()
@@ -190,7 +205,7 @@ class IntentManager:
         exps = [Expectation.model_validate(d) for d in rec.base]
         rec.expectations = exps
         clarify.apply(rec, exps, net, "pre")
-        questions = Matcher(net, self.policy).match(rec)
+        questions = Matcher(net, self.policy, records=self.store.all(), owner=rec.owner).match(rec)
         clarify.apply(rec, exps, net, "post")
         for alt in rec.links.get("accepted", []):
             apply_alternative(rec, alt, stable=True)
@@ -250,6 +265,14 @@ class IntentManager:
         else:
             rec.state = State.CHECKED
         rec.touch("checked", verdict=result["verdict"], twin=(result.get("twin") or {}).get("verdict"))
+        if rec.state == State.CHECKED:
+            ok, rows = autoapprove.evaluate(rec, net, self.policy.auto, self.store.all(), self.store.audit_log(limit=1000),
+                                            self.clock())
+            rec.links["guardrails"] = rows
+            rec.links["auto_ok"] = ok
+        else:
+            rec.links.pop("guardrails", None)
+            rec.links["auto_ok"] = False
 
     def answer(self, rid: str, question: str, value: Any, who: str = "operator", role: str = "operator") -> IntentRecord:
         with self.lock:
@@ -274,7 +297,7 @@ class IntentManager:
             self.store.audit("answer", rec.id, who, role, question=q.field, value=parsed)
             self._evaluate(rec, net)
             self.store.put(rec)
-            return rec
+            return self._auto(rec)
 
     def accept(self, rid: str, alt: Any, who: str = "operator", role: str = "operator", approve: bool = False) -> IntentRecord:
         with self.lock:
@@ -292,7 +315,13 @@ class IntentManager:
             self.store.put(rec)
             if approve and rec.state == State.CHECKED:
                 return self.approve(rec.id, who=who, role=role)
+            return self._auto(rec)
+
+    def _auto(self, rec: IntentRecord) -> IntentRecord:
+        """Apply a checked intent without waiting for a person when every guardrail holds."""
+        if rec.state != State.CHECKED or not rec.links.get("auto_ok"):
             return rec
+        return self._approve(rec, who="auto-approval", role="system", auto=True)
 
     def recheck(self, rid: str) -> IntentRecord:
         with self.lock:
@@ -301,7 +330,7 @@ class IntentManager:
                 raise ImfError(f"the intent is {rec.state.value}", 409)
             self._evaluate(rec, self.network())
             self.store.put(rec)
-            return rec
+            return self._auto(rec)
 
     # ── approve and act ──────────────────────────────────────────────────────
     def approve(self, rid: str, who: str = "operator", role: str = "operator") -> IntentRecord:
@@ -311,22 +340,36 @@ class IntentManager:
                 raise ImfError(f"the intent is {rec.state.value}; only a checked intent can be approved", 409)
             if role not in self.policy.act_roles:
                 raise ImfError(f"the {role} role cannot approve changes", 403)
-            needs = [r for r in (rec.check or {}).get("rules", []) if r["effect"] == "approval"]
+            return self._approve(rec, who, role)
+
+    def _approve(self, rec: IntentRecord, who: str, role: str, auto: bool = False) -> IntentRecord:
+        with self.lock:
+            rid = rec.id
+            needs = [] if auto else [r for r in (rec.check or {}).get("rules", []) if r["effect"] == "approval"]
             big = self.policy.require_approval_above_mbps
-            if big is not None and any((e.value("bandwidth") or 0) > big for e in rec.expectations if e.kind in ACTING_KINDS):
+            if not auto and big is not None and any((e.value("bandwidth") or 0) > big for e in rec.expectations if e.kind in ACTING_KINDS):
                 needs.append({"why": f"more than {big:g} Mbps needs an approver"})
-            if any(e.kind == Kind.GUARD for e in rec.expectations):
+            if not auto and any(e.kind == Kind.GUARD for e in rec.expectations):
                 needs.append({"why": "a rule binds every other intent: an approver sets it"})
             if needs and role not in self.policy.approval_roles:
                 raise ImfError(needs[0]["why"] + f" (you act as {role})", 403)
-            if (rec.check or {}).get("at", 0) < time.time() - 120:
+            if not auto and (rec.check or {}).get("at", 0) < time.time() - 120:
                 self._evaluate(rec, self.network())
                 if rec.state != State.CHECKED:
                     self.store.put(rec)
                     raise ImfError("the network changed since the check; see the new result", 409)
-            rec.approvals.append({"t": time.time(), "who": who, "role": role})
-            self.store.audit("approved", rec.id, who, role)
-            rec.touch("approved", who=who, role=role)
+            entry = {"t": time.time(), "who": who, "role": role}
+            if auto:
+                entry.update({"auto": True, "guardrails": rec.links.get("guardrails")})
+            rec.approvals.append(entry)
+            if auto:
+                self.store.audit("auto-approved", rec.id, who, role, owner=rec.owner,
+                                 guardrails=[g["id"] for g in rec.links.get("guardrails") or []])
+                rec.touch("approved automatically", guardrails=len(rec.links.get("guardrails") or []))
+                baseline = autoapprove.snapshot_fulfilment([r for r in self.store.all() if r.id != rec.id])
+            else:
+                self.store.audit("approved", rec.id, who, role)
+                rec.touch("approved", who=who, role=role)
             if self._windowed(rec):
                 rec.state = State.SCHEDULED
                 rec.links["schedule"] = self._schedule(rec)
@@ -335,6 +378,9 @@ class IntentManager:
                 self.tick()
                 return self._get(rid)
             self._act(rec)
+            if auto and rec.state in (State.ACTIVE, State.COMPLETED):
+                rec.links["auto"] = {"at": time.time(), "watch_until": time.time() + self.policy.auto.watch_s,
+                                     "baseline": baseline, "status": "watching"}
             self.store.put(rec)
             return rec
 
@@ -460,6 +506,11 @@ class IntentManager:
                 rec.actions += [{**a, "withdraw": True} for a in self.actuator.change(e, rec, revert=True)]
             elif e.kind == Kind.OPTIMISE and any(a.get("expectation") == e.id and a.get("op") == "energy-on" for a in rec.actions):
                 rec.actions += self.actuator.energy(e, rec, False, net)
+            elif e.kind == Kind.LIFECYCLE and e.action.get("op") in ("suspend", "resume") and \
+                    any(a.get("expectation") == e.id and a.get("ok") for a in rec.actions):
+                back = {"suspend": "resume", "resume": "suspend"}[e.action["op"]]
+                undo = Expectation(kind=Kind.LIFECYCLE, object={"type": "slice", "ids": list(e.object.ids)}, action={"op": back})
+                rec.actions += [{**a, "expectation": e.id, "withdraw": True} for a in self.actuator.lifecycle(undo, rec)]
 
     def suspend(self, rid: str, who: str = "operator", role: str = "operator") -> IntentRecord:
         with self.lock:
@@ -645,7 +696,12 @@ class IntentManager:
                     rec.state = State.SCHEDULED
                 if rec.state in (State.ACTIVE, State.DEGRADED):
                     events += self._watch(rec, now)
+                    events += self._watch_auto(rec)
                 self.store.put(rec)
+            for rec in self.store.all(states=[State.COMPLETED]):      # one-off actions applied without a person
+                if (rec.links.get("auto") or {}).get("status") == "watching":
+                    events += self._watch_auto(rec)
+                    self.store.put(rec)
         self.events = (self.events + events)[-200:]
         return events
 
@@ -697,6 +753,52 @@ class IntentManager:
                 if fired:
                     events.append({"intent": rec.id, "event": "alert", "why": fired})
         return events
+
+    def _watch_auto(self, rec: IntentRecord) -> List[Dict[str, Any]]:
+        """An intent applied without a person is rolled back if it, or an intent met before, stops being met."""
+        auto = rec.links.get("auto") or {}
+        if auto.get("status") != "watching":
+            return []
+        if time.time() >= float(auto.get("watch_until", 0)):
+            auto["status"] = "passed"
+            rec.touch("auto watch passed")
+            return [{"intent": rec.id, "event": "auto watch passed"}]
+        net = self.network()
+        mine = self._report(rec, net)
+        broken = [] if all(x.get("status") != "NOT_FULFILLED" for x in mine["expectations"].values()) else \
+            [f"{rec.name}: {mine.get('why') or 'an objective is not met'}"]
+        for other in self.store.all(states=[State.ACTIVE, State.DEGRADED]):
+            if other.id == rec.id or not auto.get("baseline", {}).get(other.id):
+                continue
+            rep = self._report(other, net)
+            self.store.put(other)
+            if any(x.get("status") == "NOT_FULFILLED" for x in rep["expectations"].values()):
+                broken.append(f"{other.name}: {rep.get('why') or 'an objective is not met'}")
+        if not broken:
+            return []
+        self._undo_all(rec)
+        rec.state = State.FAILED
+        auto["status"] = "rolled back"
+        why = "; ".join(broken)
+        rec.answer = {"text": f"Rolled back automatically within its watch window: {why}.", "insight": "state"}
+        rec.touch("rolled back automatically", why=why)
+        self.store.audit("auto-rolled-back", rec.id, "auto-approval", "system", why=why)
+        return [{"intent": rec.id, "event": "auto rollback", "why": why}]
+
+    def set_auto_policy(self, changes: Dict[str, Any], who: str, role: str) -> Dict[str, Any]:
+        if role != "admin":
+            raise ImfError("only an admin changes the auto-approval policy", 403)
+        try:
+            changes = autoapprove.validate(changes or {}, tuple(ROLES_ALL))
+        except ValueError as e:
+            raise ImfError(str(e))
+        with self.lock:
+            cur = self.policy.auto.to_dict()
+            cur.update(changes)
+            self.policy.auto = autoapprove.AutoPolicy.from_dict(cur, env=False)
+            autoapprove.save_state(self.auto_state, changes, who)
+            self.store.audit("auto-approval policy", None, who, role, changes=changes)
+            return self.policy.auto.to_dict()
 
     def _remedy(self, rec: IntentRecord, report: Dict[str, Any], net: NetworkModel) -> List[Dict[str, Any]]:
         """A keep objective with 'take it from best effort first': suspend best-effort slices on the hop."""
@@ -755,7 +857,16 @@ class IntentManager:
                                 r["status"] = "NOT_FULFILLED"
                                 whys.append(short)
                         elif t.metric == "modulation_floor":
-                            r["targets"]["modulation_floor"] = {"achieved": s.hop_floor or s.acm_floor, "status": "FULFILLED"}
+                            lowest = min((mcs_index(live.get(x, {}).get("mcs")) or 99 for x in s.path if x in live), default=None)
+                            if lowest is None or lowest == 99:       # nothing read back: the floor as configured
+                                r["targets"]["modulation_floor"] = {"achieved": s.hop_floor or s.acm_floor, "status": "FULFILLED"}
+                            else:
+                                ok = lowest >= (mcs_index(str(t.value)) or 0)
+                                r["targets"]["modulation_floor"] = {"achieved": f"MCS{lowest}",
+                                                                    "status": "FULFILLED" if ok else "NOT_FULFILLED"}
+                                if not ok:
+                                    r["status"] = "NOT_FULFILLED"
+                                    whys.append(f"{s.id}'s hop runs at MCS{lowest}, below {t.value}")
             elif e.kind == Kind.KEEP:
                 for sid in e.object.ids:
                     s = net.slices.get(sid)
@@ -894,7 +1005,12 @@ def describe(rec: IntentRecord) -> str:
         rules = [r["why"] for r in check.get("rules", []) if r["effect"] in ("approval", "floor", "headroom")]
         conflicts = [c["why"] for c in check.get("conflicts", []) if c.get("severity") == "warn"]
         extra = (" " + " ".join(rules + conflicts)) if rules or conflicts else ""
-        return f"I read: {read}. Checked on {basis}: {why}.{extra} Approve to apply."
+        guard = [g for g in rec.links.get("guardrails") or [] if not g["ok"]]
+        auto_on = any(g["id"] == "enabled" and g["ok"] for g in rec.links.get("guardrails") or [])
+        tail = f" Needs your approval: {guard[0]['why']}." if auto_on and guard else " Approve to apply."
+        if (check.get("screens") or [{}])[0].get("now"):
+            extra += " " + check["screens"][0]["now"] + "."
+        return f"I read: {read}. Checked on {basis}: {why}.{extra}{tail}"
     if s == State.NEGOTIATING:
         why = "; ".join(x.get("why") for x in check.get("screens", []) if x.get("ok") is False) or \
               "; ".join(c["why"] for c in check.get("conflicts", []))
@@ -916,6 +1032,13 @@ def describe(rec: IntentRecord) -> str:
         if not acts:
             return f"Active: {watch or read}."
         what = ", ".join(f"{a['op']} {a.get('slice') or a.get('hop') or ''}".strip() for a in acts[-4:])
+        auto = rec.links.get("auto") or {}
+        if auto:
+            held = len(rec.links.get("guardrails") or [])
+            until = time.strftime("%H:%M", time.localtime(float(auto.get("watch_until", 0))))
+            state = {"watching": f"Watching until {until}; it rolls back if an objective breaks.",
+                     "passed": "Its watch window passed."}.get(auto.get("status"), "")
+            return f"Applied automatically ({held} guardrails held): {what}. {state}".strip()
         return f"Done: {what}." + (f" Watching: {watch}." if watch else "")
     if s == State.DEGRADED:
         last = rec.reports[-1] if rec.reports else {}

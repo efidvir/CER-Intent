@@ -69,6 +69,12 @@ def _api_base() -> str:
     return os.getenv("CER_INTENT_URL", "http://localhost:5000").rstrip("/")
 
 
+def _auth() -> Dict[str, str]:
+    """The agent's token when CER-Intent asks for one (CER_AUTH=token); its role comes from the token."""
+    tok = os.getenv("CER_INTENT_TOKEN", "").strip()
+    return {"Authorization": f"Bearer {tok}"} if tok else {}
+
+
 def _proxy() -> bool:
     """Slice tools call the running CER-Intent API instead of an in-process controller."""
     return os.getenv("CER_INTENT_MCP_PROXY", "").strip().lower() in ("1", "true", "yes")
@@ -105,7 +111,7 @@ def create_network_slice(request: Dict[str, Any]) -> Dict[str, Any]:
         return {"mode": "advise", "applied": False, "note": "set CER_INTENT_MCP_MODE=act to apply",
                 "preview": preview_network_slice(request)}
     if _proxy():
-        resp = requests.post(f"{_api_base()}{RFC9543_PATH}", json=request, timeout=_http_timeout())
+        resp = requests.post(f"{_api_base()}{RFC9543_PATH}", json=request, headers=_auth(), timeout=_http_timeout())
         result = resp.json()
     else:
         result = CONTEXT.nsc.create_or_update_slice_service(request)
@@ -118,7 +124,7 @@ def create_network_slice(request: Dict[str, Any]) -> Dict[str, Any]:
 def list_network_slices() -> Dict[str, Any]:
     """List the slices the slice controller holds, with status and realization technology."""
     if _proxy():
-        resp = requests.get(f"{_api_base()}{RFC9543_PATH}", timeout=_http_timeout())
+        resp = requests.get(f"{_api_base()}{RFC9543_PATH}", headers=_auth(), timeout=_http_timeout())
         resp.raise_for_status()
         tree = resp.json().get("ietf-network-slice-service:network-slice-services", {})
         return {"slices": [
@@ -139,7 +145,7 @@ def list_network_slices() -> Dict[str, Any]:
 def get_network_slice(slice_id: str) -> Dict[str, Any]:
     """One slice as an RFC 9543 slice-service, plus how it was realized."""
     if _proxy():
-        resp = requests.get(f"{_api_base()}{RFC9543_PATH}/slice-service={slice_id}", timeout=_http_timeout())
+        resp = requests.get(f"{_api_base()}{RFC9543_PATH}/slice-service={slice_id}", headers=_auth(), timeout=_http_timeout())
         if resp.status_code == 404:
             return {"error": f"slice '{slice_id}' not found"}
         resp.raise_for_status()
@@ -158,7 +164,7 @@ def delete_network_slice(slice_id: str) -> Dict[str, Any]:
     if mcp_mode() != "act":
         return {"mode": "advise", "applied": False, "note": f"would withdraw slice '{slice_id}'"}
     if _proxy():
-        resp = requests.delete(f"{_api_base()}{RFC9543_PATH}/slice-service={slice_id}", timeout=_http_timeout())
+        resp = requests.delete(f"{_api_base()}{RFC9543_PATH}/slice-service={slice_id}", headers=_auth(), timeout=_http_timeout())
         if resp.status_code == 404:
             return {"mode": "act", "applied": False, "error": f"slice '{slice_id}' not found"}
         return {"mode": "act", "applied": resp.status_code == 204, "slice_id": slice_id,
@@ -193,7 +199,7 @@ def submit_intent(text: str) -> Dict[str, Any]:
     """Send a free-text intent to CER-Intent, which parses, checks and applies it (acts only in act mode)."""
     if mcp_mode() != "act":
         return {"mode": "advise", "applied": False, "note": "set CER_INTENT_MCP_MODE=act to submit", "intent": text}
-    resp = requests.post(f"{_api_base()}/api/v1/intent", json={"intent": text, "source": "mcp"}, timeout=_http_timeout())
+    resp = requests.post(f"{_api_base()}/api/v1/intent", json={"intent": text, "source": "mcp"}, headers=_auth(), timeout=_http_timeout())
     try:
         body = resp.json()
     except ValueError:
@@ -216,7 +222,7 @@ def run_what_if(scenario: Dict[str, Any]) -> Dict[str, Any]:
 def _v2(method: str, path: str, body: Optional[Dict[str, Any]] = None, acting: bool = False) -> Dict[str, Any]:
     """Call CER-Intent's /api/v2. In advise mode the agent acts as a viewer: it can read, ask and explore, never approve."""
     role = "operator" if (acting and mcp_mode() == "act") else "viewer"
-    headers = {"X-User": os.getenv("CER_INTENT_MCP_USER", "mcp-agent"), "X-Role": role}
+    headers = {"X-User": os.getenv("CER_INTENT_MCP_USER", "mcp-agent"), "X-Role": role, **_auth()}
     resp = requests.request(method, f"{_api_base()}{path}", json=body, headers=headers, timeout=_http_timeout())
     try:
         out = resp.json()

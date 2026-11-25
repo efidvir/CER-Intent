@@ -28,7 +28,8 @@ KIND_CUES: List[Tuple[Kind, Pattern[str]]] = [
         r"|is\s+(?:the|it|there|slice|service|radio|[\w-]+\s+(?:ok|up|healthy|down|degraded))|are\s+(?:the|there|all)|show|list|explain"
         r"|tell\s+me\s+(?:about|why|what|which|how)|status\s+of|give\s+me\s+(?:the\s+)?(?:status|state|list))\b", re.I)),
     (Kind.GUARD, re.compile(
-        r"\b(?:never|don'?t|do\s+not)\s+let\s+(?:any|a\s+single|every|all(?:\s+the)?)\s+(?:hops?|radios?|links?)\b"
+        r"\bauto[- ]?approv\w*|\b(?:approve|apply)\s+(?:[\w-]+\s+){0,6}?automatically\b|\bapply\s+(?:[\w.-]+\s+){0,8}?without\s+(?:asking|approval|waiting)\b"
+        r"|\b(?:never|don'?t|do\s+not)\s+let\s+(?:any|a\s+single|every|all(?:\s+the)?)\s+(?:hops?|radios?|links?)\b"
         r"|\b(?:no|every|any)\s+(?:hop|radio|link)s?\s+(?:may|can|should|must)\s+(?:go|drop|fall)\s+below\b", re.I)),
     (Kind.KEEP, re.compile(
         r"\b(?:don'?t|do\s+not|never)\s+let\b|\bmust\s+(?:not|never)\s+(?:drop|fall|exceed|go|rise)\b", re.I)),
@@ -55,7 +56,7 @@ KIND_CUES: List[Tuple[Kind, Pattern[str]]] = [
     (Kind.CHANGE, re.compile(
         r"\b(?:increase|decrease|raise|lower|double|triple|quadruple|halve|scale|bump|boost|cut|upgrade|downgrade|move|change|set(?!\s+up)"
         r"|modify|update|switch|extend|shorten|rename|re-?prioriti[sz]e|tighten|relax|loosen|grow|shrink|expand|reduce|add\s+\d"
-        r"|give\s+(?:the\s+)?[\w-]+(?:\s+[\w-]+)?\s+(?:\d+(?:\.\d+)?\s*%\s+)?(?:more|less)|take\s+[\w-]+(?:\s+[\w-]+)?\s+(?:down|up)\s+to"
+        r"|give\s+(?:the\s+)?[\w-]+(?:\s+[\w-]+){0,2}\s+(?:\d+(?:\.\d+)?\s*%\s+)?(?:more|less)|take\s+[\w-]+(?:\s+[\w-]+)?\s+(?:down|up)\s+to"
         r"|make\s+(?:it|[\w-]+)\s+(?:\d|faster|bigger|smaller))\b", re.I)),
     (Kind.DELIVER, re.compile(
         r"\b(?:connect|link\s+up|create|provision|set\s+up|setup|establish|build|deploy|give|provide|need|want|order|request"
@@ -82,7 +83,15 @@ NETWORK_WORDS = re.compile(
     r"\b(?:slices?|vpns?|l2vpn|l3vpn|radios?|hops?|links?|networks?|backhaul|fronthaul|midhaul|sites?|nodes?|mbps|gbps|kbps|bandwidth|"
     r"latency|delay|jitter|loss|availability|uptime|vlan|mcs\d*|modulation|qam|acm|rain(?:ing|fall|s)?|mm/h|storms?|capacity|headroom|throughput|traffic|"
     r"energy|power|intents?|rules?|polic(?:y|ies)|services?|alerts?|reports?|twin|sla|slos?|changes?|maintenance|freeze|approval|"
+    r"auto[- ]?approv\w*|approv(?:e|als?)\s+(?:\w+\s+){0,3}?automatically|deliver(?:y|ies)|guardrails?|"
     r"what\s+can\s+you|help|status|health|state)\b", re.I)
+# "never auto-approve ...", "stop auto-approving ...", "turn auto-approval off" (the negation leads the phrase,
+# so "auto-approve slices of no more than 300 Mbps" stays a grant)
+NO_AUTO = re.compile(
+    r"\b(?:never|don'?t|do\s+not|stop|cease|no\s+longer|no\s+more)\b(?=.{0,30}?\b(?:auto[- ]?approv|approv|apply))|"
+    r"\b(?:disable|turn\s+off|switch\s+off|pause|suspend)\s+(?:the\s+)?auto[- ]?approv\w*|"
+    r"\bauto[- ]?approv\w*\s+(?:is\s+)?off\b|\bno\s+(?:automatic\s+approv|auto[- ]?approv)\w*|"
+    r"^\s*(?:no|nothing)\b(?=.*\bwithout\b)", re.I)
 IN_SCOPE = ("transport slices and VPNs (L2 and L3) between sites", "changing, suspending and removing them",
             "radio settings: modulation floor, TX power, energy saving", "standing objectives on bandwidth, latency, loss "
             "and availability", "rules (freeze windows, headroom)", "reports and alerts",

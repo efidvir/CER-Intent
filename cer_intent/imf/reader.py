@@ -578,6 +578,33 @@ class RuleReader:
             e.object.type = "hop"
 
     def _k_guard(self, c: str, off: int, e: Expectation, quants: List[Quantity]) -> None:
+        if re.search(r"\bauto[- ]?approv\w*|\b(?:approve|apply)\s+(?:[\w-]+\s+){0,6}?automatically|\bwithout\s+(?:asking|approval|waiting)", c, re.I):
+            kinds = []
+            for kind, rx in (("deliver", r"deliver|slices?|new|provision|connect"), ("change", r"chang|increase|resiz|modif"),
+                             ("lifecycle", r"suspen|resum|paus(?!e\s+auto)"), ("optimise", r"energy|optimi[sz]|power"),
+                             ("observe", r"reports?|alerts?|watch")):
+                if re.search(rx, c, re.I):
+                    kinds.append(kind)
+            if L.NO_AUTO.search(c):
+                # a person approves these; generic words ("changes", "slices") restrict everything,
+                # only explicit ones narrow it ("deliveries", "new slices", "suspensions")
+                e.action = {"rule": "approval", "no_auto": True}
+                narrow = [k for k, rx in (("deliver", r"deliver\w*|new\s+slices?|provision\w*|connect\w*"),
+                                          ("lifecycle", r"suspen\w*|resum\w*"), ("optimise", r"energy|optimi[sz]\w*"),
+                                          ("observe", r"reports?|alerts?")) if re.search(rx, c, re.I)]
+                if narrow and not re.search(r"\bchang\w*|\bslices?\b(?<!new\sslice)(?<!new\sslices)", c, re.I):
+                    e.action["kinds"] = narrow
+                return
+            e.action = {"rule": "auto_approve", "kinds": kinds or ["deliver", "change"]}
+            q = next((x for x in quants if x.dim == "rate"), None)
+            if q:
+                e.set_target("bandwidth", "le", q.value, "Mbps", span=[off + q.span[0], off + q.span[1]])
+                q.used = True
+            if re.search(r"\btwin\b", c, re.I):
+                e.action["twin"] = True
+            if e.object.type == "network" and not e.object.mentions:
+                e.object.type = "network"
+            return
         if re.search(r"\b(?:headroom|spare|reserve|free)\b", c, re.I):
             q = next((x for x in quants if x.dim in ("percent", "rate")), None)
             rule: Dict[str, Any] = {"rule": "headroom"}

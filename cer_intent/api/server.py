@@ -51,6 +51,10 @@ DASHBOARD_DIR = Path(__file__).parent.parent.parent / "dashboard"
 def create_app(registry, audit_log) -> Flask:
     app = Flask(__name__, static_folder=None)
     CORS(app)
+    from cer_intent.auth import install as install_auth
+    from cer_intent.ops import ops_bp
+    install_auth(app)
+    app.register_blueprint(ops_bp)
     socketio.init_app(app)
     app.register_blueprint(dt_bp)
     app.register_blueprint(restconf_bp)

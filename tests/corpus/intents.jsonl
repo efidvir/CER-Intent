@@ -94,6 +94,32 @@
 {"text": "Suspend the backhaul tonight 22:00-02:00, then resume it", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "contexts": ["window"], "revert": true}}
 {"text": "Connect region-a and edge with 100 Mbps; also alert me if the hop drops below MCS5", "expect": {"kinds": ["deliver", "observe"], "endpoints": ["region-a", "edge"]}}
 {"text": "Give region-a to edge 200 Mbps and never let it fall below 150 Mbps", "expect": {"kinds": ["deliver", "keep"], "endpoints": ["region-a", "edge"]}}
+{"text": "Auto-approve deliveries up to 300 Mbps", "expect": {"kinds": ["guard"], "rule": "auto_approve", "targets": {"bandwidth": ["le", 300]}}}
+{"text": "Auto-approve slices of no more than 300 Mbps", "expect": {"kinds": ["guard"], "rule": "auto_approve", "targets": {"bandwidth": ["le", 300]}}}
+{"text": "Apply changes up to 100 Mbps without asking", "expect": {"kinds": ["guard"], "rule": "auto_approve", "targets": {"bandwidth": ["le", 100]}}}
+{"text": "Approve suspensions automatically at night", "expect": {"kinds": ["guard"], "rule": "auto_approve", "contexts": ["window"]}}
+{"text": "Never auto-approve deliveries", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "Don't approve changes automatically", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "Stop auto-approving slices on radio-1", "expect": {"kinds": ["guard"], "rule": "approval", "ids": ["radio-1"]}}
+{"text": "Turn off auto-approval", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "No auto-approval for suspensions", "expect": {"kinds": ["guard"], "rule": "approval"}}
+{"text": "Double the slice on VLAN 100", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "action": "scale", "targets": {"bandwidth": ["ge", 400]}}}
+{"text": "Suspend the VLAN 100 slice", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
+{"text": "Keep the 200 Mbps slice under 5 ms", "expect": {"kinds": ["keep"], "ids": ["backhaul-ran"], "targets": {"latency": ["le", 5]}}}
+{"text": "Report the busiest hop every hour", "expect": {"kinds": ["observe"], "ids": ["radio-1|radio-2"], "contexts": ["schedule"]}}
+{"text": "How is the 60 GHz link doing?", "expect": {"kinds": ["ask"], "ids": ["radio-1|radio-2"]}}
+{"text": "Alert me when the hop to edge drops below MCS6", "expect": {"kinds": ["observe"], "ids": ["radio-1|radio-2"], "contexts": ["condition"]}}
+{"text": "What is the radio at edge doing?", "expect": {"kinds": ["ask"], "ids": ["radio-2"]}}
+{"text": "Which slices use the V-band hop?", "expect": {"kinds": ["ask"], "ids": ["radio-1|radio-2"]}}
+{"text": "What runs over the region-a hop?", "expect": {"kinds": ["ask"], "ids": ["backhaul-ran"]}}
+{"text": "Save energy on the V-band link at night, keep MCS4", "expect": {"kinds": ["optimise"], "ids": ["radio-1|radio-2"], "action": "minimize"}}
+{"text": "Freeze the 60 GHz hop during peak hours", "expect": {"kinds": ["guard"], "ids": ["radio-1|radio-2"], "rule": "freeze"}}
+{"text": "Never let the edge hop go below MCS5", "expect": {"kinds": ["keep"], "ids": ["radio-1|radio-2"], "targets": {"modulation_floor": ["ge", "MCS5"]}}}
+{"text": "How much more can the 60 GHz hop carry?", "expect": {"kinds": ["explore"], "ids": ["radio-1|radio-2"], "question_type": "headroom"}}
+{"text": "Remove the biggest slice", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "delete"}}
+{"text": "Give the VLAN 100 slice 50% more", "expect": {"kinds": ["change"], "ids": ["backhaul-ran"], "targets": {"bandwidth": ["ge", 300]}}}
+{"text": "Watch the hop to region-a", "expect": {"kinds": ["observe"], "ids": ["radio-1|radio-2"]}}
+{"text": "Suspend every slice over radio-2", "expect": {"kinds": ["lifecycle"], "ids": ["backhaul-ran"], "action": "suspend"}}
 {"text": "Configure BGP on the core routers", "expect": {"kinds": [], "out_of_scope": true}}
 {"text": "Order pizza for the NOC", "expect": {"kinds": [], "out_of_scope": true}}
 {"text": "Reset my laptop password", "expect": {"kinds": [], "out_of_scope": true}}

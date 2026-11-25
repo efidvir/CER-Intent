@@ -41,9 +41,16 @@ class Policy:
     approval_roles: Tuple[str, ...] = ("approver", "admin")
     act_roles: Tuple[str, ...] = ("operator", "approver", "admin")
     profiles: Dict[str, Dict[str, Any]] = field(default_factory=lambda: dict(L.PROFILES))
+    auto: Any = None                       # AutoPolicy (cer_intent/imf/autoapprove.py)
+
+    def __post_init__(self):
+        if self.auto is None:
+            from cer_intent.imf.autoapprove import AutoPolicy
+            self.auto = AutoPolicy.from_dict(None)
 
     @classmethod
     def load(cls) -> "Policy":
+        from cer_intent.imf.autoapprove import AutoPolicy
         p = Policy()
         path = os.getenv("CER_IMF_POLICY") or str(ROOT / "data" / "imf_policy.json")
         try:
@@ -53,6 +60,8 @@ class Policy:
         for k, v in data.items():
             if k == "profiles" and isinstance(v, dict):
                 p.profiles.update(v)
+            elif k == "auto_approve" and isinstance(v, dict):
+                p.auto = AutoPolicy.from_dict(v)
             elif hasattr(p, k) and not k.startswith("_"):
                 setattr(p, k, tuple(v) if isinstance(getattr(p, k), tuple) else v)
         return p
@@ -63,10 +72,13 @@ def note(e: Expectation, fld: str, value: Any, source: Source, why: str) -> None
 
 
 class Matcher:
-    def __init__(self, net: NetworkModel, policy: Optional[Policy] = None):
+    def __init__(self, net: NetworkModel, policy: Optional[Policy] = None, records: Optional[List[Any]] = None,
+                 owner: Optional[str] = None):
         self.net = net
         self.policy = policy or Policy.load()
         self.net.vlan_pool = tuple(self.policy.vlan_pool)
+        self.records = records
+        self.owner = owner
 
     # ── entry point ──────────────────────────────────────────────────────────
     def match(self, rec: IntentRecord) -> List[Question]:
@@ -124,6 +136,24 @@ class Matcher:
                  "intent": ("intent", "slice"), "radio": ("radio",), "hop": ("hop",), "site": ("site", "radio"),
                  "node": ("site", "radio"), "link": ("hop",)}.get(obj.type, ("slice", "service", "site", "radio", "intent"))
         ids: List[str] = []
+        # descriptions answered from the network: "the slice on VLAN 100", "the busiest hop", "slices over radio-1"
+        if e.kind != Kind.DELIVER:
+            from cer_intent.imf import referents
+            found = referents.find(e.text or "", self.net, self.records, self.owner)
+            if e.kind == Kind.GUARD:
+                # a rule binds what is named, now and later: "slices over radio-1" means radio-1
+                found = [r for r in found if r.type not in ("slice", "intent")]
+            if found:
+                want = {"hop": "hop", "radio": "radio", "slice": "slice", "intent": "intent"}
+                for r in found:
+                    ids += r.ids
+                    note(e, "object", r.ids, Source.RESOLVED, r.why)
+                obj.type = want.get(found[0].type, obj.type) if obj.type in ("network", "slice", "service", "hop", "radio", "site") else obj.type
+                obj.ids = list(dict.fromkeys(ids))
+                obj.selector["described"] = [r.why for r in found]
+                if not obj.ids and any(r.group for r in found):
+                    e.action["nothing"] = "; ".join(r.why for r in found)
+                return qs
         for mention in obj.mentions:
             low = mention.lower()
             if obj.type == "radio" and re.search(r"both|the\s+radios|all|each", low):
@@ -143,6 +173,10 @@ class Matcher:
             res = self.net.resolve(mention, tuple(t for t in types if t != "intent") or types)
             if not res.ok and "intent" in types and res.status == "unknown":
                 res = self.net.resolve(mention, ("intent",))
+            if res.status == "group":
+                ids += [c[0] for c in res.candidates]
+                note(e, "object", [c[0] for c in res.candidates], Source.RESOLVED, f"“{mention}”: every one the network reports")
+                continue
             if res.ok:
                 ids.append(res.id)
                 if res.type == "site" and obj.type in ("slice", "service"):
